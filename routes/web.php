@@ -16,7 +16,7 @@ Route::view('/about', 'pages.about')->name('about');
 Route::view('/faq', 'pages.faq')->name('faq');
 Route::view('/contact', 'pages.contact')->name('contact');
 
-Route::get('/dashboard', DashboardController::class)
+Route::get('/dashboard', [DashboardController::class, '__invoke'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
