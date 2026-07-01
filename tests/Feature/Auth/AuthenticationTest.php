@@ -52,6 +52,12 @@ class AuthenticationTest extends TestCase
 
     public function test_google_redirect_uses_basic_identity_scopes_only(): void
     {
+        config([
+            'services.google.client_id' => 'google-client-id',
+            'services.google.client_secret' => 'google-client-secret',
+            'services.google.redirect' => 'https://example.com/auth/google/callback',
+        ]);
+
         $provider = Mockery::mock();
         $provider->shouldReceive('scopes')
             ->once()
@@ -68,6 +74,26 @@ class AuthenticationTest extends TestCase
 
         $this->get(route('auth.google.redirect'))
             ->assertRedirect('https://accounts.google.com/o/oauth2/v2/auth');
+    }
+
+    public function test_google_redirect_url_includes_client_id_and_normalized_callback(): void
+    {
+        config([
+            'app.url' => 'https://gmj-app-mvp-production-jfo2mv.laravel.cloud',
+            'services.google.client_id' => 'google-client-id',
+            'services.google.client_secret' => 'google-client-secret',
+            'services.google.redirect' => 'https://gmj-app-mvp-production-jfo2mv.laravel.cloud',
+        ]);
+
+        $response = $this->get(route('auth.google.redirect'));
+        $redirect = $response->headers->get('Location');
+
+        $response->assertRedirect();
+        $this->assertStringContainsString('client_id=google-client-id', $redirect);
+        $this->assertStringContainsString(
+            'redirect_uri=https%3A%2F%2Fgmj-app-mvp-production-jfo2mv.laravel.cloud%2Fauth%2Fgoogle%2Fcallback',
+            $redirect,
+        );
     }
 
     public function test_google_callback_creates_a_new_guide_user(): void

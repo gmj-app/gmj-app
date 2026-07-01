@@ -14,8 +14,15 @@ use Throwable;
 
 class GoogleAuthController extends Controller
 {
-    public function redirect(): RedirectResponse
+    public function redirect(Request $request): RedirectResponse
     {
+        $this->configureGoogleService();
+
+        if (blank(config('services.google.client_id')) || blank(config('services.google.client_secret'))) {
+            return redirect()->route('login')
+                ->with('status', 'Google sign-in is not configured yet. Missing Google OAuth credentials.');
+        }
+
         return Socialite::driver('google')
             ->scopes(['openid', 'email', 'profile'])
             ->redirect();
@@ -82,6 +89,65 @@ class GoogleAuthController extends Controller
         }
 
         return redirect()->route('dashboard');
+    }
+
+    private function configureGoogleService(): void
+    {
+        config([
+            'services.google.client_id' => $this->firstFilled([
+                config('services.google.client_id'),
+                env('GOOGLE_CLIENT_ID'),
+                getenv('GOOGLE_CLIENT_ID') ?: null,
+                $_SERVER['GOOGLE_CLIENT_ID'] ?? null,
+            ]),
+            'services.google.client_secret' => $this->firstFilled([
+                config('services.google.client_secret'),
+                env('GOOGLE_CLIENT_SECRET'),
+                getenv('GOOGLE_CLIENT_SECRET') ?: null,
+                $_SERVER['GOOGLE_CLIENT_SECRET'] ?? null,
+            ]),
+            'services.google.redirect' => $this->normalizeGoogleRedirectUri(),
+        ]);
+    }
+
+    /**
+     * @param  array<int, mixed>  $values
+     */
+    private function firstFilled(array $values): ?string
+    {
+        foreach ($values as $value) {
+            $value = trim((string) $value);
+
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeGoogleRedirectUri(): string
+    {
+        $redirect = $this->firstFilled([
+            config('services.google.redirect'),
+            env('GOOGLE_REDIRECT_URI'),
+            getenv('GOOGLE_REDIRECT_URI') ?: null,
+            $_SERVER['GOOGLE_REDIRECT_URI'] ?? null,
+        ]);
+
+        $callbackPath = '/auth/google/callback';
+
+        if (! $redirect) {
+            return route('auth.google.callback');
+        }
+
+        $path = parse_url($redirect, PHP_URL_PATH);
+
+        if ($path === null || $path === '' || $path === '/') {
+            return rtrim($redirect, '/').$callbackPath;
+        }
+
+        return $redirect;
     }
 
     private function isSafeRedirectUrl(Request $request, string $url): bool
