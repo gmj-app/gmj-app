@@ -31,7 +31,20 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI') ?: rtrim((string) env('APP_URL'), '/').'/auth/google/callback',
+        'redirect' => (static function (): string {
+            $redirect = trim((string) env('GOOGLE_REDIRECT_URI', ''));
+            $callbackPath = '/auth/google/callback';
+
+            if ($redirect === '') {
+                return rtrim((string) env('APP_URL'), '/').$callbackPath;
+            }
+
+            $path = parse_url($redirect, PHP_URL_PATH);
+
+            return $path === null || $path === '' || $path === '/'
+                ? rtrim($redirect, '/').$callbackPath
+                : $redirect;
+        })(),
     ],
 
     'slack' => [
