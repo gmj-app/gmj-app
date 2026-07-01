@@ -18,9 +18,14 @@ class GoogleAuthController extends Controller
     {
         $this->configureGoogleService();
 
-        if (blank(config('services.google.client_id')) || blank(config('services.google.client_secret'))) {
+        $missingGoogleCredentials = $this->missingGoogleCredentials();
+
+        if ($missingGoogleCredentials !== []) {
             return redirect()->route('login')
-                ->with('status', 'Google sign-in is not configured yet. Missing Google OAuth credentials.');
+                ->with(
+                    'status',
+                    'Google sign-in is not configured yet. Missing '.implode(' and ', $missingGoogleCredentials).'.',
+                );
         }
 
         return Socialite::driver('google')
@@ -148,6 +153,20 @@ class GoogleAuthController extends Controller
         }
 
         return $redirect;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function missingGoogleCredentials(): array
+    {
+        return collect([
+            'GOOGLE_CLIENT_ID' => config('services.google.client_id'),
+            'GOOGLE_CLIENT_SECRET' => config('services.google.client_secret'),
+        ])
+            ->filter(fn ($value) => blank($value))
+            ->keys()
+            ->all();
     }
 
     private function isSafeRedirectUrl(Request $request, string $url): bool
