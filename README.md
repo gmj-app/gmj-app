@@ -1,4 +1,24 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Guide My Journey
+
+## MVP Authentication
+
+Guide My Journey uses Google SSO only for MVP Guide accounts. Password login, password registration, and password reset flows are not exposed in the product UI.
+
+Required environment variables:
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://gmj-mvp.test/auth/google/callback
+```
+
+The Google OAuth client should use this local callback URL:
+
+```text
+http://gmj-mvp.test/auth/google/callback
+```
+
+Google SSO requests only basic identity scopes: `openid`, `email`, and `profile`. It does not request YouTube scopes, call the YouTube API, store Google access tokens, or verify YouTube channel ownership. Creator verification is future work and remains separate from signing in.
 
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>

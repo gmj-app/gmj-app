@@ -5,18 +5,16 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
 
 class ConfirmablePasswordController extends Controller
 {
     /**
      * Show the confirm password view.
      */
-    public function show(): View
+    public function show(): RedirectResponse
     {
-        return view('auth.confirm-password');
+        return redirect()->route('dashboard')
+            ->with('status', 'Guide My Journey uses Google sign-in for MVP.');
     }
 
     /**
@@ -24,17 +22,9 @@ class ConfirmablePasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if (! Auth::guard('web')->validate([
-            'email' => $request->user()->email,
-            'password' => $request->password,
-        ])) {
-            throw ValidationException::withMessages([
-                'password' => __('auth.password'),
-            ]);
-        }
-
         $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('dashboard', absolute: false))
+            ->with('status', 'Guide My Journey uses Google sign-in for MVP.');
     }
 }

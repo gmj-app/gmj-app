@@ -4,16 +4,16 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class PasswordUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_password_can_be_updated(): void
+    public function test_password_update_is_disabled_for_google_only_mvp(): void
     {
         $user = User::factory()->create();
+        $password = $user->password;
 
         $response = $this
             ->actingAs($user)
@@ -26,14 +26,16 @@ class PasswordUpdateTest extends TestCase
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/profile')
+            ->assertSessionHas('status', 'google-sign-in-only');
 
-        $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
+        $this->assertSame($password, $user->refresh()->password);
     }
 
-    public function test_correct_password_must_be_provided_to_update_password(): void
+    public function test_password_update_does_not_validate_password_fields(): void
     {
         $user = User::factory()->create();
+        $password = $user->password;
 
         $response = $this
             ->actingAs($user)
@@ -45,7 +47,10 @@ class PasswordUpdateTest extends TestCase
             ]);
 
         $response
-            ->assertSessionHasErrorsIn('updatePassword', 'current_password')
-            ->assertRedirect('/profile');
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile')
+            ->assertSessionHas('status', 'google-sign-in-only');
+
+        $this->assertSame($password, $user->refresh()->password);
     }
 }

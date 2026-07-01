@@ -5,7 +5,19 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ $title ?? config('app.name', 'Guide My Journey') }}</title>
+        <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+
+        <script>
+            (() => {
+                const storedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
+        </script>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -14,14 +26,14 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+    <body class="font-sans text-gray-900 antialiased dark:text-slate-100">
+        <div class="min-h-screen bg-gray-100 dark:bg-slate-950">
+            @include('layouts.public-navigation')
 
             <!-- Page Heading -->
             @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <header class="border-b border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="max-w-7xl mx-auto py-6 px-4 text-gray-900 dark:text-slate-50 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
                 </header>

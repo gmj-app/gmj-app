@@ -10,35 +10,22 @@ class PasswordConfirmationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_confirm_password_screen_can_be_rendered(): void
+    public function test_confirm_password_screen_redirects_for_google_only_mvp(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->get('/confirm-password');
-
-        $response->assertStatus(200);
+        $this->actingAs(User::factory()->create())
+            ->get('/confirm-password')
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('status', 'Guide My Journey uses Google sign-in for MVP.');
     }
 
-    public function test_password_can_be_confirmed(): void
+    public function test_confirm_password_post_redirects_without_validating_password(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/confirm-password', [
-            'password' => 'password',
-        ]);
-
-        $response->assertRedirect();
-        $response->assertSessionHasNoErrors();
-    }
-
-    public function test_password_is_not_confirmed_with_invalid_password(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/confirm-password', [
-            'password' => 'wrong-password',
-        ]);
-
-        $response->assertSessionHasErrors();
+        $this->actingAs(User::factory()->create())
+            ->post('/confirm-password', [
+                'password' => 'wrong-password',
+            ])
+            ->assertRedirect(route('dashboard', absolute: false))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', 'Guide My Journey uses Google sign-in for MVP.');
     }
 }

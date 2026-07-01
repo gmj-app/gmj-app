@@ -23,6 +23,9 @@ class CreatorFactory extends Factory
             'slug' => fake()->unique()->slug(),
             'display_name' => $displayName,
             'channel_url' => fake()->optional()->url(),
+            'submissions_open' => true,
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+            'status' => 'active',
         ];
     }
 }

@@ -24,8 +24,10 @@ class RecommendationFactory extends Factory
         return [
             'creator_id' => Creator::factory(),
             'submitted_by' => User::factory(),
+            'recommendation_type' => 'youtube',
             'youtube_url' => "https://www.youtube.com/watch?v={$videoId}",
             'youtube_video_id' => $videoId,
+            'channel_title' => null,
             'title' => fake()->sentence(4),
             'artist' => fake()->optional()->name(),
             'category' => fake()->optional()->randomElement(['music', 'comedy', 'documentary']),
