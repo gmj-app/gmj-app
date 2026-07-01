@@ -1,0 +1,337 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Creator;
+use App\Models\Recommendation;
+use App\Models\User;
+use App\Models\UserPick;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class HomepageTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_public_navigation_and_static_pages_are_available(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Guide My Journey')
+            ->assertSee('favicon.svg', false)
+            ->assertSee(route('home'), false)
+            ->assertSee('Explore')
+            ->assertSee('How it Works')
+            ->assertSee('FAQ')
+            ->assertSee('Sign in')
+            ->assertDontSee('Register')
+            ->assertSee(route('about'), false)
+            ->assertSee(route('faq'), false)
+            ->assertSee(route('contact'), false)
+            ->assertSee('Toggle light and dark mode')
+            ->assertSeeInOrder(['Fans', 'SUGGEST', 'Communities', 'VOTE', 'Creators', 'DECIDE'])
+            ->assertSee('bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent', false)
+            ->assertDontSee('Fans suggest. Communities vote. Creators decide.');
+
+        $this->get('/about')
+            ->assertOk()
+            ->assertSee('How It Works | Guide My Journey', false)
+            ->assertSee('How it works')
+            ->assertSee('Fans suggest')
+            ->assertSee('Communities vote')
+            ->assertSee('Creators decide')
+            ->assertSee('Voting guides the journey, but creators always stay in control.')
+            ->assertSee("Start guiding a creator's journey", false)
+            ->assertDontSee('How the journey works')
+            ->assertDontSee('The creator stays in control')
+            ->assertDontSee('About Guide My Journey');
+
+        $this->get('/faq')
+            ->assertOk()
+            ->assertSee('What is Guide My Journey?')
+            ->assertSee('Is this only for reaction channels?')
+            ->assertSee('For Fans and Guides')
+            ->assertSee('What are resources?')
+            ->assertSee('Suggestions and Voting')
+            ->assertSee('Can I upvote my own suggestion?')
+            ->assertSee('For Creators')
+            ->assertSee('Can creators block users?')
+            ->assertSee('Platform and YouTube')
+            ->assertSee('Is Guide My Journey connected to YouTube?')
+            ->assertSee('Is Guide My Journey free?')
+            ->assertDontSee('How do creators claim or create a page?');
+
+        $this->get('/contact')
+            ->assertOk()
+            ->assertSee('For questions, feedback, or creator inquiries, contact:')
+            ->assertSee('support@guidemyjourney.test')
+            ->assertDontSee('<form', false);
+    }
+
+    public function test_authenticated_public_navigation_keeps_account_actions(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get('/')
+            ->assertOk()
+            ->assertSee('My Hub')
+            ->assertSee('Profile')
+            ->assertSee('Log out')
+            ->assertDontSee('Creator Dashboard')
+            ->assertSee(route('logout'), false);
+    }
+
+    public function test_homepage_ranks_creators_by_votes_on_visible_recommendations(): void
+    {
+        $popularCreator = Creator::factory()->create([
+            'display_name' => 'Popular Creator',
+            'slug' => 'popular-creator',
+            'youtube_channel_title' => 'Popular Creator Channel',
+            'youtube_thumbnail_url' => 'https://example.com/popular-creator.jpg',
+            'verification_status' => 'verified',
+        ]);
+        $secondCreator = Creator::factory()->create([
+            'display_name' => 'Second Creator',
+            'slug' => 'second-creator',
+        ]);
+
+        $topRequest = Recommendation::factory()->create([
+            'creator_id' => $popularCreator->id,
+            'title' => 'Visible top request',
+            'status' => 'approved',
+        ]);
+        $hiddenRequest = Recommendation::factory()->create([
+            'creator_id' => $popularCreator->id,
+            'title' => 'Hidden request with many votes',
+            'status' => 'hidden',
+        ]);
+        $secondRequest = Recommendation::factory()->create([
+            'creator_id' => $secondCreator->id,
+            'title' => 'Second creator request',
+            'status' => 'scheduled',
+        ]);
+        $passedRequest = Recommendation::factory()->create([
+            'creator_id' => $secondCreator->id,
+            'title' => 'Passed public request',
+            'status' => 'passed',
+        ]);
+
+        $this->addVotes($topRequest, 3);
+        $this->addVotes($hiddenRequest, 5);
+        $this->addVotes($secondRequest, 2);
+        $this->addVotes($passedRequest, 1);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Guide My Journey')
+            ->assertSeeInOrder(['Fans ', '>SUGGEST</span>.', 'Communities ', '>VOTE</span>.', 'Creators ', '>DECIDE</span>.'], false)
+            ->assertSee('from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent', false)
+            ->assertSee('placeholder="Search for a creator..."', false)
+            ->assertDontSee('Community-powered creator journeys')
+            ->assertDontSee('Favorite creators, suggest ideas or links, and upvote what you want to see next.')
+            ->assertSee('Popular creators')
+            ->assertSee('Verified')
+            ->assertSee('Top requests')
+            ->assertSee('Visible top request')
+            ->assertSee(route('creator.queue', $popularCreator), false)
+            ->assertSee('aria-label="View Popular Creator\'s journey"', false)
+            ->assertSee('src="https://example.com/popular-creator.jpg"', false)
+            ->assertSee('alt="Popular Creator avatar"', false)
+            ->assertSee('onerror="this.previousElementSibling.removeAttribute(\'aria-hidden\'); this.remove()"', false)
+            ->assertSee('aria-label="Second Creator avatar"', false)
+            ->assertSee('>SC</span>', false)
+            ->assertSee('mt-auto border-t', false)
+            ->assertDontSee('View journey', false)
+            ->assertDontSee('&rarr;', false)
+            ->assertDontSee('inline-flex min-h-12 w-full items-center justify-center rounded-full', false)
+            ->assertDontSee('Hidden request with many votes')
+            ->assertSeeInOrder([
+                'Popular Creator',
+                'Second Creator',
+            ]);
+    }
+
+    public function test_homepage_shows_up_to_three_top_public_requests_per_creator(): void
+    {
+        $creator = Creator::factory()->create([
+            'display_name' => 'Three Request Creator',
+            'slug' => 'three-request-creator',
+        ]);
+
+        $newestTopRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Newest tied top request',
+            'status' => 'approved',
+            'created_at' => now(),
+        ]);
+        $olderTopRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Older tied top request',
+            'status' => 'approved',
+            'created_at' => now()->subDay(),
+        ]);
+        $thirdRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Third highest public request',
+            'status' => 'scheduled',
+            'created_at' => now()->subDays(2),
+        ]);
+        $fourthRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Fourth public request',
+            'status' => 'passed',
+            'created_at' => now()->subDays(3),
+        ]);
+        $hiddenRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Hidden request must not appear',
+            'status' => 'hidden',
+        ]);
+
+        $this->addVotes($newestTopRequest, 3);
+        $this->addVotes($olderTopRequest, 3);
+        $this->addVotes($thirdRequest, 2);
+        $this->addVotes($fourthRequest, 1);
+        $this->addVotes($hiddenRequest, 10);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Top requests')
+            ->assertSeeInOrder([
+                'Newest tied top request',
+                'Older tied top request',
+                'Third highest public request',
+            ])
+            ->assertDontSee('Fourth public request')
+            ->assertDontSee('Hidden request must not appear');
+    }
+
+    public function test_homepage_shows_the_empty_top_requests_state(): void
+    {
+        Creator::factory()->create([
+            'display_name' => 'Creator Without Requests',
+            'slug' => 'creator-without-requests',
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Top requests')
+            ->assertSee('No public requests yet');
+    }
+
+    public function test_homepage_creator_cards_show_description_previews_with_fallbacks(): void
+    {
+        Creator::factory()->create([
+            'display_name' => 'Creator With Bio',
+            'youtube_channel_title' => 'Creator With Bio',
+            'bio' => 'A focused creator biography for the discovery card.',
+            'submission_instructions' => 'This should not be shown when a bio exists.',
+        ]);
+        Creator::factory()->create([
+            'display_name' => 'Creator With Instructions',
+            'bio' => null,
+            'submission_instructions' => 'Suggest thoughtful documentaries and interviews.',
+        ]);
+        Creator::factory()->create([
+            'display_name' => 'Creator Without Details',
+            'bio' => null,
+            'submission_instructions' => null,
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('A focused creator biography for the discovery card.')
+            ->assertDontSee('This should not be shown when a bio exists.')
+            ->assertSee('Suggest thoughtful documentaries and interviews.')
+            ->assertSee("Help guide this creator's journey.")
+            ->assertSee('line-clamp-2 text-sm leading-5', false);
+    }
+
+    public function test_search_filters_creators_and_changes_the_results_heading(): void
+    {
+        Creator::factory()->create([
+            'display_name' => 'Vocals with Vanessa',
+            'slug' => 'vocals-with-vanessa',
+            'youtube_channel_title' => 'Vanessa Vocal Studio',
+            'youtube_channel_url' => 'https://www.youtube.com/channel/UCVANESSADEMOCHANNEL01',
+        ]);
+        Creator::factory()->create([
+            'display_name' => 'Movie Night Mike',
+            'slug' => 'movie-night-mike',
+        ]);
+
+        $this->get('/?q=Vocal+Studio')
+            ->assertOk()
+            ->assertSee('Search results')
+            ->assertSee('Vocals with Vanessa')
+            ->assertDontSee('Movie Night Mike')
+            ->assertSee('value="Vocal Studio"', false);
+    }
+
+    public function test_search_displays_an_empty_state_when_no_creators_match(): void
+    {
+        Creator::factory()->create(['display_name' => 'Existing Creator']);
+
+        $this->get('/?q=missing')
+            ->assertOk()
+            ->assertSee('Search results')
+            ->assertSee('No creators found.')
+            ->assertDontSee('Existing Creator');
+    }
+
+    public function test_homepage_paginates_twelve_creators_per_page(): void
+    {
+        foreach (range(1, 13) as $number) {
+            Creator::factory()->create([
+                'display_name' => sprintf('Creator %02d', $number),
+                'slug' => sprintf('creator-%02d', $number),
+            ]);
+        }
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Creator 01')
+            ->assertSee('Creator 12')
+            ->assertDontSee('Creator 13');
+
+        $this->get('/?page=2')
+            ->assertOk()
+            ->assertSee('Creator 13')
+            ->assertDontSee('Creator 01');
+    }
+
+    public function test_inactive_creators_are_excluded_from_discovery_and_search(): void
+    {
+        Creator::factory()->create([
+            'display_name' => 'Active Creator',
+            'slug' => 'active-creator',
+        ]);
+        Creator::factory()->create([
+            'display_name' => 'Inactive Creator',
+            'slug' => 'inactive-creator',
+            'status' => 'inactive',
+            'deactivated_at' => now(),
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Active Creator')
+            ->assertDontSee('Inactive Creator');
+
+        $this->get('/?q=Inactive')
+            ->assertOk()
+            ->assertSee('No creators found.')
+            ->assertDontSee('Inactive Creator');
+    }
+
+    private function addVotes(Recommendation $recommendation, int $count): void
+    {
+        User::factory()
+            ->count($count)
+            ->create()
+            ->each(fn (User $user) => UserPick::factory()->create([
+                'user_id' => $user->id,
+                'creator_id' => $recommendation->creator_id,
+                'recommendation_id' => $recommendation->id,
+            ]));
+    }
+}

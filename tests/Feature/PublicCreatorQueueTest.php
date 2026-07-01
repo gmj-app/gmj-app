@@ -1,0 +1,795 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Creator;
+use App\Models\CreatorFavorite;
+use App\Models\CreatorOwner;
+use App\Models\CreatorTag;
+use App\Models\Recommendation;
+use App\Models\User;
+use App\Models\UserPick;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Tests\TestCase;
+
+class PublicCreatorQueueTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_creator_page_uses_journey_wording_and_shows_creator_guidance(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'display_name' => 'JFragment',
+            'bio' => 'Exploring music, culture, and first-listen discoveries.',
+            'submission_instructions' => 'Tell me why this recommendation matters to you.',
+            'youtube_channel_url' => 'https://www.youtube.com/@jfragment',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee("JFragment's Journey", false)
+            ->assertDontSee('Suggest ideas, vote with the community, and help guide what this creator makes next.')
+            ->assertSee('Exploring music, culture, and first-listen discoveries.')
+            ->assertSee('Submission guidance')
+            ->assertSee('Tell me why this recommendation matters to you.')
+            ->assertSee('Add Recommendation')
+            ->assertSee('aria-label="Add a recommendation for JFragment"', false)
+            ->assertSee('Visit Channel')
+            ->assertSee('aria-label="Visit JFragment\'s YouTube channel"', false)
+            ->assertDontSee('Submit a recommendation')
+            ->assertDontSee('Visit YouTube channel')
+            ->assertSeeInOrder([
+                'Your limits',
+                'Filters',
+                'Search and filter suggestions',
+            ])
+            ->assertSee('aria-expanded="false"', false)
+            ->assertSee('x-cloak', false)
+            ->assertDontSee('data-active-filter-count=', false)
+            ->assertDontSee('Queue controls');
+    }
+
+    public function test_it_only_displays_public_queue_statuses_and_recommendation_details(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'display_name' => 'JFragment',
+        ]);
+
+        foreach (['approved', 'coming_soon', 'scheduled', 'recorded', 'published', 'passed'] as $status) {
+            Recommendation::factory()->create([
+                'creator_id' => $creator->id,
+                'title' => ucfirst($status).' recommendation',
+                'artist' => 'Example Artist',
+                'category' => 'Music',
+                'status' => $status,
+                'youtube_url' => "https://www.youtube.com/watch?v={$status}",
+            ]);
+        }
+
+        foreach (['pending', 'hidden', 'planned', 'declined'] as $status) {
+            Recommendation::factory()->create([
+                'creator_id' => $creator->id,
+                'title' => ucfirst($status).' recommendation',
+                'status' => $status,
+            ]);
+        }
+
+        $response = $this->get('/jfragment');
+
+        $response->assertOk()
+            ->assertSee('JFragment')
+            ->assertSee('Example Artist')
+            ->assertSee('Music')
+            ->assertSee('Watch original')
+            ->assertSee('Submitted');
+
+        foreach (['approved', 'coming_soon', 'scheduled', 'recorded', 'published', 'passed'] as $status) {
+            $response->assertSee(ucfirst($status).' recommendation');
+        }
+
+        foreach (['pending', 'hidden', 'planned', 'declined'] as $status) {
+            $response->assertDontSee(ucfirst($status).' recommendation');
+        }
+    }
+
+    public function test_it_orders_pinned_first_then_votes_then_newest(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        $pinned = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Pinned recommendation',
+            'status' => 'approved',
+            'is_pinned' => true,
+            'created_at' => now()->subWeek(),
+        ]);
+        $mostVotes = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Most voted recommendation',
+            'status' => 'coming_soon',
+            'created_at' => now()->subDays(2),
+        ]);
+        $newest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Newest recommendation',
+            'status' => 'recorded',
+            'created_at' => now(),
+        ]);
+        $oldest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Oldest recommendation',
+            'status' => 'published',
+            'created_at' => now()->subDay(),
+        ]);
+
+        $this->addPicks($creator, $pinned, 1);
+        $this->addPicks($creator, $mostVotes, 3);
+        $this->addPicks($creator, $newest, 2);
+        $this->addPicks($creator, $oldest, 2);
+
+        $this->get('/jfragment')
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Pinned recommendation',
+                'Most voted recommendation',
+                'Newest recommendation',
+                'Oldest recommendation',
+            ]);
+    }
+
+    public function test_public_queue_can_search_filter_and_sort_recommendations(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $music = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Quiet folk ballad',
+            'artist' => 'Needle North',
+            'category' => 'music',
+            'status' => 'approved',
+            'youtube_url' => 'https://www.youtube.com/watch?v=FOLK0000001',
+            'created_at' => now()->subDays(3),
+        ]);
+        $documentary = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Ocean archive documentary',
+            'channel_title' => 'Retro Archive',
+            'category' => 'documentary',
+            'status' => 'scheduled',
+            'youtube_url' => 'https://www.youtube.com/watch?v=OCEAN000001',
+            'scheduled_for' => now()->addWeek(),
+            'created_at' => now(),
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Hidden Retro Archive request',
+            'category' => 'documentary',
+            'status' => 'hidden',
+        ]);
+
+        $this->addPicks($creator, $music, 3);
+        $this->addPicks($creator, $documentary, 1);
+
+        foreach ([
+            'Ocean archive' => 'Ocean archive documentary',
+            'Needle North' => 'Quiet folk ballad',
+            'Retro Archive' => 'Ocean archive documentary',
+            'OCEAN000001' => 'Ocean archive documentary',
+        ] as $search => $expectedTitle) {
+            $this->get(route('creator.queue', ['creator' => $creator, 'q' => $search]))
+                ->assertOk()
+                ->assertSee($expectedTitle)
+                ->assertDontSee('Hidden Retro Archive request');
+        }
+
+        $this->get(route('creator.queue', [
+            'creator' => $creator,
+            'status' => 'scheduled',
+            'category' => 'documentary',
+            'sort' => 'scheduled',
+        ]))
+            ->assertOk()
+            ->assertSee('Ocean archive documentary')
+            ->assertDontSee('Quiet folk ballad')
+            ->assertSee('value="scheduled" selected', false)
+            ->assertSee('value="documentary" selected', false)
+            ->assertSee('value="scheduled" selected', false)
+            ->assertSee('Most upvotes')
+            ->assertSee('Newest')
+            ->assertSee('Status')
+            ->assertSee('Scheduled date')
+            ->assertSee('Filters')
+            ->assertSee('Show filters')
+            ->assertSee('Hide filters')
+            ->assertSee('aria-controls="creator-queue-filters"', false)
+            ->assertSee('x-bind:aria-expanded="open.toString()"', false)
+            ->assertSee('x-show="open"', false)
+            ->assertSee('data-active-filter-count="2"', false)
+            ->assertDontSee('Queue controls');
+
+        $this->get(route('creator.queue', ['creator' => $creator, 'sort' => 'newest']))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Ocean archive documentary',
+                'Quiet folk ballad',
+            ]);
+    }
+
+    public function test_public_queue_shows_distinct_empty_states(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'submissions_open' => true,
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('No recommendations yet. Be the first to suggest something for this journey.')
+            ->assertSee('Submit recommendation');
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Visible request',
+            'status' => 'approved',
+        ]);
+
+        $this->get(route('creator.queue', ['creator' => $creator, 'q' => 'missing']))
+            ->assertOk()
+            ->assertSee('No recommendations found.')
+            ->assertDontSee('No recommendations yet. Be the first to suggest something for this journey.');
+    }
+
+    public function test_it_displays_topic_descriptions_without_a_youtube_link(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_type' => 'topic',
+            'youtube_url' => null,
+            'youtube_video_id' => null,
+            'channel_title' => null,
+            'title' => 'The history of the Amen break',
+            'description' => 'Trace one drum break across decades of music.',
+            'status' => 'approved',
+        ]);
+
+        $this->get('/jfragment')
+            ->assertOk()
+            ->assertSee('Topic')
+            ->assertSee('The history of the Amen break')
+            ->assertSee('Trace one drum break across decades of music.')
+            ->assertSee('Topic suggestion')
+            ->assertDontSee('Watch on YouTube');
+    }
+
+    public function test_it_displays_human_readable_public_status_labels(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'New status recommendation',
+            'status' => 'coming_soon',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Passed status recommendation',
+            'status' => 'passed',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Already seen recommendation',
+            'status' => 'already_seen',
+        ]);
+
+        $this->get('/jfragment')
+            ->assertOk()
+            ->assertSee('New status recommendation')
+            ->assertSee('Passed status recommendation')
+            ->assertSee('Already seen recommendation')
+            ->assertSee('Coming Soon', false)
+            ->assertSee('Already Seen', false)
+            ->assertSee('The creator has already seen this.')
+            ->assertSee('Passed', false);
+
+        $this->get('/jfragment?status=already_seen')
+            ->assertOk()
+            ->assertSee('Already seen recommendation')
+            ->assertDontSee('New status recommendation')
+            ->assertDontSee('Passed status recommendation');
+    }
+
+    public function test_scheduled_and_published_recommendations_show_public_timing_and_reaction_links(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Scheduled recommendation',
+            'status' => 'scheduled',
+            'scheduled_for' => '2026-07-04 19:30:00',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Published recommendation',
+            'status' => 'published',
+            'published_reaction_url' => 'https://www.youtube.com/watch?v=REACTION001',
+        ]);
+
+        $this->get('/jfragment')
+            ->assertOk()
+            ->assertSee('Scheduled for Jul 4, 2026 at 7:30 PM')
+            ->assertSee('Watch published content')
+            ->assertSee('https://www.youtube.com/watch?v=REACTION001', false);
+    }
+
+    public function test_it_displays_a_youtube_thumbnail_when_a_video_id_is_available(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'youtube_video_id' => 'dQw4w9WgXcQ',
+            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'title' => 'Never Gonna Give You Up',
+            'status' => 'approved',
+        ]);
+
+        $this->get('/jfragment')
+            ->assertOk()
+            ->assertSee('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', false)
+            ->assertSee('onerror="this.hidden = true"', false)
+            ->assertSee('Thumbnail for Never Gonna Give You Up');
+    }
+
+    public function test_invalid_or_missing_youtube_video_ids_use_the_placeholder(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        foreach ([
+            ['title' => 'Missing ID', 'youtube_video_id' => null],
+            ['title' => 'Malformed ID', 'youtube_video_id' => 'not-a-video-id'],
+        ] as $recommendation) {
+            Recommendation::factory()->create([
+                'creator_id' => $creator->id,
+                'youtube_url' => null,
+                'status' => 'approved',
+                ...$recommendation,
+            ]);
+        }
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Video preview unavailable')
+            ->assertDontSee('/vi//hqdefault.jpg', false)
+            ->assertDontSee('/vi/not-a-video-id/hqdefault.jpg', false);
+    }
+
+    public function test_cards_show_placeholder_reason_submitter_and_pick_copy(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $submitter = User::factory()->create(['name' => 'Example Fan']);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $submitter->id,
+            'recommendation_type' => 'topic',
+            'youtube_url' => null,
+            'youtube_video_id' => null,
+            'title' => 'A thoughtful community topic',
+            'reason' => str_repeat('A meaningful reason for this recommendation. ', 8),
+            'status' => 'approved',
+        ]);
+        $viewer = User::factory()->create();
+
+        $this->actingAs($viewer)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Community topic')
+            ->assertSee('Submitted by Example Fan')
+            ->assertSee('Upvote')
+            ->assertSee('Top requested')
+            ->assertSee(Str::limit($recommendation->reason, 160));
+
+        $this->post(route('recommendations.vote', [$creator, $recommendation]), [
+            'confirm_favorite' => true,
+            'vote_action' => 'add',
+        ])
+            ->assertRedirect();
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Remove upvote')
+            ->assertSee('name="vote_action" value="remove"', false)
+            ->assertSee('1')
+            ->assertSee('upvote');
+    }
+
+    public function test_only_the_highest_voted_public_recommendation_is_top_requested(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $top = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Highest voted request',
+            'status' => 'approved',
+        ]);
+        $other = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Lower voted request',
+            'status' => 'coming_soon',
+        ]);
+
+        $this->addPicks($creator, $top, 3);
+        $this->addPicks($creator, $other, 1);
+
+        $response = $this->get(route('creator.queue', $creator));
+
+        $response
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Top requested',
+                'Highest voted request',
+                'Lower voted request',
+            ]);
+
+        $this->assertSame(1, substr_count($response->getContent(), 'Top requested'));
+    }
+
+    public function test_inactive_creator_pages_return_not_found(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'inactive-creator',
+            'status' => 'inactive',
+            'deactivated_at' => now(),
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertNotFound();
+    }
+
+    public function test_queue_remains_public_when_submissions_are_closed(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'submissions_open' => false,
+        ]);
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Visible recommendation',
+            'status' => 'approved',
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Visible recommendation');
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Recommendations closed');
+    }
+
+    public function test_authenticated_users_can_toggle_a_creator_favorite(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('0 users have favorited this creator.')
+            ->assertSee('0 followers')
+            ->assertSee('Favorite');
+
+        $this->post(route('creator.favorite', $creator))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Creator added to your favorites.');
+
+        $this->assertDatabaseHas('creator_favorites', [
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('1 user has favorited this creator.')
+            ->assertSee('1 follower')
+            ->assertSee('Favorited');
+
+        $this->post(route('creator.favorite', $creator))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Creator removed from your favorites.');
+
+        $this->assertDatabaseMissing('creator_favorites', [
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_unfavoriting_removes_only_that_creators_upvotes(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $otherCreator = Creator::factory()->create();
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+        ]);
+        $otherRecommendation = Recommendation::factory()->create([
+            'creator_id' => $otherCreator->id,
+            'status' => 'approved',
+        ]);
+        $user = User::factory()->create();
+
+        foreach ([$creator, $otherCreator] as $favoritedCreator) {
+            CreatorFavorite::query()->create([
+                'creator_id' => $favoritedCreator->id,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        foreach ([
+            [$creator, $recommendation],
+            [$otherCreator, $otherRecommendation],
+        ] as [$pickedCreator, $pickedRecommendation]) {
+            UserPick::factory()->create([
+                'creator_id' => $pickedCreator->id,
+                'recommendation_id' => $pickedRecommendation->id,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Remove favorite?')
+            ->assertSee('Remove favorite and upvotes')
+            ->assertSee('Active upvotes on this creator: 1')
+            ->assertSee('request-participation-confirmation', false)
+            ->assertSee('data-modal-root="participation-confirmation"', false)
+            ->assertSee('pointer-events-none invisible', false)
+            ->assertSee('data-modal-backdrop="participation-confirmation"', false)
+            ->assertSee('x-bind:hidden="! show"', false)
+            ->assertSee('hidden', false)
+            ->assertDontSee('confirm(', false);
+
+        $this->post(route('creator.favorite', $creator))
+            ->assertSessionHas(
+                'success',
+                'Creator removed from your favorites. Your upvotes for this creator were removed.',
+            );
+
+        $this->assertDatabaseMissing('creator_favorites', [
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseMissing('user_picks', [
+            'recommendation_id' => $recommendation->id,
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseHas('creator_favorites', [
+            'creator_id' => $otherCreator->id,
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseHas('user_picks', [
+            'recommendation_id' => $otherRecommendation->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_non_consuming_public_statuses_do_not_show_an_upvote_action(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'already_seen',
+            'title' => 'Locked recommendation',
+        ]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Locked recommendation')
+            ->assertSee('No longer accepting upvotes')
+            ->assertDontSee('aria-label="Upvote this recommendation"', false);
+
+        $this->post(route('recommendations.vote', [$creator, $recommendation]))
+            ->assertSessionHasErrors([
+                'limit' => 'This suggestion is no longer accepting upvotes.',
+            ]);
+
+        $this->assertDatabaseCount('user_picks', 0);
+        $this->assertFalse($recommendation->consumesUpvotes());
+    }
+
+    public function test_creator_hero_shows_visible_recommendation_and_vote_totals(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $visible = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+        ]);
+        $hidden = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'hidden',
+        ]);
+
+        $this->addPicks($creator, $visible, 3);
+        $this->addPicks($creator, $hidden, 5);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSeeInOrder([
+                '1 recommendation',
+                '0 followers',
+                '3 upvotes',
+            ]);
+    }
+
+    public function test_add_recommendation_cta_only_shows_suggestion_resources_for_favorited_guides(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $guestResponse = $this->get(route('creator.queue', $creator));
+
+        $guestResponse
+            ->assertOk()
+            ->assertSee('Add Recommendation')
+            ->assertDontSee('Add Recommendation (', false);
+
+        $unfavoritedUser = User::factory()->create();
+
+        $this->actingAs($unfavoritedUser)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Add Recommendation')
+            ->assertDontSee('Add Recommendation (', false);
+
+        $favoritedUser = User::factory()->create();
+        CreatorFavorite::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $favoritedUser->id,
+        ]);
+
+        Recommendation::factory()
+            ->count(2)
+            ->create([
+                'creator_id' => $creator->id,
+                'submitted_by' => $favoritedUser->id,
+                'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            ]);
+
+        $this->actingAs($favoritedUser)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Add Recommendation (1/3)');
+    }
+
+    public function test_add_recommendation_cta_shows_zero_remaining_for_exhausted_favorited_guides(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $user = User::factory()->create();
+        CreatorFavorite::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+
+        Recommendation::factory()
+            ->count(3)
+            ->create([
+                'creator_id' => $creator->id,
+                'submitted_by' => $user->id,
+                'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            ]);
+
+        $this->actingAs($user)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Add Recommendation (0/3)')
+            ->assertSee('pointer-events-none bg-slate-400 shadow-none', false);
+    }
+
+    public function test_creator_owners_cannot_favorite_their_own_page(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $owner = User::factory()->create();
+        CreatorOwner::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $owner->id,
+            'role' => 'owner',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('Favorite')
+            ->assertSee('Manage creator page')
+            ->assertSee(route('creators.dashboard', $creator), false);
+
+        $this->post(route('creator.favorite', $creator))
+            ->assertSessionHasErrors([
+                'favorite' => 'Creators cannot favorite their own creator page.',
+            ]);
+
+        $this->assertDatabaseCount('creator_favorites', 0);
+    }
+
+    public function test_public_queue_displays_and_filters_creator_tags(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $tag = CreatorTag::query()->create([
+            'creator_id' => $creator->id,
+            'name' => 'Live Performance',
+            'slug' => 'live-performance',
+        ]);
+        $tagged = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Tagged live session',
+            'status' => 'approved',
+        ]);
+        $untagged = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Untagged studio session',
+            'status' => 'approved',
+        ]);
+        $tagged->creatorTags()->attach($tag);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Live Performance')
+            ->assertSee('Tagged live session')
+            ->assertSee('Untagged studio session');
+
+        $this->get(route('creator.queue', [
+            'creator' => $creator,
+            'tag' => 'live-performance',
+        ]))
+            ->assertOk()
+            ->assertSee('Tagged live session')
+            ->assertDontSee('Untagged studio session')
+            ->assertSee('value="live-performance"', false);
+
+        $otherCreator = Creator::factory()->create();
+        CreatorTag::query()->create([
+            'creator_id' => $otherCreator->id,
+            'name' => 'Foreign Tag',
+            'slug' => 'foreign-tag',
+        ]);
+
+        $this->get(route('creator.queue', [
+            'creator' => $creator,
+            'tag' => 'foreign-tag',
+        ]))
+            ->assertOk()
+            ->assertSee('Tagged live session')
+            ->assertSee('Untagged studio session')
+            ->assertDontSee('Foreign Tag');
+
+        $this->assertTrue($untagged->creatorTags()->doesntExist());
+    }
+
+    public function test_non_owners_do_not_see_manage_creator_page_link(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('Manage creator page');
+    }
+
+    private function addPicks(Creator $creator, Recommendation $recommendation, int $count): void
+    {
+        User::factory()
+            ->count($count)
+            ->create()
+            ->each(fn (User $user) => UserPick::factory()->create([
+                'user_id' => $user->id,
+                'creator_id' => $creator->id,
+                'recommendation_id' => $recommendation->id,
+            ]));
+    }
+}

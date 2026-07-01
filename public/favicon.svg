@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-labelledby="title desc">
+<title id="title">Guide My Journey app icon</title>
+<desc id="desc">A rounded app icon containing the Guide My Journey connected path mark.</desc>
+<defs>
+  <linearGradient id="tile-bg" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FFFFFF"/>
+    <stop offset="1" stop-color="#F8FAFC"/>
+  </linearGradient>
+  <filter id="tile-shadow" x="-25%" y="-25%" width="150%" height="150%">
+    <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0F172A" flood-opacity="0.12"/>
+  </filter>
+  <linearGradient id="gmj-gradient" x1="18" y1="128" x2="132" y2="28" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1D35C9"/>
+    <stop offset="0.45" stop-color="#5B6FF2"/>
+    <stop offset="0.72" stop-color="#7C3AED"/>
+    <stop offset="1" stop-color="#9B5CF6"/>
+  </linearGradient>
+  <linearGradient id="gmj-gradient-soft" x1="16" y1="132" x2="138" y2="22" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1D35C9"/>
+    <stop offset="0.55" stop-color="#60A5FA"/>
+    <stop offset="1" stop-color="#8B5CF6"/>
+  </linearGradient>
+</defs>
+<rect x="20" y="20" width="140" height="140" rx="34" fill="url(#tile-bg)" filter="url(#tile-shadow)"/>
+<g transform="translate(14 16)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M88 24 C56 25 31 51 31 83 C31 116 57 139 90 133 C112 129 128 111 130 88" stroke="url(#gmj-gradient-soft)" stroke-width="11"/>
+  <path d="M74 80 H126" stroke="url(#gmj-gradient-soft)" stroke-width="11"/>
+  <circle cx="31" cy="93" r="12" fill="#2337C8"/>
+  <circle cx="88" cy="24" r="12" fill="#8B5CF6"/>
+  <circle cx="126" cy="80" r="12" fill="#77B6F8"/>
+</g>
+</svg>
