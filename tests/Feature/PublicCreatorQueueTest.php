@@ -39,6 +39,8 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('More info')
             ->assertSee('Submission guidance')
             ->assertSee('Tell me why this recommendation matters to you.')
+            ->assertSeeInOrder(['Biography', 'Submission guidance'])
+            ->assertDontSee('<details', false)
             ->assertSee('Add Recommendation')
             ->assertSee('aria-label="Add a recommendation for JFragment"', false)
             ->assertSee('Visit Channel')
@@ -54,6 +56,23 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('x-cloak', false)
             ->assertDontSee('data-active-filter-count=', false)
             ->assertDontSee('Queue controls');
+    }
+
+    public function test_creator_menu_panels_show_empty_states_for_missing_bio_and_guidance(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'bio' => null,
+            'submission_instructions' => null,
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Biography')
+            ->assertSee('Submission guidance')
+            ->assertSee('No biography has been added for this creator yet.')
+            ->assertSee('This creator has not added submission guidance yet.')
+            ->assertDontSee('<details', false);
     }
 
     public function test_it_only_displays_public_queue_statuses_and_recommendation_details(): void

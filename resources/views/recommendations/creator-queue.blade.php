@@ -2,8 +2,8 @@
     <section class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         <div class="mx-auto min-w-0 max-w-5xl">
             <div
-                x-data="{ creatorMenuOpen: false, biographyOpen: false }"
-                x-on:keydown.escape.window="biographyOpen ? biographyOpen = false : creatorMenuOpen = false"
+                x-data="{ creatorMenuOpen: false, biographyOpen: false, submissionGuidanceOpen: false }"
+                x-on:keydown.escape.window="biographyOpen || submissionGuidanceOpen ? (biographyOpen = false, submissionGuidanceOpen = false) : creatorMenuOpen = false"
                 class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
             >
                 <x-creator-hero-background :creator="$creator" class="h-36 sm:h-44 lg:h-52">
@@ -49,6 +49,19 @@
                                         <path stroke-linecap="round" d="M12 7.75h.01" />
                                     </svg>
                                     Biography
+                                </button>
+
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    x-on:click="submissionGuidanceOpen = true; creatorMenuOpen = false"
+                                    class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-white/10 focus:bg-white/10 focus:outline-none"
+                                >
+                                    <svg class="size-5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 5.75A1.75 1.75 0 0 1 6.75 4h10.5A1.75 1.75 0 0 1 19 5.75v12.5A1.75 1.75 0 0 1 17.25 20H6.75A1.75 1.75 0 0 1 5 18.25V5.75Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4" />
+                                    </svg>
+                                    Submission guidance
                                 </button>
                             </div>
                         </div>
@@ -151,6 +164,46 @@
                                     </div>
                                 </div>
                             </section>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    x-show="submissionGuidanceOpen"
+                    x-cloak
+                    x-transition.opacity
+                    class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 px-3 py-8 sm:px-6"
+                >
+                    <button
+                        type="button"
+                        class="fixed inset-0 cursor-default"
+                        aria-label="Close submission guidance"
+                        x-on:click="submissionGuidanceOpen = false"
+                    ></button>
+
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="creator-submission-guidance-title"
+                        class="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl bg-[#212121] text-white shadow-2xl ring-1 ring-white/10"
+                        x-on:click.stop
+                    >
+                        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-[#212121] px-6 py-5">
+                            <h2 id="creator-submission-guidance-title" class="text-xl font-extrabold tracking-tight sm:text-2xl">Submission guidance</h2>
+                            <button
+                                type="button"
+                                x-on:click="submissionGuidanceOpen = false"
+                                aria-label="Close submission guidance"
+                                class="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-slate-200 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                            >
+                                <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6 6 18" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="max-h-[calc(100vh-9rem)] overflow-y-auto px-6 pb-6">
+                            <div class="whitespace-pre-line text-sm font-medium leading-6 text-slate-100 sm:text-base sm:leading-7">{{ filled($creator->submission_instructions) ? $creator->submission_instructions : 'This creator has not added submission guidance yet.' }}</div>
                         </div>
                     </div>
                 </div>
@@ -271,12 +324,6 @@
                             @endif
                         @endauth
 
-                        @if ($creator->submission_instructions)
-                            <details class="max-w-3xl rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm leading-6 text-slate-700 dark:border-slate-800 dark:bg-white/5 dark:text-slate-300">
-                                <summary class="cursor-pointer font-bold text-slate-800 marker:text-slate-400 dark:text-slate-100">Submission guidance</summary>
-                                <p class="mt-2">{{ $creator->submission_instructions }}</p>
-                            </details>
-                        @endif
                     </div>
                 </div>
             </div>
