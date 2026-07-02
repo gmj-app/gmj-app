@@ -827,8 +827,8 @@ class CreatorManagementRoutesTest extends TestCase
 
     public function test_creator_branding_uploads_use_configured_default_disk(): void
     {
-        config(['filesystems.default' => 's3']);
-        Storage::fake('s3');
+        config(['filesystems.default' => 'creator_uploads']);
+        Storage::fake('creator_uploads');
 
         [$creator, $owner] = $this->creatorWithOwner();
 
@@ -843,8 +843,8 @@ class CreatorManagementRoutesTest extends TestCase
 
         $this->assertNotNull($creator->avatar_path);
         $this->assertStringStartsWith("creators/{$creator->id}/avatars/", $creator->avatar_path);
-        Storage::disk('s3')->assertExists($creator->avatar_path);
-        $this->assertSame(Storage::disk('s3')->url($creator->avatar_path), $creator->avatar_url);
+        Storage::disk('creator_uploads')->assertExists($creator->avatar_path);
+        $this->assertSame(Storage::disk('creator_uploads')->url($creator->avatar_path), $creator->avatar_url);
     }
 
     public function test_non_owner_cannot_update_creator_branding(): void
