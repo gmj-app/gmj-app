@@ -189,7 +189,19 @@
                         x-on:click.stop
                     >
                         <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-[#212121] px-6 py-5">
-                            <h2 id="creator-submission-guidance-title" class="text-xl font-extrabold tracking-tight sm:text-2xl">Submission guidance</h2>
+                            <div class="flex min-w-0 items-center gap-3">
+                                <x-creator-avatar
+                                    :creator="$creator"
+                                    size="md"
+                                    class="size-11 rounded-xl ring-1 ring-white/10"
+                                />
+
+                                <div class="min-w-0">
+                                    <h2 id="creator-submission-guidance-title" class="text-xl font-extrabold tracking-tight sm:text-2xl">Submission guidance</h2>
+                                    <p class="mt-0.5 truncate text-sm font-semibold text-slate-400">A note from {{ $creator->display_name }}</p>
+                                </div>
+                            </div>
+
                             <button
                                 type="button"
                                 x-on:click="submissionGuidanceOpen = false"
@@ -203,7 +215,17 @@
                         </div>
 
                         <div class="max-h-[calc(100vh-9rem)] overflow-y-auto px-6 pb-6">
-                            <div class="whitespace-pre-line text-sm font-medium leading-6 text-slate-100 sm:text-base sm:leading-7">{{ filled($creator->submission_instructions) ? $creator->submission_instructions : 'This creator has not added submission guidance yet.' }}</div>
+                            @if (filled($creator->submission_instructions))
+                                <blockquote class="relative rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-6 sm:px-6">
+                                    <span class="pointer-events-none absolute left-4 top-2 bg-gradient-to-br from-indigo-300/60 to-violet-300/20 bg-clip-text text-7xl font-black leading-none text-transparent" aria-hidden="true">“</span>
+                                    <div class="relative whitespace-pre-line pl-5 text-sm font-medium leading-6 text-slate-100 sm:text-base sm:leading-7">{{ $creator->submission_instructions }}</div>
+                                    <span class="pointer-events-none absolute bottom-1 right-5 bg-gradient-to-br from-violet-300/35 to-indigo-300/10 bg-clip-text text-6xl font-black leading-none text-transparent" aria-hidden="true">”</span>
+                                </blockquote>
+                            @else
+                                <p class="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm font-medium leading-6 text-slate-300 sm:text-base">
+                                    This creator has not added submission guidance yet.
+                                </p>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -23,7 +23,7 @@ class PublicCreatorQueueTest extends TestCase
             'slug' => 'jfragment',
             'display_name' => 'JFragment',
             'bio' => 'Exploring music, culture, and first-listen discoveries.',
-            'submission_instructions' => 'Tell me why this recommendation matters to you.',
+            'submission_instructions' => "Tell me why this recommendation matters to you.\n<script>alert('nope')</script>",
             'youtube_channel_url' => 'https://www.youtube.com/@jfragment',
         ]);
 
@@ -39,6 +39,10 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('More info')
             ->assertSee('Submission guidance')
             ->assertSee('Tell me why this recommendation matters to you.')
+            ->assertSee('A note from JFragment')
+            ->assertSee('aria-label="JFragment avatar"', false)
+            ->assertSee('&lt;script&gt;alert(&#039;nope&#039;)&lt;/script&gt;', false)
+            ->assertDontSee('<script>alert', false)
             ->assertSeeInOrder(['Biography', 'Submission guidance'])
             ->assertDontSee('<details', false)
             ->assertSee('Add Recommendation')
