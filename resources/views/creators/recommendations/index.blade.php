@@ -85,12 +85,24 @@
             </form>
 
             <div class="mt-6 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-200 dark:bg-slate-900 dark:ring-slate-800">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-slate-800">
+                <div class="overflow-hidden">
+                    <table class="w-full table-fixed divide-y divide-gray-200 text-sm dark:divide-slate-800">
+                        <colgroup>
+                            <col class="w-[24%]">
+                            <col class="w-[10%]">
+                            <col class="w-[8%]">
+                            <col class="w-[9%]">
+                            <col class="w-[15%]">
+                            <col class="w-[5%]">
+                            <col class="w-[9%]">
+                            <col class="w-[7%]">
+                            <col class="w-[6%]">
+                            <col class="w-[7%]">
+                        </colgroup>
                         <thead class="bg-gray-50 dark:bg-slate-800/80">
                             <tr>
                                 @foreach (['Title', 'Artist/channel', 'Category', 'Tags', 'Status', 'Votes', 'Submitted by', 'Submitted date', 'YouTube link', 'Actions'] as $heading)
-                                    <th scope="col" class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-300">
+                                    <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase leading-4 tracking-wide text-gray-500 dark:text-slate-300">
                                         {{ $heading }}
                                     </th>
                                 @endforeach
@@ -100,10 +112,10 @@
                         <tbody class="divide-y divide-gray-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
                             @forelse ($recommendations as $recommendation)
                                 <tr class="align-top">
-                                    <td class="min-w-80 px-4 py-4">
+                                    <td class="px-3 py-4">
                                         <div class="flex items-start gap-3">
                                             @if ($recommendation->youtubeThumbnailUrl())
-                                                <span class="relative block h-12 w-20 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:h-14 sm:w-24 dark:border-slate-700 dark:bg-slate-950">
+                                                <span class="relative block h-11 w-16 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 xl:h-12 xl:w-20 dark:border-slate-700 dark:bg-slate-950">
                                                     <img
                                                         src="{{ $recommendation->youtubeThumbnailUrl() }}"
                                                         alt="Thumbnail for {{ $recommendation->title }}"
@@ -120,7 +132,7 @@
                                             @endif
 
                                             <div class="min-w-0">
-                                                <p class="font-semibold leading-5 text-gray-900 dark:text-slate-50">{{ $recommendation->title }}</p>
+                                                <p class="break-words font-semibold leading-5 text-gray-900 dark:text-slate-50">{{ $recommendation->title }}</p>
                                                 @if ($recommendation->isCreatorAdded())
                                                     <span class="mt-1 inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Creator-added</span>
                                                 @endif
@@ -130,28 +142,30 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="min-w-44 px-4 py-4 text-gray-600 dark:text-slate-300">
+                                    <td class="break-words px-3 py-4 text-gray-600 dark:text-slate-300">
                                         {{ $recommendation->channel_title ?: ($recommendation->artist ?: '—') }}
                                     </td>
-                                    <td class="px-4 py-4">
+                                    <td class="px-3 py-4">
                                         @if ($recommendation->category)
-                                            <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium capitalize text-gray-700 dark:bg-slate-800 dark:text-slate-200">{{ $recommendation->category }}</span>
+                                            <span class="inline-flex max-w-full rounded-full bg-gray-100 px-2 py-1 text-xs font-medium capitalize text-gray-700 dark:bg-slate-800 dark:text-slate-200">
+                                                <span class="truncate">{{ $recommendation->category }}</span>
+                                            </span>
                                         @else
                                             <span class="text-gray-400">—</span>
                                         @endif
                                     </td>
-                                    <td class="min-w-44 px-4 py-4">
+                                    <td class="px-3 py-4">
                                         @if ($recommendation->creatorTags->isNotEmpty())
                                             <div class="flex flex-wrap gap-1.5">
                                                 @foreach ($recommendation->creatorTags as $tag)
-                                                    <span class="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ $tag->name }}</span>
+                                                    <span class="max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ $tag->name }}</span>
                                                 @endforeach
                                             </div>
                                         @else
                                             <span class="text-gray-400">—</span>
                                         @endif
                                     </td>
-                                    <td class="min-w-60 px-4 py-4">
+                                    <td class="px-3 py-4">
                                         <form
                                             method="POST"
                                             action="{{ route('creators.recommendations.status', [$creator, $recommendation]) }}"
@@ -161,7 +175,7 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            <select name="status" x-model="status" class="block w-full rounded-md border-gray-300 bg-white text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                                            <select name="status" x-model="status" class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
                                                 @foreach ($statuses as $status)
                                                     <option value="{{ $status }}">{{ \App\Models\Recommendation::STATUS_LABELS[$status] }}</option>
                                                 @endforeach
@@ -174,7 +188,7 @@
                                                     name="scheduled_for"
                                                     type="datetime-local"
                                                     value="{{ $recommendation->scheduled_for?->format('Y-m-d\TH:i') }}"
-                                                    class="block w-full rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                                                    class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                                 >
                                             </div>
 
@@ -186,7 +200,7 @@
                                                     type="url"
                                                     value="{{ $recommendation->published_reaction_url }}"
                                                     placeholder="Published content URL"
-                                                    class="block w-full rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+                                                    class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
                                                 >
                                                 <label for="published-at-{{ $recommendation->id }}" class="sr-only">Published date</label>
                                                 <input
@@ -194,33 +208,33 @@
                                                     name="published_at"
                                                     type="datetime-local"
                                                     value="{{ $recommendation->published_at?->format('Y-m-d\TH:i') }}"
-                                                    class="block w-full rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                                                    class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                                 >
                                             </div>
 
                                             <button class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">Save status</button>
                                         </form>
                                     </td>
-                                    <td class="px-4 py-4 font-semibold text-gray-900 dark:text-slate-50">{{ $recommendation->user_picks_count }}</td>
-                                    <td class="min-w-44 px-4 py-4">
+                                    <td class="px-3 py-4 font-semibold text-gray-900 dark:text-slate-50">{{ $recommendation->user_picks_count }}</td>
+                                    <td class="break-words px-3 py-4">
                                         @if ($recommendation->isCreatorAdded())
                                             <p class="font-medium text-violet-700 dark:text-violet-300">Creator-added</p>
                                         @else
                                             <p class="font-medium text-gray-800 dark:text-slate-100">{{ $recommendation->submittedBy->name }}</p>
-                                            <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ $recommendation->submittedBy->email }}</p>
+                                            <p class="mt-1 break-all text-xs text-gray-500 dark:text-slate-400">{{ $recommendation->submittedBy->email }}</p>
                                         @endif
                                     </td>
-                                    <td class="whitespace-nowrap px-4 py-4 text-gray-600 dark:text-slate-300">{{ $recommendation->created_at->format('M j, Y') }}</td>
-                                    <td class="px-4 py-4">
+                                    <td class="px-3 py-4 text-gray-600 dark:text-slate-300">{{ $recommendation->created_at->format('M j, Y') }}</td>
+                                    <td class="px-3 py-4">
                                         @if ($recommendation->youtube_url)
-                                            <a href="{{ $recommendation->youtube_url }}" target="_blank" rel="noopener noreferrer" class="font-semibold text-red-600 hover:text-red-500 dark:text-red-300 dark:hover:text-red-200">
+                                            <a href="{{ $recommendation->youtube_url }}" target="_blank" rel="noopener noreferrer" class="break-words text-xs font-semibold leading-4 text-red-600 hover:text-red-500 dark:text-red-300 dark:hover:text-red-200">
                                                 {{ $recommendation->youtube_video_id ? 'Open YouTube' : 'Open link' }}
                                             </a>
                                         @else
                                             <span class="text-gray-400">—</span>
                                         @endif
                                     </td>
-                                    <td class="min-w-40 px-4 py-4">
+                                    <td class="px-3 py-4">
                                         <div class="space-y-3">
                                             <div x-data="{ editing: false }" @keydown.escape.window="editing = false">
                                                 <button type="button" @click="editing = true" class="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">Edit</button>
@@ -329,7 +343,7 @@
                                             <form method="POST" action="{{ route('creators.recommendations.hide', [$creator, $recommendation]) }}" class="space-y-2">
                                                 @csrf
                                                 @method('PATCH')
-                                                <select name="moderation_reason" aria-label="Hide reason" class="block w-full rounded-md border-gray-300 bg-white py-1.5 text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                                                <select name="moderation_reason" aria-label="Hide reason" class="block w-full min-w-0 rounded-md border-gray-300 bg-white py-1.5 text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
                                                     <option value="creator_hidden">Creator hidden</option>
                                                     <option value="inappropriate">Inappropriate</option>
                                                 </select>
