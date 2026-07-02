@@ -1,24 +1,121 @@
-*.log
-.DS_Store
+# ----------------------------------------------------------------------
+# Laravel / PHP
+# ----------------------------------------------------------------------
+
+/vendor/
+node_modules/
+
 .env
-.env.backup
-.env.production
-.phpactor.json
+.env.*
+!.env.example
+
 .phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
+/.phpunit.cache/
+/coverage/
+
 Homestead.json
 Homestead.yaml
+auth.json
+
+# Laravel generated files
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+/public/storage
+
+# ----------------------------------------------------------------------
+# Build assets
+# ----------------------------------------------------------------------
+
+/public/build/
+/public/hot
+/public/mix-manifest.json
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----------------------------------------------------------------------
+# Databases / dumps / backups
+# ----------------------------------------------------------------------
+
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.backup
+*.bak
+
+# But allow example database files if you intentionally create them
+!database/*.example.sql
+
+# ----------------------------------------------------------------------
+# IDE / Editor
+# ----------------------------------------------------------------------
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ----------------------------------------------------------------------
+# Operating system files
+# ----------------------------------------------------------------------
+
+.DS_Store
 Thumbs.db
+desktop.ini
+
+# ----------------------------------------------------------------------
+# Logs
+# ----------------------------------------------------------------------
+
+*.log
+logs/
+
+# ----------------------------------------------------------------------
+# Temporary files
+# ----------------------------------------------------------------------
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*.orig
+*.rej
+
+# ----------------------------------------------------------------------
+# Composer / package manager artifacts
+# ----------------------------------------------------------------------
+
+composer.phar
+/.composer-cache/
+
+# ----------------------------------------------------------------------
+# Laravel Cloud / deployment local-only notes
+# ----------------------------------------------------------------------
+
+.laravel-cloud.local
