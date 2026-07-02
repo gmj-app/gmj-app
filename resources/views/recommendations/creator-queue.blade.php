@@ -1,8 +1,59 @@
 <x-public-layout :title="$creator->display_name.' Journey | '.config('app.name', 'Guide My Journey')">
     <section class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         <div class="mx-auto min-w-0 max-w-5xl">
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div
+                x-data="{ creatorMenuOpen: false, biographyOpen: false }"
+                x-on:keydown.escape.window="biographyOpen ? biographyOpen = false : creatorMenuOpen = false"
+                class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            >
                 <x-creator-hero-background :creator="$creator" class="h-36 sm:h-44 lg:h-52">
+                    <div class="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
+                        <div class="relative" x-on:click.outside="creatorMenuOpen = false">
+                            <button
+                                type="button"
+                                x-on:click="creatorMenuOpen = ! creatorMenuOpen"
+                                aria-label="Open creator actions"
+                                aria-haspopup="menu"
+                                aria-expanded="false"
+                                x-bind:aria-expanded="creatorMenuOpen.toString()"
+                                class="inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/20 transition hover:bg-black/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                            >
+                                <svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <circle cx="5" cy="12" r="1.8" />
+                                    <circle cx="12" cy="12" r="1.8" />
+                                    <circle cx="19" cy="12" r="1.8" />
+                                </svg>
+                            </button>
+
+                            <div
+                                x-show="creatorMenuOpen"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 scale-100"
+                                x-transition:leave-end="opacity-0 scale-95"
+                                role="menu"
+                                class="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-white/10 bg-slate-950/95 py-1.5 text-sm font-semibold text-white shadow-2xl backdrop-blur"
+                            >
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    x-on:click="biographyOpen = true; creatorMenuOpen = false"
+                                    class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-white/10 focus:bg-white/10 focus:outline-none"
+                                >
+                                    <svg class="size-5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="9" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10.75v5.5" />
+                                        <path stroke-linecap="round" d="M12 7.75h.01" />
+                                    </svg>
+                                    Biography
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="absolute inset-x-0 bottom-0 p-4">
                         <div class="flex min-w-0 items-end gap-3 sm:gap-4">
                             <x-creator-avatar
@@ -13,16 +64,96 @@
 
                             <div class="min-w-0 pb-0.5">
                                 <h1 class="max-w-3xl break-words text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl lg:text-4xl">{{ $creator->display_name }}'s Journey</h1>
-
-                                @if ($creator->bio)
-                                    <p class="mt-1.5 max-w-2xl text-sm font-medium leading-6 text-slate-100 drop-shadow-sm">
-                                        {{ $creator->bio }}
-                                    </p>
-                                @endif
                             </div>
                         </div>
                     </div>
                 </x-creator-hero-background>
+
+                <div
+                    x-show="biographyOpen"
+                    x-cloak
+                    x-transition.opacity
+                    class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 px-3 py-8 sm:px-6"
+                >
+                    <button
+                        type="button"
+                        class="fixed inset-0 cursor-default"
+                        aria-label="Close biography"
+                        x-on:click="biographyOpen = false"
+                    ></button>
+
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="creator-biography-title"
+                        class="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl bg-[#212121] text-white shadow-2xl ring-1 ring-white/10"
+                        x-on:click.stop
+                    >
+                        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-[#212121] px-6 py-5">
+                            <h2 id="creator-biography-title" class="text-xl font-extrabold tracking-tight sm:text-2xl">{{ $creator->display_name }}</h2>
+                            <button
+                                type="button"
+                                x-on:click="biographyOpen = false"
+                                aria-label="Close biography"
+                                class="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-slate-200 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                            >
+                                <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6 6 18" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="max-h-[calc(100vh-9rem)] overflow-y-auto px-6 pb-6">
+                            <section>
+                                <h3 class="text-lg font-extrabold">Description</h3>
+                                <div class="mt-3 space-y-4 whitespace-pre-line text-sm font-medium leading-6 text-slate-100 sm:text-base sm:leading-7">{{ filled($creator->bio) ? $creator->bio : 'No biography has been added for this creator yet.' }}</div>
+                            </section>
+
+                            <section class="mt-7">
+                                <h3 class="text-lg font-extrabold">More info</h3>
+                                <div class="mt-4 space-y-4 text-sm font-semibold text-slate-100 sm:text-base">
+                                    @if ($creator->youtube_channel_url ?? $creator->channel_url)
+                                        <a
+                                            href="{{ $creator->youtube_channel_url ?? $creator->channel_url }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="flex items-center gap-4 rounded-xl py-1 transition hover:text-white"
+                                        >
+                                            <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                <rect x="3" y="6" width="18" height="12" rx="3" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m10 9 5 3-5 3V9Z" />
+                                            </svg>
+                                            <span class="break-all">{{ $creator->youtube_channel_url ?? $creator->channel_url }}</span>
+                                        </a>
+                                    @endif
+
+                                    <div class="flex items-center gap-4">
+                                        <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5.75A1.75 1.75 0 0 1 5.75 4h12.5A1.75 1.75 0 0 1 20 5.75V19.5l-4-2-4 2-4-2-4 2Z" />
+                                        </svg>
+                                        <span>{{ $publicRecommendationsCount }} {{ $publicRecommendationsCount === 1 ? 'recommendation' : 'recommendations' }}</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-4">
+                                        <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 19v-1.5A3.5 3.5 0 0 0 12.5 14h-5A3.5 3.5 0 0 0 4 17.5V19" />
+                                            <circle cx="10" cy="7.5" r="3.5" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 8v5M20.5 10.5h-5" />
+                                        </svg>
+                                        <span>{{ $favoritesCount }} {{ $favoritesCount === 1 ? 'follower' : 'followers' }}</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-4">
+                                        <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m7 11 5-7 5 7h-3v8h-4v-8H7Z" />
+                                        </svg>
+                                        <span>{{ $publicVotesCount }} {{ $publicVotesCount === 1 ? 'upvote' : 'upvotes' }}</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="p-4 sm:p-5">
                     <div class="flex flex-col gap-3">
