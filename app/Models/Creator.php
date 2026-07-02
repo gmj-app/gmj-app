@@ -110,7 +110,9 @@ class Creator extends Model
     {
         // Creator uploads take precedence over future YouTube imports.
         if ($this->hasUploadedAvatar()) {
-            return Storage::disk('public')->url($this->avatar_path);
+            return filter_var($this->avatar_path, FILTER_VALIDATE_URL)
+                ? $this->avatar_path
+                : Storage::disk(config('filesystems.default'))->url($this->avatar_path);
         }
 
         return filled($this->youtube_thumbnail_url) ? $this->youtube_thumbnail_url : null;
@@ -120,7 +122,9 @@ class Creator extends Model
     {
         // Creator uploads take precedence over future YouTube imports.
         if ($this->hasUploadedHero()) {
-            return Storage::disk('public')->url($this->hero_path);
+            return filter_var($this->hero_path, FILTER_VALIDATE_URL)
+                ? $this->hero_path
+                : Storage::disk(config('filesystems.default'))->url($this->hero_path);
         }
 
         return filled($this->youtube_banner_url) ? $this->youtube_banner_url : null;
@@ -128,12 +132,22 @@ class Creator extends Model
 
     public function hasUploadedAvatar(): bool
     {
-        return filled($this->avatar_path) && Storage::disk('public')->exists($this->avatar_path);
+        if (blank($this->avatar_path)) {
+            return false;
+        }
+
+        return filter_var($this->avatar_path, FILTER_VALIDATE_URL)
+            || Storage::disk(config('filesystems.default'))->exists($this->avatar_path);
     }
 
     public function hasUploadedHero(): bool
     {
-        return filled($this->hero_path) && Storage::disk('public')->exists($this->hero_path);
+        if (blank($this->hero_path)) {
+            return false;
+        }
+
+        return filter_var($this->hero_path, FILTER_VALIDATE_URL)
+            || Storage::disk(config('filesystems.default'))->exists($this->hero_path);
     }
 
     public function recommendations(): HasMany

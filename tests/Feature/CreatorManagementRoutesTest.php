@@ -18,6 +18,13 @@ class CreatorManagementRoutesTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['filesystems.default' => 'public']);
+    }
+
     public function test_creator_management_pages_require_owner_access(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
@@ -735,8 +742,8 @@ class CreatorManagementRoutesTest extends TestCase
         $firstAvatarPath = $creator->avatar_path;
         $firstHeroPath = $creator->hero_path;
 
-        $this->assertStringStartsWith("creator-branding/{$creator->id}/avatar/", $firstAvatarPath);
-        $this->assertStringStartsWith("creator-branding/{$creator->id}/hero/", $firstHeroPath);
+        $this->assertStringStartsWith("creators/{$creator->id}/avatars/", $firstAvatarPath);
+        $this->assertStringStartsWith("creators/{$creator->id}/heroes/", $firstHeroPath);
         Storage::disk('public')->assertExists([$firstAvatarPath, $firstHeroPath]);
 
         $this->get(route('home'))
@@ -818,6 +825,28 @@ class CreatorManagementRoutesTest extends TestCase
         Storage::disk('public')->assertExists($creator->avatar_path);
     }
 
+    public function test_creator_branding_uploads_use_configured_default_disk(): void
+    {
+        config(['filesystems.default' => 's3']);
+        Storage::fake('s3');
+
+        [$creator, $owner] = $this->creatorWithOwner();
+
+        $this->actingAs($owner)
+            ->patch(route('creators.settings.update', $creator), [
+                ...$this->validSettingsPayload($creator),
+                'avatar' => UploadedFile::fake()->image('avatar.jpg', 512, 512),
+            ])
+            ->assertRedirect(route('creators.settings.edit', $creator));
+
+        $creator->refresh();
+
+        $this->assertNotNull($creator->avatar_path);
+        $this->assertStringStartsWith("creators/{$creator->id}/avatars/", $creator->avatar_path);
+        Storage::disk('s3')->assertExists($creator->avatar_path);
+        $this->assertSame(Storage::disk('s3')->url($creator->avatar_path), $creator->avatar_url);
+    }
+
     public function test_non_owner_cannot_update_creator_branding(): void
     {
         Storage::fake('public');
@@ -833,21 +862,21 @@ class CreatorManagementRoutesTest extends TestCase
             ->assertForbidden();
 
         $this->assertNull($creator->fresh()->avatar_path);
-        Storage::disk('public')->assertDirectoryEmpty("creator-branding/{$creator->id}");
+        Storage::disk('public')->assertDirectoryEmpty("creators/{$creator->id}");
     }
 
     public function test_creator_branding_helpers_prioritize_local_files_and_generate_initials(): void
     {
         Storage::fake('public');
 
-        Storage::disk('public')->put('creator-branding/1/avatar/avatar.jpg', 'avatar');
-        Storage::disk('public')->put('creator-branding/1/hero/hero.jpg', 'hero');
+        Storage::disk('public')->put('creators/1/avatars/avatar.jpg', 'avatar');
+        Storage::disk('public')->put('creators/1/heroes/hero.jpg', 'hero');
 
         $creator = Creator::factory()->create([
             'id' => 1,
             'display_name' => 'Culture Curious',
-            'avatar_path' => 'creator-branding/1/avatar/avatar.jpg',
-            'hero_path' => 'creator-branding/1/hero/hero.jpg',
+            'avatar_path' => 'creators/1/avatars/avatar.jpg',
+            'hero_path' => 'creators/1/heroes/hero.jpg',
             'youtube_thumbnail_url' => 'https://example.com/youtube-avatar.jpg',
             'youtube_banner_url' => 'https://example.com/youtube-banner.jpg',
         ]);

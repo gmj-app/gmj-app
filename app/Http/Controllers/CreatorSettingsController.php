@@ -67,15 +67,15 @@ class CreatorSettingsController extends Controller
         $oldPaths = [];
 
         foreach ([
-            'avatar' => ['column' => 'avatar_path', 'directory' => 'avatar'],
-            'hero' => ['column' => 'hero_path', 'directory' => 'hero'],
+            'avatar' => ['column' => 'avatar_path', 'directory' => "creators/{$creator->id}/avatars"],
+            'hero' => ['column' => 'hero_path', 'directory' => "creators/{$creator->id}/heroes"],
         ] as $input => $branding) {
             $column = $branding['column'];
 
             if ($request->hasFile($input)) {
                 $path = $this->storeBrandingUpload(
                     $request->file($input),
-                    "creator-branding/{$creator->id}/{$branding['directory']}",
+                    $branding['directory'],
                     $input,
                 );
 
@@ -84,7 +84,7 @@ class CreatorSettingsController extends Controller
 
                 if (
                     filled($creator->{$column})
-                    && str_starts_with($creator->{$column}, "creator-branding/{$creator->id}/")
+                    && $this->isStoredCreatorBrandingPath($creator->{$column}, $creator)
                 ) {
                     $oldPaths[] = $creator->{$column};
                 }
@@ -93,7 +93,7 @@ class CreatorSettingsController extends Controller
 
                 if (
                     filled($creator->{$column})
-                    && str_starts_with($creator->{$column}, "creator-branding/{$creator->id}/")
+                    && $this->isStoredCreatorBrandingPath($creator->{$column}, $creator)
                 ) {
                     $oldPaths[] = $creator->{$column};
                 }
@@ -103,12 +103,12 @@ class CreatorSettingsController extends Controller
         try {
             $creator->update($updates);
         } catch (Throwable $exception) {
-            Storage::disk('public')->delete($newPaths);
+            $this->brandingDisk()->delete($newPaths);
 
             throw $exception;
         }
 
-        Storage::disk('public')->delete(array_unique($oldPaths));
+        $this->brandingDisk()->delete(array_unique($oldPaths));
 
         return redirect()
             ->route('creators.settings.edit', $creator)
@@ -151,7 +151,7 @@ class CreatorSettingsController extends Controller
         }
 
         try {
-            $stored = Storage::disk('public')->put($path, $stream);
+            $stored = $this->brandingDisk()->put($path, $stream);
         } finally {
             fclose($stream);
         }
@@ -163,5 +163,20 @@ class CreatorSettingsController extends Controller
         }
 
         return $path;
+    }
+
+    private function brandingDisk()
+    {
+        return Storage::disk(config('filesystems.default'));
+    }
+
+    private function isStoredCreatorBrandingPath(string $path, Creator $creator): bool
+    {
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        return str_starts_with($path, "creators/{$creator->id}/")
+            || str_starts_with($path, "creator-branding/{$creator->id}/");
     }
 }
