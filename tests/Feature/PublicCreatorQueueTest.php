@@ -198,6 +198,59 @@ class PublicCreatorQueueTest extends TestCase
             ]);
     }
 
+    public function test_recommendations_render_as_ranked_expandable_leaderboard_rows(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $first = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'First ranked request',
+            'status' => 'approved',
+        ]);
+        $second = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Second ranked request',
+            'status' => 'approved',
+        ]);
+
+        $this->addPicks($creator, $first, 2);
+        $this->addPicks($creator, $second, 1);
+
+        $response = $this
+            ->withSession([
+                'recommendation_action' => [
+                    'recommendation_id' => $second->id,
+                    'message' => 'Your upvote was added.',
+                    'type' => 'added',
+                ],
+            ])
+            ->get(route('creator.queue', $creator));
+
+        $response
+            ->assertOk()
+            ->assertSeeInOrder([
+                '1st',
+                'First ranked request',
+                '2',
+                'upvotes',
+                '2nd',
+                'Second ranked request',
+                '1',
+                'upvote',
+            ])
+            ->assertSee('id="recommendation-'.$first->id.'"', false)
+            ->assertSee('id="recommendation-details-'.$first->id.'"', false)
+            ->assertSee('aria-controls="recommendation-details-'.$first->id.'"', false)
+            ->assertSee('x-bind:aria-expanded="open.toString()"', false)
+            ->assertSee('x-show="open"', false)
+            ->assertSee('x-data="{ open: false }"', false)
+            ->assertSee('x-data="{ open: true }"', false)
+            ->assertSee('data-recommendation-action-feedback', false)
+            ->assertSee('Your upvote was added.');
+
+        $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$first->id.'"'));
+        $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
+    }
+
     public function test_public_queue_can_search_filter_and_sort_recommendations(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);

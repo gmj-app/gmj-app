@@ -562,13 +562,113 @@
                         </div>
                     </div>
 
+                    @php
+                        $recommendationAction = session('recommendation_action');
+                        $actionRecommendationId = is_array($recommendationAction)
+                            ? (int) ($recommendationAction['recommendation_id'] ?? 0)
+                            : null;
+                    @endphp
+
                     @forelse ($recommendations as $recommendation)
-                        <x-recommendation-card
-                            :recommendation="$recommendation"
-                            :creator="$creator"
-                            :usage="$usage"
-                            :top-requested="$recommendation->id === $topRequestedId"
-                        />
+                        @php
+                            $rank = $loop->iteration;
+                            $rankMod100 = $rank % 100;
+                            $rankSuffix = in_array($rankMod100, [11, 12, 13], true)
+                                ? 'th'
+                                : match ($rank % 10) {
+                                    1 => 'st',
+                                    2 => 'nd',
+                                    3 => 'rd',
+                                    default => 'th',
+                                };
+                            $rankLabel = "{$rank}{$rankSuffix}";
+                            $rankClasses = match ($rank) {
+                                1 => 'border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-200',
+                                2 => 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-500/60 dark:bg-slate-500/15 dark:text-slate-200',
+                                3 => 'border-orange-300 bg-orange-100 text-orange-800 dark:border-orange-500/50 dark:bg-orange-500/15 dark:text-orange-200',
+                                default => 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-200',
+                            };
+                            $isActionTarget = $actionRecommendationId === $recommendation->id;
+                        @endphp
+
+                        <div
+                            id="recommendation-{{ $recommendation->id }}"
+                            x-data="{ open: @js($isActionTarget) }"
+                            x-init="
+                                const expandIfHashTarget = () => {
+                                    if (window.location.hash === '#recommendation-{{ $recommendation->id }}') {
+                                        open = true;
+                                        $nextTick(() => $el.scrollIntoView({ block: 'start' }));
+                                    }
+                                };
+
+                                expandIfHashTarget();
+                            "
+                            x-on:hashchange.window="
+                                if (window.location.hash === '#recommendation-{{ $recommendation->id }}') {
+                                    open = true;
+                                    $nextTick(() => $el.scrollIntoView({ block: 'start' }));
+                                }
+                            "
+                            class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition dark:border-slate-800 dark:bg-slate-900"
+                        >
+                            <button
+                                type="button"
+                                x-on:click="open = ! open"
+                                aria-expanded="false"
+                                x-bind:aria-expanded="open.toString()"
+                                aria-controls="recommendation-details-{{ $recommendation->id }}"
+                                class="flex min-h-16 w-full min-w-0 cursor-pointer items-center gap-3 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/70 sm:min-h-20 sm:gap-4 sm:px-5"
+                            >
+                                <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-extrabold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
+                                    {{ $rankLabel }}
+                                </span>
+
+                                <span class="min-w-0 flex-1">
+                                    <span class="block break-words text-sm font-extrabold leading-5 text-slate-950 dark:text-white sm:text-base sm:leading-6">
+                                        {{ $recommendation->title }}
+                                    </span>
+                                </span>
+
+                                <span class="shrink-0 text-right">
+                                    <span class="block text-base font-extrabold leading-none text-slate-950 dark:text-white sm:text-lg">{{ $recommendation->user_picks_count }}</span>
+                                    <span class="mt-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</span>
+                                </span>
+
+                                <svg
+                                    class="size-5 shrink-0 text-slate-400 transition-transform duration-200"
+                                    x-bind:class="{ 'rotate-180 text-indigo-500 dark:text-indigo-300': open }"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    aria-hidden="true"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                                </svg>
+                            </button>
+
+                            <div
+                                id="recommendation-details-{{ $recommendation->id }}"
+                                x-show="open"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-1"
+                                class="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40 sm:p-4"
+                            >
+                                <x-recommendation-card
+                                    :recommendation="$recommendation"
+                                    :creator="$creator"
+                                    :usage="$usage"
+                                    :top-requested="$recommendation->id === $topRequestedId"
+                                    :anchor="false"
+                                />
+                            </div>
+                        </div>
                     @empty
                         <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-slate-900">
                             @if ($publicRecommendationsCount === 0)

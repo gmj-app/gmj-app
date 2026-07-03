@@ -3,6 +3,7 @@
     'creator',
     'usage' => null,
     'topRequested' => false,
+    'anchor' => true,
 ])
 
 @php
@@ -11,7 +12,7 @@
         && (int) ($recommendationAction['recommendation_id'] ?? 0) === $recommendation->id;
 @endphp
 
-<article id="recommendation-{{ $recommendation->id }}" class="group min-w-0 scroll-mt-24 overflow-hidden rounded-3xl border bg-white shadow-sm transition duration-200 dark:bg-slate-900 md:hover:-translate-y-0.5 md:hover:shadow-xl {{ $hasRecommendationAction ? 'border-indigo-300 ring-1 ring-indigo-400/40 dark:border-indigo-700 dark:ring-indigo-500/40' : 'border-slate-200 dark:border-slate-800 md:hover:border-indigo-200 dark:md:hover:border-indigo-800' }}">
+<article @if ($anchor) id="recommendation-{{ $recommendation->id }}" @endif class="group min-w-0 scroll-mt-24 overflow-hidden rounded-3xl border bg-white shadow-sm transition duration-200 dark:bg-slate-900 md:hover:-translate-y-0.5 md:hover:shadow-xl {{ $hasRecommendationAction ? 'border-indigo-300 ring-1 ring-indigo-400/40 dark:border-indigo-700 dark:ring-indigo-500/40' : 'border-slate-200 dark:border-slate-800 md:hover:border-indigo-200 dark:md:hover:border-indigo-800' }}">
     @if ($recommendation->youtubeThumbnailUrl())
         <a
             href="{{ $recommendation->youtube_url }}"
