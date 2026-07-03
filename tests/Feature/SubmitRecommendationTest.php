@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Creator;
+use App\Models\CreatorFavorite;
 use App\Models\CreatorOwner;
+use App\Models\Recommendation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -36,6 +38,56 @@ class SubmitRecommendationTest extends TestCase
             ->assertSee('Suggest an idea or YouTube link for something this creator could make, cover, explore, or discover.')
             ->assertSee('Why should JFragment make, cover, or explore this?')
             ->assertSee('Submit recommendation');
+    }
+
+    public function test_submission_form_uses_a_normal_post_and_visible_favorite_notice(): void
+    {
+        Creator::factory()->create([
+            'slug' => 'jfragment',
+            'display_name' => 'JFragment',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get('/jfragment/submit')
+            ->assertOk()
+            ->assertSee('method="POST"', false)
+            ->assertSee('action="'.route('recommendations.store', ['creator' => 'jfragment']).'"', false)
+            ->assertSee('type="submit"', false)
+            ->assertSee('form="recommendation-submit"', false)
+            ->assertSee('name="confirm_favorite"', false)
+            ->assertSee('value="1"', false)
+            ->assertSee('Submitting to this journey will add JFragment to your favorites and use 1 creator favorite slot.')
+            ->assertDontSee('request-participation-confirmation', false);
+    }
+
+    public function test_submission_button_still_submits_when_suggestion_limit_is_exhausted(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'display_name' => 'JFragment',
+        ]);
+        $user = User::factory()->create();
+
+        CreatorFavorite::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+
+        Recommendation::factory()
+            ->count(3)
+            ->create([
+                'creator_id' => $creator->id,
+                'submitted_by' => $user->id,
+                'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            ]);
+
+        $this->actingAs($user)
+            ->get('/jfragment/submit')
+            ->assertOk()
+            ->assertSee('Suggestion limit reached')
+            ->assertSee('type="submit"', false)
+            ->assertSee('form="recommendation-submit"', false)
+            ->assertDontSee('disabled', false);
     }
 
     public function test_closed_submissions_show_a_friendly_message_and_hide_the_form(): void
@@ -91,6 +143,26 @@ class SubmitRecommendationTest extends TestCase
                 'category',
                 'reason',
             ]);
+    }
+
+    public function test_validation_errors_are_visible_on_the_submission_form(): void
+    {
+        Creator::factory()->create(['slug' => 'jfragment']);
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from('/jfragment/submit')
+            ->post('/jfragment/submit', [
+                'youtube_url' => 'not-a-url',
+                'title' => '',
+            ]);
+
+        $response->assertRedirect('/jfragment/submit');
+
+        $this->get('/jfragment/submit')
+            ->assertOk()
+            ->assertSee('Please fix the highlighted fields and submit again.')
+            ->assertSee('youtube url', false)
+            ->assertSee('title', false);
     }
 
     public function test_manual_mode_holds_a_recommendation_for_review_and_hides_it_from_the_public_queue(): void
@@ -178,6 +250,37 @@ class SubmitRecommendationTest extends TestCase
             ->get(route('creators.dashboard', $creator))
             ->assertOk()
             ->assertSeeInOrder(['Pending review', '0']);
+    }
+
+    public function test_youtube_submission_allows_empty_category_and_reason(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'recommendation_approval_mode' => 'auto',
+        ]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/jfragment/submit', [
+                'recommendation_type' => 'youtube',
+                'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'title' => 'No category needed',
+                'channel_title' => 'Example Channel',
+                'category' => '',
+                'reason' => '',
+                'confirm_favorite' => '1',
+            ])
+            ->assertRedirect('/jfragment')
+            ->assertSessionDoesntHaveErrors(['category', 'reason']);
+
+        $this->assertDatabaseHas('recommendations', [
+            'creator_id' => $creator->id,
+            'submitted_by' => $user->id,
+            'title' => 'No category needed',
+            'category' => null,
+            'reason' => null,
+            'status' => 'approved',
+        ]);
     }
 
     public function test_it_extracts_a_youtu_be_video_id_when_possible(): void

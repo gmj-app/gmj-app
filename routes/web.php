@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BetaFeedbackController;
 use App\Http\Controllers\CreatorDashboardController;
 use App\Http\Controllers\CreatorRecommendationController;
 use App\Http\Controllers\CreatorSettingsController;
@@ -15,6 +16,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/faq', 'pages.faq')->name('faq');
 Route::view('/contact', 'pages.contact')->name('contact');
+
+Route::post('/beta-feedback', [BetaFeedbackController::class, 'store'])
+    ->name('beta-feedback.store');
 
 Route::get('/dashboard', [DashboardController::class, '__invoke'])
     ->middleware(['auth', 'verified'])

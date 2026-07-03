@@ -278,7 +278,7 @@ class MembershipLimitsTest extends TestCase
         ]);
     }
 
-    public function test_submission_form_renders_branded_favorite_confirmation_and_limit_states(): void
+    public function test_submission_form_posts_directly_with_visible_favorite_and_limit_states(): void
     {
         $creator = Creator::factory()->create();
         $user = User::factory()->create();
@@ -286,9 +286,11 @@ class MembershipLimitsTest extends TestCase
         $this->actingAs($user)
             ->get(route('recommendations.create', $creator))
             ->assertOk()
-            ->assertSee('Add creator to your favorites?')
-            ->assertSee('Continue and submit')
+            ->assertSee("Submitting to this journey will add {$creator->display_name} to your favorites and use 1 creator favorite slot.")
             ->assertSee('Creator favorites: 0 of 3 used')
+            ->assertSee('name="confirm_favorite"', false)
+            ->assertSee('value="1"', false)
+            ->assertDontSee('request-participation-confirmation', false)
             ->assertDontSee('confirm(', false)
             ->assertDontSee('alert(', false);
 
@@ -302,10 +304,12 @@ class MembershipLimitsTest extends TestCase
         $this->get(route('recommendations.create', $creator))
             ->assertOk()
             ->assertSee('Favorite limit reached')
-            ->assertSee('Open My Hub')
+            ->assertSee('name="confirm_favorite"', false)
+            ->assertSee('value="0"', false)
             ->assertSee('Creator favorites: 3 of 3 used')
             ->assertSee('Favorite limit reached')
-            ->assertDontSee('Continue and submit');
+            ->assertDontSee('Continue and submit')
+            ->assertDontSee('request-participation-confirmation', false);
     }
 
     public function test_favorite_limit_blocks_manual_favorite_vote_and_suggestion_for_new_creator(): void

@@ -44,5 +44,9 @@
                 {{ $slot }}
             </main>
         </div>
+
+        @if (config('gmj.beta_feedback_enabled'))
+            <x-beta-feedback />
+        @endif
     </body>
 </html>

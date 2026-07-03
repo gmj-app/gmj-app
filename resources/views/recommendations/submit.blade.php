@@ -38,9 +38,21 @@
                     </div>
                 @enderror
 
+                @if ($errors->any())
+                    <div class="mt-6 rounded-md bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-200 dark:ring-red-900">
+                        <p class="font-bold">Please fix the highlighted fields and submit again.</p>
+                        <ul class="mt-2 list-disc space-y-1 pl-5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 @if (! $usage['is_favorited'] && $usage['reactors_remaining'] === 0)
                     <div class="mt-6 rounded-md bg-red-50 p-4 text-sm font-medium text-red-700 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-200 dark:ring-red-900">
                         You’ve reached your creator favorite limit. Remove a favorite before suggesting something for this journey.
+                        <span class="block">Creator favorites: {{ $usage['reactors_used'] }} of {{ $usage['reactors_limit'] }} used.</span>
                     </div>
                 @endif
 
@@ -50,22 +62,6 @@
                         method="POST"
                         action="{{ route('recommendations.store', $creator) }}"
                         class="mt-8 space-y-6"
-                        @if (! $usage['is_favorited'])
-                            x-on:submit="
-                                if ($el.dataset.participationConfirmed === '1') return;
-                                $event.preventDefault();
-                                $dispatch('request-participation-confirmation', {
-                                    formId: $el.id,
-                                    mode: @js($usage['reactors_remaining'] === 0 ? 'limit' : 'confirm'),
-                                    title: @js($usage['reactors_remaining'] === 0 ? 'Favorite limit reached' : 'Add creator to your favorites?'),
-                                    body: @js($usage['reactors_remaining'] === 0
-                                        ? 'You have used all your creator favorite slots. Remove a favorite before suggesting something for this journey.'
-                                        : 'Submitting to this journey will add this creator to your favorites and use 1 creator favorite slot.'),
-                                    resourceLine: @js("Creator favorites: {$usage['reactors_used']} of {$usage['reactors_limit']} used"),
-                                    confirmLabel: @js($usage['reactors_remaining'] === 0 ? '' : 'Continue and submit'),
-                                });
-                            "
-                        @endif
                         x-data="{
                         type: @js(old('recommendation_type', 'youtube')),
                         youtubeUrl: @js(old('youtube_url', '')),
@@ -162,7 +158,18 @@
                     }"
                     >
                         @csrf
-                        <input type="hidden" name="confirm_favorite" value="0">
+                        <input
+                            type="hidden"
+                            name="confirm_favorite"
+                            value="{{ ! $usage['is_favorited'] && $usage['reactors_remaining'] > 0 ? '1' : '0' }}"
+                        >
+
+                    @if (! $usage['is_favorited'] && $usage['reactors_remaining'] > 0)
+                        <div class="rounded-md bg-indigo-50 p-4 text-sm text-indigo-800 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-200 dark:ring-indigo-900">
+                            Submitting to this journey will add {{ $creator->display_name }} to your favorites and use 1 creator favorite slot.
+                            <span class="block font-semibold">Creator favorites: {{ $usage['reactors_used'] }} of {{ $usage['reactors_limit'] }} used.</span>
+                        </div>
+                    @endif
 
                     <div>
                         <fieldset>
@@ -296,8 +303,8 @@
                     <div class="flex justify-end">
                         <button
                             type="submit"
-                            @disabled($usage['suggestions_remaining'] === 0)
-                            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-slate-700"
+                            form="recommendation-submit"
+                            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
                         >
                             {{ $usage['can_suggest'] ? 'Submit recommendation' : ($usage['reactors_remaining'] === 0 && ! $usage['is_favorited'] ? 'Favorite limit reached' : 'Suggestion limit reached') }}
                         </button>
@@ -307,5 +314,4 @@
             </div>
         </section>
 
-        <x-participation-confirmation-modal />
 </x-public-layout>
