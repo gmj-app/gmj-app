@@ -130,7 +130,7 @@ class MembershipLimitsTest extends TestCase
             ->assertSee('Example Member')
             ->assertSee('Plus')
             ->assertSee('Your limits')
-            ->assertSee('Creators favorited')
+            ->assertSee('Creator favorites remaining')
             ->assertSee('Suggestions remaining')
             ->assertSee('Upvotes remaining')
             ->assertSee('1 of 5 used')
@@ -200,7 +200,7 @@ class MembershipLimitsTest extends TestCase
             ->assertDontSee('data-global-success-alert', false)
             ->assertSee('data-recommendation-action-feedback', false)
             ->assertSee('Your upvote was added.')
-            ->assertSeeInOrder(['Creators favorited', '2', '1 of 3 used'])
+            ->assertSeeInOrder(['Creator favorites remaining', '2', '1 of 3 used'])
             ->assertSeeInOrder(['Upvotes remaining', '2', '1 of 3 used']);
 
         $this->assertSame(

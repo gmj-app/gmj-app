@@ -24,6 +24,24 @@ class BetaFeedbackTest extends TestCase
             ->assertSee('Tell us what happened. This form automatically includes the page and browser details so you do not have to.');
     }
 
+    public function test_feedback_modal_uses_direct_open_state_and_posts_to_feedback_route(): void
+    {
+        config(['gmj.beta_feedback_enabled' => true]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('type="button"', false)
+            ->assertSee('x-on:click="openModal()"', false)
+            ->assertSee('x-show="open"', false)
+            ->assertSee('role="dialog"', false)
+            ->assertSee('aria-labelledby="beta-feedback-title"', false)
+            ->assertSee('method="POST"', false)
+            ->assertSee('action="'.route('beta-feedback.store').'"', false)
+            ->assertSee('x-on:keydown.escape.window="open ? closeModal() : null"', false)
+            ->assertDontSee('$dispatch(&#039;open-modal&#039;, &#039;beta-feedback&#039;)', false)
+            ->assertDontSee('data-modal-root="beta-feedback"', false);
+    }
+
     public function test_feedback_button_is_hidden_when_disabled(): void
     {
         config(['gmj.beta_feedback_enabled' => false]);

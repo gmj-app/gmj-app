@@ -387,7 +387,7 @@
                                 <h2 class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Your limits</h2>
                                 <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1 lg:gap-4">
                                     @foreach ([
-                                        ['Creators favorited', $usage['reactors_remaining'], $usage['reactors_used'], $usage['reactors_limit']],
+                                        ['Creator favorites remaining', $usage['reactors_remaining'], $usage['reactors_used'], $usage['reactors_limit']],
                                         ['Suggestions remaining', $usage['suggestions_remaining'], $usage['suggestions_used'], $usage['suggestions_limit']],
                                         ['Upvotes remaining', $usage['votes_remaining'], $usage['votes_used'], $usage['votes_limit']],
                                     ] as [$label, $remaining, $used, $limit])
