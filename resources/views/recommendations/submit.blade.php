@@ -73,8 +73,41 @@
                         channelTitle: @js(old('channel_title', '')),
                         lookupStatus: '',
                         lookupController: null,
+                        lookupTimer: null,
+                        lookupInFlightUrl: '',
+                        lookupCompletedUrl: '',
+                        lookupFailedUrl: '',
+                        normalizedYouTubeUrl() {
+                            return this.youtubeUrl.trim();
+                        },
+                        hasValidLookingYouTubeUrl(url) {
+                            return /^(https?:\/\/)?((www|m)\.)?(youtube\.com\/watch\?[^ ]*\bv=[A-Za-z0-9_-]{11}\b|youtube\.com\/(shorts|embed|live)\/[A-Za-z0-9_-]{11}\b|youtu\.be\/[A-Za-z0-9_-]{11}\b)/i.test(url);
+                        },
+                        scheduleYouTubeDetailsLookup() {
+                            clearTimeout(this.lookupTimer);
+                            this.lookupTimer = setTimeout(() => this.fetchYouTubeDetails(), 600);
+                        },
                         async fetchYouTubeDetails() {
-                            if (this.type !== 'youtube' || !this.youtubeUrl) {
+                            const requestedUrl = this.normalizedYouTubeUrl();
+
+                            if (this.type !== 'youtube' || !requestedUrl) {
+                                this.lookupStatus = '';
+                                this.lookupCompletedUrl = '';
+                                this.lookupFailedUrl = '';
+                                this.lookupInFlightUrl = '';
+                                return;
+                            }
+
+                            if (! this.hasValidLookingYouTubeUrl(requestedUrl)) {
+                                this.lookupStatus = 'Enter a valid YouTube video URL.';
+                                return;
+                            }
+
+                            if (
+                                requestedUrl === this.lookupInFlightUrl
+                                || requestedUrl === this.lookupCompletedUrl
+                                || requestedUrl === this.lookupFailedUrl
+                            ) {
                                 return;
                             }
 
@@ -83,11 +116,12 @@
                             }
 
                             this.lookupController = new AbortController();
-                            this.lookupStatus = 'Looking up video details...';
+                            this.lookupInFlightUrl = requestedUrl;
+                            this.lookupStatus = 'Loading video details...';
 
                             try {
                                 const url = new URL(@js(route('recommendations.youtube-metadata', $creator)));
-                                url.searchParams.set('url', this.youtubeUrl);
+                                url.searchParams.set('youtube_url', requestedUrl);
 
                                 const response = await fetch(url, {
                                     headers: { 'Accept': 'application/json' },
@@ -100,6 +134,9 @@
                                     throw new Error(data.message || 'Could not load video details.');
                                 }
 
+                                this.lookupCompletedUrl = requestedUrl;
+                                this.lookupFailedUrl = '';
+
                                 if (data.title) {
                                     this.title = data.title;
                                 }
@@ -110,10 +147,15 @@
 
                                 this.lookupStatus = data.title || data.channel_title
                                     ? 'Video details loaded.'
-                                    : 'No video details found. You can enter them manually.';
+                                    : (data.message || 'We could not load video details. You can still submit manually.');
                             } catch (error) {
                                 if (error.name !== 'AbortError') {
-                                    this.lookupStatus = error.message || 'Could not load video details. You can enter them manually.';
+                                    this.lookupFailedUrl = requestedUrl;
+                                    this.lookupStatus = error.message || 'We could not read this YouTube link. Please check the URL or submit it as a topic.';
+                                }
+                            } finally {
+                                if (this.lookupInFlightUrl === requestedUrl) {
+                                    this.lookupInFlightUrl = '';
                                 }
                             }
                         },
@@ -155,7 +197,7 @@
                                 name="youtube_url"
                                 type="url"
                                 x-model="youtubeUrl"
-                                @change.debounce.500ms="fetchYouTubeDetails()"
+                                @input="scheduleYouTubeDetailsLookup()"
                                 @blur="fetchYouTubeDetails()"
                                 :required="type === 'youtube'"
                                 autofocus

@@ -270,6 +270,69 @@ class SubmitRecommendationTest extends TestCase
             ]);
     }
 
+    public function test_youtube_metadata_lookup_accepts_youtube_url_alias_and_underscore_video_ids(): void
+    {
+        Http::fake([
+            '*youtube.com/oembed*' => Http::response([
+                'title' => 'Example Underscore Video',
+                'author_name' => 'JFragment',
+            ]),
+        ]);
+
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        $this->actingAs(User::factory()->create())
+            ->getJson(route('recommendations.youtube-metadata', [
+                'creator' => $creator,
+                'youtube_url' => 'https://www.youtube.com/watch?v=_BTsmCm8UPE',
+            ]))
+            ->assertOk()
+            ->assertJson([
+                'video_id' => '_BTsmCm8UPE',
+                'title' => 'Example Underscore Video',
+                'channel_title' => 'JFragment',
+            ]);
+    }
+
+    public function test_youtube_metadata_lookup_gracefully_handles_oembed_failures_for_valid_urls(): void
+    {
+        Http::fake([
+            '*youtube.com/oembed*' => Http::response([], 404),
+        ]);
+
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        $this->actingAs(User::factory()->create())
+            ->getJson(route('recommendations.youtube-metadata', [
+                'creator' => $creator,
+                'youtube_url' => 'https://youtu.be/_BTsmCm8UPE',
+            ]))
+            ->assertOk()
+            ->assertJson([
+                'video_id' => '_BTsmCm8UPE',
+                'title' => '',
+                'channel_title' => '',
+                'metadata_unavailable' => true,
+            ]);
+    }
+
+    public function test_submission_form_uses_debounced_metadata_lookup_without_refetching_unchanged_urls(): void
+    {
+        Creator::factory()->create([
+            'slug' => 'jfragment',
+            'display_name' => 'JFragment',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get('/jfragment/submit')
+            ->assertOk()
+            ->assertSee('scheduleYouTubeDetailsLookup', false)
+            ->assertSee('lookupCompletedUrl', false)
+            ->assertSee('lookupFailedUrl', false)
+            ->assertSee("url.searchParams.set('youtube_url', requestedUrl);", false)
+            ->assertDontSee("url.searchParams.set('url', this.youtubeUrl);", false);
+    }
+
     public function test_it_extracts_video_ids_from_youtube_shorts_urls(): void
     {
         Creator::factory()->create(['slug' => 'jfragment']);

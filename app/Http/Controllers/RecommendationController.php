@@ -218,11 +218,16 @@ class RecommendationController extends Controller
 
     public function youtubeMetadata(Request $request, Creator $creator): JsonResponse
     {
-        $validated = $request->validate([
-            'url' => ['required', 'url'],
+        $request->merge([
+            'youtube_url' => $request->input('youtube_url', $request->input('url')),
         ]);
 
-        $videoId = $this->youtubeUrls->extractVideoId($validated['url']);
+        $validated = $request->validate([
+            'youtube_url' => ['required', 'url'],
+        ]);
+
+        $youtubeUrl = $validated['youtube_url'];
+        $videoId = $this->youtubeUrls->extractVideoId($youtubeUrl);
 
         if (! $videoId) {
             return response()->json([
@@ -235,14 +240,18 @@ class RecommendationController extends Controller
                 ->acceptJson()
                 ->get('https://www.youtube.com/oembed', [
                     'format' => 'json',
-                    'url' => $validated['url'],
+                    'url' => $youtubeUrl,
                 ])
                 ->throw()
                 ->json();
         } catch (Throwable) {
             return response()->json([
+                'video_id' => $videoId,
+                'title' => '',
+                'channel_title' => '',
                 'message' => 'Could not load video details. You can still enter them manually.',
-            ], 422);
+                'metadata_unavailable' => true,
+            ]);
         }
 
         return response()->json([
