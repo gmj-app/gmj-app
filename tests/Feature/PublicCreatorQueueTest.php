@@ -79,6 +79,36 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('<details', false);
     }
 
+    public function test_creator_biography_auto_links_safe_urls_without_trusting_html(): void
+    {
+        $longUrl = 'https://example.com/'.str_repeat('very-long-path-segment-', 12).'?ref=creator';
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'bio' => "Check out my old band: https://www.youtube.com/watch?v=abc123\n"
+                .'More history at http://example.com/archive and https://example.org/social.'
+                ."\nLong link: {$longUrl}\n"
+                .'<script>alert(1)</script>'
+                ."\nUnsafe scheme: javascript:alert(1)",
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Check out my old band:')
+            ->assertSee('href="https://www.youtube.com/watch?v=abc123"', false)
+            ->assertSee('href="http://example.com/archive"', false)
+            ->assertSee('href="https://example.org/social"', false)
+            ->assertSee('href="'.$longUrl.'"', false)
+            ->assertSee('target="_blank"', false)
+            ->assertSee('rel="noopener noreferrer nofollow ugc"', false)
+            ->assertSee('hover:underline', false)
+            ->assertSee('[overflow-wrap:anywhere]', false)
+            ->assertSee("\nLong link:", false)
+            ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)
+            ->assertDontSee('<script>alert', false)
+            ->assertSee('javascript:alert(1)')
+            ->assertDontSee('href="javascript:alert(1)"', false);
+    }
+
     public function test_it_only_displays_public_queue_statuses_and_recommendation_details(): void
     {
         $creator = Creator::factory()->create([

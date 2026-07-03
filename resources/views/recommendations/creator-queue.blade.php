@@ -119,7 +119,7 @@
                         <div class="max-h-[calc(100vh-9rem)] overflow-y-auto px-6 pb-6">
                             <section>
                                 <h3 class="text-lg font-extrabold">Description</h3>
-                                <div class="mt-3 space-y-4 whitespace-pre-line text-sm font-medium leading-6 text-slate-100 sm:text-base sm:leading-7">{{ filled($creator->bio) ? $creator->bio : 'No biography has been added for this creator yet.' }}</div>
+                                <div class="mt-3 space-y-4 whitespace-pre-line break-words text-sm font-medium leading-6 text-slate-100 [overflow-wrap:anywhere] sm:text-base sm:leading-7"><x-linkified-text :text="filled($creator->bio) ? $creator->bio : 'No biography has been added for this creator yet.'" /></div>
                             </section>
 
                             <section class="mt-7">
