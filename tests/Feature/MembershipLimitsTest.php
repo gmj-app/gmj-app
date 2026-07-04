@@ -129,6 +129,14 @@ class MembershipLimitsTest extends TestCase
             ->assertOk()
             ->assertSee('Example Member')
             ->assertSee('Plus')
+            ->assertSee('x-data="{ open: false }"', false)
+            ->assertSee('aria-controls="creator-resource-details"', false)
+            ->assertSee('x-bind:aria-expanded="open.toString()"', false)
+            ->assertSee('Favorites left')
+            ->assertSee('Suggestions left')
+            ->assertSee('Upvotes left')
+            ->assertSee('5/5')
+            ->assertSee('4/5')
             ->assertSee('Your limits')
             ->assertSee('Creator favorites remaining')
             ->assertSee('Suggestions remaining')
@@ -140,6 +148,9 @@ class MembershipLimitsTest extends TestCase
             ->assertSee(route('profile.edit'), false)
             ->assertSee(route('logout'), false)
             ->assertSeeInOrder([
+                'Favorites left',
+                'Suggestions left',
+                'Upvotes left',
                 'Your limits',
                 'Profile',
                 'Log out',
@@ -200,6 +211,8 @@ class MembershipLimitsTest extends TestCase
             ->assertDontSee('data-global-success-alert', false)
             ->assertSee('data-recommendation-action-feedback', false)
             ->assertSee('Your upvote was added.')
+            ->assertSeeInOrder(['Favorites left', '2/3'])
+            ->assertSeeInOrder(['Upvotes left', '2/3'])
             ->assertSeeInOrder(['Creator favorites remaining', '2', '1 of 3 used'])
             ->assertSeeInOrder(['Upvotes remaining', '2', '1 of 3 used']);
 

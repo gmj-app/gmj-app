@@ -927,7 +927,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->actingAs($owner)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertDontSee('Favorite')
+            ->assertDontSee('id="creator-favorite-toggle"', false)
             ->assertSee('Manage creator page')
             ->assertSee(route('creators.dashboard', $creator), false);
 
