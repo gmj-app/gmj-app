@@ -715,19 +715,31 @@
                                 aria-expanded="false"
                                 x-bind:aria-expanded="open.toString()"
                                 aria-controls="recommendation-details-{{ $recommendation->id }}"
-                                class="flex min-h-16 w-full min-w-0 cursor-pointer items-center gap-3 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/70 sm:min-h-20 sm:gap-4 sm:px-5"
+                                class="flex min-h-16 w-full min-w-0 cursor-pointer items-start gap-3 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/70 sm:min-h-20 sm:gap-4 sm:px-5"
                             >
                                 <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-extrabold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
                                     {{ $rankLabel }}
                                 </span>
 
-                                <span class="min-w-0 flex-1">
+                                <span class="min-w-0 flex-1 pt-0.5">
                                     <span class="block break-words text-sm font-extrabold leading-5 text-slate-950 dark:text-white sm:text-base sm:leading-6">
                                         {{ $recommendation->title }}
                                     </span>
+                                    <span class="pointer-events-none mt-2 block min-h-6">
+                                        <x-recommendation-support-avatars
+                                            :recommendation="$recommendation"
+                                            :limit="5"
+                                            class="sm:hidden"
+                                        />
+                                        <x-recommendation-support-avatars
+                                            :recommendation="$recommendation"
+                                            :limit="10"
+                                            class="hidden sm:flex"
+                                        />
+                                    </span>
                                 </span>
 
-                                <span class="shrink-0 text-right">
+                                <span class="shrink-0 pt-0.5 text-right">
                                     <span class="block text-base font-extrabold leading-none text-slate-950 dark:text-white sm:text-lg">{{ $recommendation->user_picks_count }}</span>
                                     <span class="mt-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</span>
                                 </span>

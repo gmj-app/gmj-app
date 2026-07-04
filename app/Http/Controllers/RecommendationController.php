@@ -94,7 +94,11 @@ class RecommendationController extends Controller
                 ->whereHas('creatorTags', fn ($query) => $query
                     ->where('creator_tags.creator_id', $creator->id)
                     ->where('creator_tags.slug', $filters['tag'])))
-            ->with(['submittedBy:id,name', 'creatorTags:id,creator_id,name,slug'])
+            ->with([
+                'submittedBy:id,name,avatar_url',
+                'creatorTags:id,creator_id,name,slug',
+                'userPicks.user:id,name,avatar_url',
+            ])
             ->withCount('userPicks');
 
         if ($request->user()) {

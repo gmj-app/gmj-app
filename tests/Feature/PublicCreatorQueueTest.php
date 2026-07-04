@@ -265,6 +265,55 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
     }
 
+    public function test_recommendation_rows_show_requester_and_upvoter_avatar_stacks(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $requester = User::factory()->create([
+            'name' => 'Original Fan',
+            'email' => 'original@example.test',
+            'avatar_url' => null,
+        ]);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $requester->id,
+            'title' => 'Avatar-backed request',
+            'status' => 'approved',
+        ]);
+
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $recommendation->id,
+            'user_id' => $requester->id,
+        ]);
+
+        User::factory()
+            ->count(23)
+            ->sequence(fn ($sequence) => [
+                'name' => 'Voter '.str_pad((string) ($sequence->index + 1), 2, '0', STR_PAD_LEFT),
+                'avatar_url' => 'https://example.test/avatar-'.$sequence->index.'.jpg',
+            ])
+            ->create()
+            ->each(fn (User $user) => UserPick::factory()->create([
+                'creator_id' => $creator->id,
+                'recommendation_id' => $recommendation->id,
+                'user_id' => $user->id,
+            ]));
+
+        $response = $this->get(route('creator.queue', $creator));
+
+        $response
+            ->assertOk()
+            ->assertSee('Avatar-backed request')
+            ->assertSee('title="Requested by Original Fan"', false)
+            ->assertSee('aria-label="Requested by Original Fan"', false)
+            ->assertSee('title="Upvoted by Voter 01"', false)
+            ->assertSee('Community support')
+            ->assertSee('title="14 more upvoters"', false)
+            ->assertSee('title="19 more upvoters"', false)
+            ->assertSee('title="3 more upvoters"', false)
+            ->assertDontSee('original@example.test');
+    }
+
     public function test_public_queue_can_search_filter_and_sort_recommendations(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
