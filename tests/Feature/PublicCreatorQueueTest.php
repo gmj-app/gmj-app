@@ -487,7 +487,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('No published recommendations yet.');
     }
 
-    public function test_published_page_lists_searches_and_expands_published_recommendations(): void
+    public function test_published_page_lists_searches_and_selects_published_recommendations(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
         $tag = CreatorTag::query()->create([
@@ -530,9 +530,11 @@ class PublicCreatorQueueTest extends TestCase
                 'Older published request',
             ])
             ->assertDontSee('Active request')
-            ->assertSee('x-data="{ open: false }"', false)
-            ->assertSee("window.location.hash === '#recommendation-{$newer->id}'", false)
-            ->assertSee('scroll-mt-28', false)
+            ->assertSee('grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3', false)
+            ->assertSee('Selected published recommendation')
+            ->assertSee("selectRecommendation({$newer->id})", false)
+            ->assertSee("selectedId === {$newer->id}", false)
+            ->assertSee("href=\"".route('creators.published', $creator).'#recommendation-'.$newer->id."\"", false)
             ->assertSee('Watch published content')
             ->assertSee('https://www.youtube.com/watch?v=REACTION001', false)
             ->assertDontSee('Upvote')

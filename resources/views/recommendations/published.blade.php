@@ -1,6 +1,37 @@
 <x-public-layout :title="'Published Recommendations | '.$creator->display_name.' | '.config('app.name', 'Guide My Journey')">
     <section class="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <div class="mx-auto min-w-0 max-w-4xl">
+        <div
+            class="mx-auto min-w-0 max-w-6xl"
+            x-data="{
+                selectedId: null,
+                resultIds: @js($publishedRecommendations->pluck('id')->map(fn ($id) => (int) $id)->values()),
+                init() {
+                    this.syncFromHash();
+                    if (this.selectedId !== null) {
+                        this.$nextTick(() => this.scrollToSelected());
+                    }
+                },
+                syncFromHash() {
+                    const match = window.location.hash.match(/^#recommendation-(\d+)$/);
+                    this.selectedId = match ? Number(match[1]) : null;
+                },
+                hasSelectedResult() {
+                    return this.selectedId !== null && this.resultIds.includes(this.selectedId);
+                },
+                selectRecommendation(id) {
+                    this.selectedId = Number(id);
+                    history.replaceState(null, '', `${window.location.pathname}${window.location.search}#recommendation-${id}`);
+                    this.$nextTick(() => this.scrollToSelected());
+                },
+                scrollToSelected() {
+                    const target = this.$refs.selectedPublishedRecommendation;
+                    if (target) {
+                        target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                    }
+                },
+            }"
+            x-on:hashchange.window="syncFromHash(); $nextTick(() => scrollToSelected())"
+        >
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <x-creator-hero-background :creator="$creator" class="h-28 sm:h-36">
                     <div class="absolute inset-x-0 bottom-0 p-4">
@@ -61,106 +92,58 @@
                 </form>
             </div>
 
-            <div class="mt-6 space-y-4">
-                @forelse ($publishedRecommendations as $recommendation)
-                    @php
-                        $publishedDate = $recommendation->published_at ?? $recommendation->updated_at ?? $recommendation->created_at;
-                    @endphp
+            @if ($publishedRecommendations->isNotEmpty())
+                <div
+                    x-ref="selectedPublishedRecommendation"
+                    x-show="selectedId !== null"
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    class="mt-6 scroll-mt-28"
+                    aria-live="polite"
+                >
+                    <template x-if="selectedId !== null && ! hasSelectedResult()">
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-semibold text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/40 dark:text-amber-100">
+                            The selected published recommendation is not in these search results.
+                        </div>
+                    </template>
 
-                    <div
-                        id="recommendation-{{ $recommendation->id }}"
-                        x-data="{ open: false }"
-                        x-init="
-                            const expandIfHashTarget = () => {
-                                if (window.location.hash === '#recommendation-{{ $recommendation->id }}') {
-                                    open = true;
-                                    $nextTick(() => $el.scrollIntoView({ block: 'start' }));
-                                }
-                            };
+                    @foreach ($publishedRecommendations as $recommendation)
+                        <div x-show="selectedId === {{ $recommendation->id }}" x-cloak>
+                            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                <h2 class="text-sm font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">Selected published recommendation</h2>
+                                <a href="{{ route('creators.published', $creator) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400" x-on:click="selectedId = null">
+                                    View full catalog
+                                </a>
+                            </div>
+                            <x-published-recommendation-detail :recommendation="$recommendation" />
+                        </div>
+                    @endforeach
+                </div>
+            @endif
 
-                            expandIfHashTarget();
-                        "
-                        x-on:hashchange.window="
-                            if (window.location.hash === '#recommendation-{{ $recommendation->id }}') {
-                                open = true;
-                                $nextTick(() => $el.scrollIntoView({ block: 'start' }));
-                            }
-                        "
-                        class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition dark:border-slate-800 dark:bg-slate-900"
-                    >
-                        <button
-                            type="button"
-                            x-on:click="open = ! open"
-                            aria-expanded="false"
-                            x-bind:aria-expanded="open.toString()"
-                            aria-controls="recommendation-details-{{ $recommendation->id }}"
-                            class="flex min-h-16 w-full min-w-0 cursor-pointer items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/70 sm:min-h-20 sm:gap-4 sm:px-5"
-                        >
-                            <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" />
-                                </svg>
-                            </span>
+            <div class="mt-6">
+                @if ($publishedRecommendations->isNotEmpty())
+                    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                        <h2 class="text-sm font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400" x-text="selectedId === null ? 'Published catalog' : 'More published recommendations'">Published catalog</h2>
+                    </div>
 
-                            <span class="min-w-0 flex-1">
-                                <span class="block break-words text-sm font-extrabold leading-5 text-slate-950 dark:text-white sm:text-base sm:leading-6">
-                                    {{ $recommendation->title }}
-                                </span>
-                                <span class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                    <span>Published {{ $publishedDate->format('M j, Y') }}</span>
-                                    @if ($recommendation->channel_title)
-                                        <span>{{ $recommendation->channel_title }}</span>
-                                    @elseif ($recommendation->artist)
-                                        <span>{{ $recommendation->artist }}</span>
-                                    @endif
-                                </span>
-                            </span>
-
-                            <span class="hidden shrink-0 text-right sm:block">
-                                <span class="block text-base font-extrabold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</span>
-                                <span class="mt-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $recommendation->user_picks_count) }}</span>
-                            </span>
-
-                            <svg
-                                class="size-5 shrink-0 text-slate-400 transition-transform duration-200"
-                                x-bind:class="{ 'rotate-180 text-indigo-500 dark:text-indigo-300': open }"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                aria-hidden="true"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-                            </svg>
-                        </button>
-
-                        <div
-                            id="recommendation-details-{{ $recommendation->id }}"
-                            x-show="open"
-                            x-cloak
-                            x-transition:enter="transition ease-out duration-200"
-                            x-transition:enter-start="opacity-0 -translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                            x-transition:leave="transition ease-in duration-150"
-                            x-transition:leave-start="opacity-100 translate-y-0"
-                            x-transition:leave-end="opacity-0 -translate-y-1"
-                            class="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40 sm:p-4"
-                        >
-                            <x-recommendation-card
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach ($publishedRecommendations as $recommendation)
+                            <x-published-recommendation-tile
                                 :recommendation="$recommendation"
                                 :creator="$creator"
-                                :usage="null"
-                                :top-requested="false"
-                                :anchor="false"
-                                :show-voting-controls="false"
+                                x-on:click.prevent="selectRecommendation({{ $recommendation->id }})"
+                                x-bind:class="selectedId === {{ $recommendation->id }} ? 'border-emerald-400 ring-2 ring-emerald-300/70 dark:border-emerald-500 dark:ring-emerald-500/40' : ''"
                             />
-                        </div>
+                        @endforeach
                     </div>
-                @empty
+                @else
                     <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-slate-900">
                         @if ($publishedRecommendationsCount === 0)
                             <h2 class="text-lg font-bold text-slate-950 dark:text-white">No published recommendations yet.</h2>
-                            <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Published suggestions will appear here once this creator makes them happen.</p>
+                            <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">When this creator marks recommendations as published, they'll appear here.</p>
                         @else
                             <h2 class="text-lg font-bold text-slate-950 dark:text-white">No published recommendations found.</h2>
                             <a href="{{ route('creators.published', $creator) }}" class="mt-4 inline-flex text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
@@ -168,7 +151,7 @@
                             </a>
                         @endif
                     </div>
-                @endforelse
+                @endif
             </div>
         </div>
     </section>
