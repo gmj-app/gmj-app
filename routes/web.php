@@ -8,6 +8,7 @@ use App\Http\Controllers\CreatorSetupController;
 use App\Http\Controllers\CreatorStarterSuggestionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecommendationController;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +81,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/internal/plan-testing', [InternalPlanTestingController::class, 'edit'])
+        ->name('internal.plan-testing');
+    Route::post('/internal/plan-testing', [InternalPlanTestingController::class, 'update']);
 });
 
 require __DIR__.'/auth.php';

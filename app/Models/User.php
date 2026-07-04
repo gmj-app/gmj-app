@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\PlanEntitlementService;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -27,6 +28,7 @@ class User extends Authenticatable
         'avatar_url',
         'auth_provider',
         'membership_tier',
+        'plan_slug',
         'password',
     ];
 
@@ -91,12 +93,26 @@ class User extends Authenticatable
      */
     public function membershipLimits(): array
     {
-        $defaultTier = config('membership.default', 'free');
+        return app(PlanEntitlementService::class)->getLegacyLimitsForUser($this);
+    }
 
-        return config(
-            "membership.tiers.{$this->membership_tier}",
-            config("membership.tiers.{$defaultTier}"),
-        );
+    public function planSlug(): string
+    {
+        return app(PlanEntitlementService::class)->getUserPlan($this);
+    }
+
+    public function planName(): string
+    {
+        return app(PlanEntitlementService::class)->getUserPlanName($this);
+    }
+
+    public function canTestPaidPlans(): bool
+    {
+        if (! config('gmj.plan_testing_enabled')) {
+            return false;
+        }
+
+        return in_array(strtolower((string) $this->email), config('gmj.admin_emails', []), true);
     }
 
     public function reactorsUsed(): int

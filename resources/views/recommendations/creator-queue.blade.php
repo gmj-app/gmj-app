@@ -313,7 +313,7 @@
                                                         formId: $el.id,
                                                         mode: 'confirm',
                                                         title: 'Remove favorite?',
-                                                        body: @js("Removing this creator from your favorites will also remove your upvotes on this creator's suggestions."),
+                                                        body: @js("Unfavoriting removes your upvotes from this creator. Suggestions with no other votes may be removed."),
                                                         resourceLine: @js("Active upvotes on this creator: {$usage['votes_used']}"),
                                                         confirmLabel: 'Remove favorite and upvotes',
                                                         destructive: true,

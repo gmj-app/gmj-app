@@ -196,5 +196,4 @@ class Recommendation extends Model
             && $this->consumesUpvotes()
             && ! self::statusConsumesUpvotes($status);
     }
-
 }

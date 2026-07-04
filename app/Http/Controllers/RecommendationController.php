@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRecommendationRequest;
 use App\Models\Creator;
-use App\Models\CreatorFavorite;
 use App\Models\Recommendation;
 use App\Models\User;
 use App\Services\CreatorParticipationService;
+use App\Services\UnfavoriteCreatorAction;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +22,7 @@ class RecommendationController extends Controller
 {
     public function __construct(
         private readonly CreatorParticipationService $participation,
+        private readonly UnfavoriteCreatorAction $unfavoriteCreator,
         private readonly YouTubeUrlService $youtubeUrls,
     ) {}
 
@@ -407,38 +408,20 @@ class RecommendationController extends Controller
             ]);
         }
 
+        if ($creator->creatorFavorites()->where('user_id', $request->user()->id)->exists()) {
+            $result = $this->unfavoriteCreator->handle($request->user(), $creator);
+
+            return back()->with(
+                'success',
+                $result['removed_upvotes'] > 0
+                    ? 'Creator removed from your favorites. Your upvotes for this creator were removed.'
+                    : 'Creator removed from your favorites.',
+            );
+        }
+
         return DB::transaction(function () use ($creator, $request): RedirectResponse {
-            /** @var User $user */
-            $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
-            $favorite = CreatorFavorite::query()
-                ->where('creator_id', $creator->id)
-                ->where('user_id', $user->id)
-                ->first();
-
-            if ($favorite) {
-                $removedUpvotes = $user->userPicks()
-                    ->where('creator_id', $creator->id)
-                    ->delete();
-
-                Recommendation::query()
-                    ->where('creator_id', $creator->id)
-                    ->where('submitted_by', $user->id)
-                    ->whereIn('status', Recommendation::unfavoriteRemovableStatuses())
-                    ->whereDoesntHave('userPicks')
-                    ->delete();
-
-                $favorite->delete();
-
-                return back()->with(
-                    'success',
-                    $removedUpvotes > 0
-                        ? 'Creator removed from your favorites. Your upvotes for this creator were removed.'
-                        : 'Creator removed from your favorites.',
-                );
-            }
-
             $this->participation->ensureFavoritedForParticipation(
-                $user,
+                $request->user(),
                 $creator,
                 true,
                 'favorite',

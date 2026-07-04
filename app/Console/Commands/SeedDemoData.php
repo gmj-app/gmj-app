@@ -207,6 +207,10 @@ class SeedDemoData extends Command
             $data['membership_tier'] = $membershipTier;
         }
 
+        if (Schema::hasColumn('users', 'plan_slug')) {
+            $data['plan_slug'] = $membershipTier;
+        }
+
         return User::query()->updateOrCreate(['email' => $email], $data);
     }
 

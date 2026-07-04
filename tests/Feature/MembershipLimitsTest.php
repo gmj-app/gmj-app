@@ -6,6 +6,7 @@ use App\Models\Creator;
 use App\Models\CreatorFavorite;
 use App\Models\Recommendation;
 use App\Models\User;
+use App\Services\PlanEntitlementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,8 +45,8 @@ class MembershipLimitsTest extends TestCase
 
     public function test_plus_and_pro_users_receive_their_configured_allowances(): void
     {
-        $plus = User::factory()->create(['membership_tier' => 'plus']);
-        $pro = User::factory()->create(['membership_tier' => 'pro']);
+        $plus = User::factory()->create(['plan_slug' => 'plus']);
+        $pro = User::factory()->create(['plan_slug' => 'pro']);
 
         $this->assertSame([
             'label' => 'Plus',
@@ -58,8 +59,32 @@ class MembershipLimitsTest extends TestCase
             'label' => 'Pro',
             'reactors' => 10,
             'suggestions_per_reactor' => 10,
-            'votes_per_reactor' => 5,
+            'votes_per_reactor' => 10,
         ], $pro->membershipLimits());
+    }
+
+    public function test_plan_entitlements_return_expected_limits_and_fallbacks(): void
+    {
+        $plans = app(PlanEntitlementService::class);
+
+        $this->assertSame([
+            'plan' => 'free',
+            'label' => 'Free',
+            'creator_favorites_limit' => 3,
+            'suggestions_per_creator_limit' => 3,
+            'upvotes_per_creator_limit' => 3,
+        ], $plans->getLimitsForUser(User::factory()->make(['plan_slug' => 'free'])));
+
+        $this->assertSame(5, $plans->getCreatorFavoritesLimit(User::factory()->make(['plan_slug' => 'plus'])));
+        $this->assertSame(5, $plans->getSuggestionsPerCreatorLimit(User::factory()->make(['plan_slug' => 'plus'])));
+        $this->assertSame(5, $plans->getUpvotesPerCreatorLimit(User::factory()->make(['plan_slug' => 'plus'])));
+
+        $this->assertSame(10, $plans->getCreatorFavoritesLimit(User::factory()->make(['plan_slug' => 'pro'])));
+        $this->assertSame(10, $plans->getSuggestionsPerCreatorLimit(User::factory()->make(['plan_slug' => 'pro'])));
+        $this->assertSame(10, $plans->getUpvotesPerCreatorLimit(User::factory()->make(['plan_slug' => 'pro'])));
+
+        $this->assertSame('free', $plans->getUserPlan(User::factory()->make(['plan_slug' => null])));
+        $this->assertSame('free', $plans->getUserPlan(User::factory()->make(['plan_slug' => 'enterprise'])));
     }
 
     public function test_free_users_have_three_votes_per_reactor_and_can_remove_a_vote(): void
@@ -115,7 +140,7 @@ class MembershipLimitsTest extends TestCase
         $creator = Creator::factory()->create(['display_name' => 'JFragment']);
         $user = User::factory()->create([
             'name' => 'Example Member',
-            'membership_tier' => 'plus',
+            'plan_slug' => 'plus',
         ]);
 
         Recommendation::factory()->create([

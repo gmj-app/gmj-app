@@ -585,7 +585,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Selected published recommendation')
             ->assertSee("selectRecommendation({$newer->id})", false)
             ->assertSee("selectedId === {$newer->id}", false)
-            ->assertSee("href=\"".route('creators.published', $creator).'#recommendation-'.$newer->id."\"", false)
+            ->assertSee('href="'.route('creators.published', $creator).'#recommendation-'.$newer->id.'"', false)
             ->assertSee('Watch published content')
             ->assertSee('https://www.youtube.com/watch?v=REACTION001', false)
             ->assertDontSee('Upvote')
@@ -821,6 +821,7 @@ class PublicCreatorQueueTest extends TestCase
             ->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSee('Remove favorite?')
+            ->assertSee('Unfavoriting removes your upvotes from this creator. Suggestions with no other votes may be removed.')
             ->assertSee('Remove favorite and upvotes')
             ->assertSee('Active upvotes on this creator: 1')
             ->assertSee('request-participation-confirmation', false)
@@ -889,6 +890,13 @@ class PublicCreatorQueueTest extends TestCase
             'title' => 'Published archive request',
             'published_at' => now(),
         ]);
+        $creatorAdded = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $user->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_CREATOR,
+            'status' => 'approved',
+            'title' => 'Creator-added request',
+        ]);
 
         $supporter = User::factory()->create();
         UserPick::factory()->create([
@@ -896,7 +904,7 @@ class PublicCreatorQueueTest extends TestCase
             'recommendation_id' => $approvedWithSupport->id,
             'user_id' => $supporter->id,
         ]);
-        foreach ([$pending, $approved, $published] as $recommendation) {
+        foreach ([$pending, $approved, $published, $creatorAdded] as $recommendation) {
             UserPick::factory()->create([
                 'creator_id' => $creator->id,
                 'recommendation_id' => $recommendation->id,
@@ -909,12 +917,13 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSessionHas(
                 'success',
                 'Creator removed from your favorites. Your upvotes for this creator were removed.',
-        );
+            );
 
         $this->assertDatabaseMissing('recommendations', ['id' => $pending->id]);
         $this->assertDatabaseMissing('recommendations', ['id' => $approved->id]);
         $this->assertDatabaseHas('recommendations', ['id' => $approvedWithSupport->id]);
         $this->assertDatabaseHas('recommendations', ['id' => $published->id]);
+        $this->assertDatabaseHas('recommendations', ['id' => $creatorAdded->id]);
         $this->assertDatabaseMissing('user_picks', [
             'recommendation_id' => $published->id,
             'user_id' => $user->id,
@@ -959,6 +968,63 @@ class PublicCreatorQueueTest extends TestCase
                 'user_id' => $user->id,
             ]);
         }
+    }
+
+    public function test_refavoriting_does_not_restore_removed_upvotes_or_unsupported_submissions(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $user = User::factory()->create();
+        CreatorFavorite::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+        $unsupported = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $user->id,
+            'status' => 'approved',
+            'title' => 'Unsupported request',
+        ]);
+        $otherRecommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+            'title' => 'Another guide request',
+        ]);
+
+        foreach ([$unsupported, $otherRecommendation] as $recommendation) {
+            UserPick::factory()->create([
+                'creator_id' => $creator->id,
+                'recommendation_id' => $recommendation->id,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->post(route('creator.favorite', $creator))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('creator_favorites', [
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseMissing('recommendations', ['id' => $unsupported->id]);
+        $this->assertDatabaseHas('recommendations', ['id' => $otherRecommendation->id]);
+        $this->assertDatabaseMissing('user_picks', [
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+
+        $this->post(route('creator.favorite', $creator))
+            ->assertSessionHas('success', 'Creator added to your favorites.');
+
+        $this->assertDatabaseHas('creator_favorites', [
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseMissing('recommendations', ['id' => $unsupported->id]);
+        $this->assertDatabaseMissing('user_picks', [
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
     }
 
     public function test_non_consuming_public_statuses_do_not_show_an_upvote_action(): void
