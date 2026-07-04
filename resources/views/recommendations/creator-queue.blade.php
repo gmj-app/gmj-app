@@ -373,8 +373,9 @@
 
             <div class="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start">
                 <aside class="min-w-0 lg:col-start-2 lg:row-start-1">
-                    <div class="w-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-24">
-                        @auth
+                    <div class="space-y-5 lg:sticky lg:top-24">
+                        <div class="w-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                            @auth
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0">
                                     <p class="truncate font-bold text-slate-950 dark:text-white">{{ auth()->user()->name }}</p>
@@ -420,6 +421,50 @@
                                 <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:border-indigo-200 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-200">Log in</a>
                             </div>
                         @endauth
+                        </div>
+
+                        <section class="w-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="recently-published-title">
+                            <div class="flex items-center justify-between gap-3">
+                                <h2 id="recently-published-title" class="text-sm font-extrabold text-slate-950 dark:text-white">Recently Published</h2>
+                                <span class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Published</span>
+                            </div>
+
+                            @if ($recentPublishedRecommendations->isEmpty())
+                                <p class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">No published recommendations yet.</p>
+                            @else
+                                <div class="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
+                                    @foreach ($recentPublishedRecommendations as $publishedRecommendation)
+                                        @php
+                                            $publishedDate = $publishedRecommendation->published_at ?? $publishedRecommendation->updated_at ?? $publishedRecommendation->created_at;
+                                        @endphp
+                                        <a
+                                            href="{{ route('creators.published', $creator) }}#recommendation-{{ $publishedRecommendation->id }}"
+                                            class="group flex min-w-0 items-start gap-3 py-3 first:pt-0 last:pb-0"
+                                        >
+                                            <span class="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" />
+                                                </svg>
+                                            </span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="block break-words text-sm font-bold leading-5 text-slate-800 group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-300">{{ $publishedRecommendation->title }}</span>
+                                                <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                                    <span>Published {{ $publishedDate->format('M j, Y') }}</span>
+                                                    @if ($publishedRecommendation->category)
+                                                        <span class="capitalize">{{ $publishedRecommendation->category }}</span>
+                                                    @endif
+                                                    <span>{{ $publishedRecommendation->user_picks_count }} {{ Str::plural('vote', $publishedRecommendation->user_picks_count) }}</span>
+                                                </span>
+                                            </span>
+                                        </a>
+                                    @endforeach
+                                </div>
+
+                                <a href="{{ route('creators.published', $creator) }}" class="mt-4 inline-flex text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                                    View all published
+                                </a>
+                            @endif
+                        </section>
                     </div>
                 </aside>
 

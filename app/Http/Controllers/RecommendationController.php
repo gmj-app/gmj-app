@@ -36,7 +36,9 @@ class RecommendationController extends Controller
             'tag' => (string) $request->query('tag', ''),
             'sort' => (string) $request->query('sort', 'votes'),
         ];
-        $filters['status'] = in_array($filters['status'], Recommendation::PUBLIC_STATUSES, true)
+        $activePublicStatuses = Recommendation::activePublicStatuses();
+
+        $filters['status'] = in_array($filters['status'], $activePublicStatuses, true)
             ? $filters['status']
             : '';
         $filters['sort'] = in_array($filters['sort'], ['votes', 'newest', 'status', 'scheduled'], true)
@@ -47,14 +49,14 @@ class RecommendationController extends Controller
             ->value('slug') ?? '';
 
         $publicRecommendationsCount = $creator->recommendations()
-            ->whereIn('status', Recommendation::PUBLIC_STATUSES)
+            ->whereIn('status', $activePublicStatuses)
             ->count();
         $publicVotesCount = $creator->userPicks()
             ->whereHas('recommendation', fn ($query) => $query
                 ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
             ->count();
         $topRequestedId = $creator->recommendations()
-            ->whereIn('status', Recommendation::PUBLIC_STATUSES)
+            ->whereIn('status', $activePublicStatuses)
             ->whereIn('status', Recommendation::upvoteConsumingStatuses())
             ->withCount('userPicks')
             ->orderByDesc('user_picks_count')
@@ -64,19 +66,19 @@ class RecommendationController extends Controller
             ?->id;
 
         $categoryOptions = $creator->recommendations()
-            ->whereIn('status', Recommendation::PUBLIC_STATUSES)
+            ->whereIn('status', $activePublicStatuses)
             ->whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()
             ->orderBy('category')
             ->pluck('category');
-        $statusOptions = collect(Recommendation::PUBLIC_STATUSES)
+        $statusOptions = collect($activePublicStatuses)
             ->mapWithKeys(fn (string $status) => [
                 $status => Recommendation::STATUS_LABELS[$status],
             ]);
 
         $recommendationsQuery = $creator->recommendations()
-            ->whereIn('status', Recommendation::PUBLIC_STATUSES)
+            ->whereIn('status', $activePublicStatuses)
             ->when($filters['q'] !== '', function ($query) use ($filters): void {
                 $query->where(function ($query) use ($filters): void {
                     $query
@@ -118,7 +120,15 @@ class RecommendationController extends Controller
         $recommendations = $recommendationsQuery->get();
         $tagOptions = $creator->creatorTags()
             ->whereHas('recommendations', fn ($query) => $query
-                ->whereIn('recommendations.status', Recommendation::PUBLIC_STATUSES))
+                ->whereIn('recommendations.status', $activePublicStatuses))
+            ->get();
+        $recentPublishedRecommendations = $creator->recommendations()
+            ->where('status', 'published')
+            ->withCount('userPicks')
+            ->orderByDesc('published_at')
+            ->orderByDesc('updated_at')
+            ->latest()
+            ->limit(5)
             ->get();
 
         $usage = $request->user()
@@ -144,11 +154,60 @@ class RecommendationController extends Controller
             'ownsCreator',
             'publicRecommendationsCount',
             'publicVotesCount',
+            'recentPublishedRecommendations',
             'recommendations',
             'statusOptions',
             'tagOptions',
             'topRequestedId',
             'usage',
+        ));
+    }
+
+    public function published(Request $request, Creator $creator): View
+    {
+        abort_if($creator->status !== 'active', 404);
+
+        $filters = [
+            'q' => trim((string) $request->query('q', '')),
+        ];
+
+        $publishedRecommendationsQuery = $creator->recommendations()
+            ->where('status', 'published')
+            ->when($filters['q'] !== '', function ($query) use ($creator, $filters): void {
+                $query->where(function ($query) use ($creator, $filters): void {
+                    $query
+                        ->where('title', 'like', "%{$filters['q']}%")
+                        ->orWhere('artist', 'like', "%{$filters['q']}%")
+                        ->orWhere('channel_title', 'like', "%{$filters['q']}%")
+                        ->orWhere('description', 'like', "%{$filters['q']}%")
+                        ->orWhere('reason', 'like', "%{$filters['q']}%")
+                        ->orWhere('category', 'like', "%{$filters['q']}%")
+                        ->orWhere('youtube_url', 'like', "%{$filters['q']}%")
+                        ->orWhereHas('creatorTags', fn ($query) => $query
+                            ->where('creator_tags.creator_id', $creator->id)
+                            ->where(function ($query) use ($filters): void {
+                                $query
+                                    ->where('creator_tags.name', 'like', "%{$filters['q']}%")
+                                    ->orWhere('creator_tags.slug', 'like', "%{$filters['q']}%");
+                            }));
+                });
+            })
+            ->with(['submittedBy:id,name', 'creatorTags:id,creator_id,name,slug'])
+            ->withCount('userPicks')
+            ->orderByDesc('published_at')
+            ->orderByDesc('updated_at')
+            ->latest();
+
+        $publishedRecommendations = $publishedRecommendationsQuery->get();
+        $publishedRecommendationsCount = $creator->recommendations()
+            ->where('status', 'published')
+            ->count();
+
+        return view('recommendations.published', compact(
+            'creator',
+            'filters',
+            'publishedRecommendations',
+            'publishedRecommendationsCount',
         ));
     }
 

@@ -116,7 +116,7 @@ class PublicCreatorQueueTest extends TestCase
             'display_name' => 'JFragment',
         ]);
 
-        foreach (['approved', 'coming_soon', 'scheduled', 'recorded', 'published', 'passed'] as $status) {
+        foreach (['approved', 'coming_soon', 'scheduled', 'recorded', 'passed'] as $status) {
             Recommendation::factory()->create([
                 'creator_id' => $creator->id,
                 'title' => ucfirst($status).' recommendation',
@@ -126,6 +126,15 @@ class PublicCreatorQueueTest extends TestCase
                 'youtube_url' => "https://www.youtube.com/watch?v={$status}",
             ]);
         }
+
+        $published = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Published recommendation',
+            'artist' => 'Example Artist',
+            'category' => 'Music',
+            'status' => 'published',
+            'youtube_url' => 'https://www.youtube.com/watch?v=published',
+        ]);
 
         foreach (['pending', 'hidden', 'planned', 'declined'] as $status) {
             Recommendation::factory()->create([
@@ -144,9 +153,14 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Watch original')
             ->assertSee('Submitted');
 
-        foreach (['approved', 'coming_soon', 'scheduled', 'recorded', 'published', 'passed'] as $status) {
+        foreach (['approved', 'coming_soon', 'scheduled', 'recorded', 'passed'] as $status) {
             $response->assertSee(ucfirst($status).' recommendation');
         }
+
+        $response
+            ->assertSee('Recently Published')
+            ->assertSee('Published recommendation')
+            ->assertDontSee('id="recommendation-'.$published->id.'"', false);
 
         foreach (['pending', 'hidden', 'planned', 'declined'] as $status) {
             $response->assertDontSee(ucfirst($status).' recommendation');
@@ -179,7 +193,7 @@ class PublicCreatorQueueTest extends TestCase
         $oldest = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Oldest recommendation',
-            'status' => 'published',
+            'status' => 'passed',
             'created_at' => now()->subDay(),
         ]);
 
@@ -413,7 +427,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('Passed status recommendation');
     }
 
-    public function test_scheduled_and_published_recommendations_show_public_timing_and_reaction_links(): void
+    public function test_scheduled_recommendations_show_public_timing(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
 
@@ -423,18 +437,116 @@ class PublicCreatorQueueTest extends TestCase
             'status' => 'scheduled',
             'scheduled_for' => '2026-07-04 19:30:00',
         ]);
-        Recommendation::factory()->create([
-            'creator_id' => $creator->id,
-            'title' => 'Published recommendation',
-            'status' => 'published',
-            'published_reaction_url' => 'https://www.youtube.com/watch?v=REACTION001',
-        ]);
 
         $this->get('/jfragment')
             ->assertOk()
-            ->assertSee('Scheduled for Jul 4, 2026 at 7:30 PM')
+            ->assertSee('Scheduled for Jul 4, 2026 at 7:30 PM');
+    }
+
+    public function test_creator_page_shows_recently_published_sidebar_and_excludes_published_from_active_queue(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $active = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Active community request',
+            'status' => 'approved',
+        ]);
+        $published = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Published community request',
+            'status' => 'published',
+            'category' => 'music',
+            'published_at' => '2026-07-04 12:00:00',
+        ]);
+
+        $this->addPicks($creator, $published, 2);
+
+        $response = $this->get(route('creator.queue', $creator));
+
+        $response
+            ->assertOk()
+            ->assertSee('Recently Published')
+            ->assertSee('View all published')
+            ->assertSee('Published Jul 4, 2026')
+            ->assertSee(route('creators.published', $creator).'#recommendation-'.$published->id, false)
+            ->assertSee('2 votes');
+
+        $this->assertStringContainsString('Active community request', $response->getContent());
+        $this->assertSame(1, substr_count($response->getContent(), 'Published community request'));
+        $this->assertStringNotContainsString('id="recommendation-'.$published->id.'"', $response->getContent());
+        $this->assertStringContainsString('id="recommendation-'.$active->id.'"', $response->getContent());
+    }
+
+    public function test_creator_page_shows_recently_published_empty_state(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Recently Published')
+            ->assertSee('No published recommendations yet.');
+    }
+
+    public function test_published_page_lists_searches_and_expands_published_recommendations(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $tag = CreatorTag::query()->create([
+            'creator_id' => $creator->id,
+            'name' => 'Deep Dive',
+            'slug' => 'deep-dive',
+        ]);
+        $newer = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Newer published request',
+            'status' => 'published',
+            'channel_title' => 'Published Channel',
+            'description' => 'A finished community outcome.',
+            'category' => 'documentary',
+            'youtube_url' => 'https://www.youtube.com/watch?v=SOURCE00001',
+            'published_at' => '2026-07-04 12:00:00',
+            'published_reaction_url' => 'https://www.youtube.com/watch?v=REACTION001',
+        ]);
+        $older = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Older published request',
+            'status' => 'published',
+            'published_at' => '2026-07-03 12:00:00',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Active request',
+            'status' => 'approved',
+        ]);
+        $newer->creatorTags()->attach($tag);
+
+        $response = $this->get(route('creators.published', $creator));
+
+        $response
+            ->assertOk()
+            ->assertSee('Published Recommendations')
+            ->assertSee('Ideas this creator has already made, covered, explored, or published.')
+            ->assertSeeInOrder([
+                'Newer published request',
+                'Older published request',
+            ])
+            ->assertDontSee('Active request')
+            ->assertSee('x-data="{ open: false }"', false)
+            ->assertSee("window.location.hash === '#recommendation-{$newer->id}'", false)
+            ->assertSee('scroll-mt-28', false)
             ->assertSee('Watch published content')
-            ->assertSee('https://www.youtube.com/watch?v=REACTION001', false);
+            ->assertSee('https://www.youtube.com/watch?v=REACTION001', false)
+            ->assertDontSee('Upvote')
+            ->assertDontSee('No longer accepting upvotes');
+
+        $this->get(route('creators.published', ['creator' => $creator, 'q' => 'Deep Dive']))
+            ->assertOk()
+            ->assertSee('Newer published request')
+            ->assertDontSee('Older published request')
+            ->assertSee('value="Deep Dive"', false);
+
+        $this->get(route('creators.published', ['creator' => $creator, 'q' => 'missing']))
+            ->assertOk()
+            ->assertSee('No published recommendations found.');
     }
 
     public function test_it_displays_a_youtube_thumbnail_when_a_video_id_is_available(): void

@@ -4,6 +4,7 @@
     'usage' => null,
     'topRequested' => false,
     'anchor' => true,
+    'showVotingControls' => true,
 ])
 
 @php
@@ -165,7 +166,7 @@
                 </div>
             </div>
 
-            @if ($recommendation->consumesUpvotes())
+            @if ($showVotingControls && $recommendation->consumesUpvotes())
                 @auth
                     <form
                         id="recommendation-vote-{{ $recommendation->id }}"
@@ -191,7 +192,7 @@
                         Log in to upvote
                     </a>
                 @endauth
-            @else
+            @elseif ($showVotingControls)
                 <span class="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-center text-sm font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 sm:w-auto">
                     No longer accepting upvotes
                 </span>

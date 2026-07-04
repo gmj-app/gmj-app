@@ -84,5 +84,8 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
+Route::get('/{creator:slug}/published', [RecommendationController::class, 'published'])
+    ->name('creators.published');
+
 Route::get('/{creator:slug}', [RecommendationController::class, 'showCreatorQueue'])
     ->name('creator.queue');

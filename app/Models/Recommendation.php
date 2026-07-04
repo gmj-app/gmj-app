@@ -36,6 +36,15 @@ class Recommendation extends Model
         'passed',
     ];
 
+    public const ACTIVE_PUBLIC_STATUSES = [
+        'approved',
+        'coming_soon',
+        'scheduled',
+        'recorded',
+        'already_seen',
+        'passed',
+    ];
+
     public const UPVOTE_CONSUMING_STATUSES = [
         'pending',
         'approved',
@@ -149,6 +158,11 @@ class Recommendation extends Model
     public static function upvoteConsumingStatuses(): array
     {
         return self::UPVOTE_CONSUMING_STATUSES;
+    }
+
+    public static function activePublicStatuses(): array
+    {
+        return self::ACTIVE_PUBLIC_STATUSES;
     }
 
     public static function statusConsumesUpvotes(string $status): bool
