@@ -930,7 +930,9 @@ class PublicCreatorQueueTest extends TestCase
             ->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertDontSee('id="creator-favorite-toggle"', false)
-            ->assertSee('Manage creator page')
+            ->assertDontSee('Manage creator page')
+            ->assertSee('Settings')
+            ->assertSee('aria-label="Open settings for '.$creator->display_name.'"', false)
             ->assertSee(route('creators.dashboard', $creator), false);
 
         $this->post(route('creator.favorite', $creator))
@@ -1002,7 +1004,8 @@ class PublicCreatorQueueTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertDontSee('Manage creator page');
+            ->assertDontSee('Manage creator page')
+            ->assertDontSee('Settings');
     }
 
     private function addPicks(Creator $creator, Recommendation $recommendation, int $count): void
