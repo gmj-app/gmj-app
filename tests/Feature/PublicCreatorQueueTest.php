@@ -306,11 +306,13 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Avatar-backed request')
             ->assertSee('title="Requested by Original Fan"', false)
             ->assertSee('aria-label="Requested by Original Fan"', false)
+            ->assertSee('src="https://example.test/avatar-0.jpg"', false)
             ->assertSee('title="Upvoted by Voter 01"', false)
             ->assertSee('Community support')
             ->assertSee('title="14 more upvoters"', false)
             ->assertSee('title="19 more upvoters"', false)
             ->assertSee('title="3 more upvoters"', false)
+            ->assertDontSee('this.nextElementSibling.hidden', false)
             ->assertDontSee('original@example.test');
     }
 

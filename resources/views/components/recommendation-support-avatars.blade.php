@@ -72,11 +72,8 @@
                         alt=""
                         loading="lazy"
                         class="{{ $avatarSizeClasses }} rounded-full object-cover"
-                        onerror="this.hidden = true; this.nextElementSibling.hidden = false"
+                        onerror="this.hidden = true"
                     >
-                    <span hidden class="{{ $avatarSizeClasses }} inline-flex items-center justify-center rounded-full bg-slate-200 font-extrabold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
-                        {{ $initials }}
-                    </span>
                 @else
                     <span class="{{ $avatarSizeClasses }} inline-flex items-center justify-center rounded-full bg-slate-200 font-extrabold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
                         {{ $initials }}
