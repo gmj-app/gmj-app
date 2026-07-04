@@ -50,6 +50,11 @@ class Recommendation extends Model
         'approved',
     ];
 
+    public const UNFAVORITE_REMOVABLE_STATUSES = [
+        'pending',
+        'approved',
+    ];
+
     public const VISIBLE_STATUSES = self::PUBLIC_STATUSES;
 
     public const SUBMISSION_SOURCE_FAN = 'fan';
@@ -160,6 +165,11 @@ class Recommendation extends Model
         return self::UPVOTE_CONSUMING_STATUSES;
     }
 
+    public static function unfavoriteRemovableStatuses(): array
+    {
+        return self::UNFAVORITE_REMOVABLE_STATUSES;
+    }
+
     public static function activePublicStatuses(): array
     {
         return self::ACTIVE_PUBLIC_STATUSES;
@@ -186,4 +196,5 @@ class Recommendation extends Model
             && $this->consumesUpvotes()
             && ! self::statusConsumesUpvotes($status);
     }
+
 }

@@ -855,6 +855,112 @@ class PublicCreatorQueueTest extends TestCase
         ]);
     }
 
+    public function test_unfavoriting_only_removes_zero_support_pending_or_approved_submissions(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $user = User::factory()->create();
+        CreatorFavorite::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+
+        $pending = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $user->id,
+            'status' => 'pending',
+            'title' => 'Early pending request',
+        ]);
+        $approved = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $user->id,
+            'status' => 'approved',
+            'title' => 'Zero support approved request',
+        ]);
+        $approvedWithSupport = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $user->id,
+            'status' => 'approved',
+            'title' => 'Supported approved request',
+        ]);
+        $published = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $user->id,
+            'status' => 'published',
+            'title' => 'Published archive request',
+            'published_at' => now(),
+        ]);
+
+        $supporter = User::factory()->create();
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $approvedWithSupport->id,
+            'user_id' => $supporter->id,
+        ]);
+        foreach ([$pending, $approved, $published] as $recommendation) {
+            UserPick::factory()->create([
+                'creator_id' => $creator->id,
+                'recommendation_id' => $recommendation->id,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->post(route('creator.favorite', $creator))
+            ->assertSessionHas(
+                'success',
+                'Creator removed from your favorites. Your upvotes for this creator were removed.',
+        );
+
+        $this->assertDatabaseMissing('recommendations', ['id' => $pending->id]);
+        $this->assertDatabaseMissing('recommendations', ['id' => $approved->id]);
+        $this->assertDatabaseHas('recommendations', ['id' => $approvedWithSupport->id]);
+        $this->assertDatabaseHas('recommendations', ['id' => $published->id]);
+        $this->assertDatabaseMissing('user_picks', [
+            'recommendation_id' => $published->id,
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseHas('user_picks', [
+            'recommendation_id' => $approvedWithSupport->id,
+            'user_id' => $supporter->id,
+        ]);
+    }
+
+    public function test_unfavoriting_never_removes_creator_acted_on_or_historical_submissions(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $user = User::factory()->create();
+        CreatorFavorite::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+
+        $recommendations = collect(['coming_soon', 'scheduled', 'recorded', 'published', 'already_seen', 'passed', 'hidden'])
+            ->map(fn (string $status) => Recommendation::factory()->create([
+                'creator_id' => $creator->id,
+                'submitted_by' => $user->id,
+                'status' => $status,
+                'published_at' => $status === 'published' ? now() : null,
+            ]));
+
+        $recommendations->each(fn (Recommendation $recommendation) => UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $recommendation->id,
+            'user_id' => $user->id,
+        ]));
+
+        $this->actingAs($user)
+            ->post(route('creator.favorite', $creator))
+            ->assertRedirect();
+
+        foreach ($recommendations as $recommendation) {
+            $this->assertDatabaseHas('recommendations', ['id' => $recommendation->id]);
+            $this->assertDatabaseMissing('user_picks', [
+                'recommendation_id' => $recommendation->id,
+                'user_id' => $user->id,
+            ]);
+        }
+    }
+
     public function test_non_consuming_public_statuses_do_not_show_an_upvote_action(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);

@@ -419,6 +419,14 @@ class RecommendationController extends Controller
                 $removedUpvotes = $user->userPicks()
                     ->where('creator_id', $creator->id)
                     ->delete();
+
+                Recommendation::query()
+                    ->where('creator_id', $creator->id)
+                    ->where('submitted_by', $user->id)
+                    ->whereIn('status', Recommendation::unfavoriteRemovableStatuses())
+                    ->whereDoesntHave('userPicks')
+                    ->delete();
+
                 $favorite->delete();
 
                 return back()->with(
