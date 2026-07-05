@@ -87,6 +87,7 @@ class HomepageTest extends TestCase
             'slug' => 'popular-creator',
             'youtube_channel_title' => 'Popular Creator Channel',
             'youtube_thumbnail_url' => 'https://example.com/popular-creator.jpg',
+            'youtube_banner_url' => 'https://example.com/popular-creator-banner.jpg',
             'verification_status' => 'verified',
         ]);
         $secondCreator = Creator::factory()->create([
@@ -134,6 +135,10 @@ class HomepageTest extends TestCase
             ->assertSee('Visible top request')
             ->assertSee(route('creator.queue', $popularCreator), false)
             ->assertSee('aria-label="View Popular Creator\'s journey"', false)
+            ->assertSee('src="https://example.com/popular-creator-banner.jpg"', false)
+            ->assertSee('loading="lazy"', false)
+            ->assertSee('bg-gradient-to-br from-indigo-600 via-sky-600 to-violet-600', false)
+            ->assertSee('ring-4 ring-white dark:ring-slate-900', false)
             ->assertSee('src="https://example.com/popular-creator.jpg"', false)
             ->assertSee('alt="Popular Creator avatar"', false)
             ->assertSee('onerror="this.previousElementSibling.removeAttribute(\'aria-hidden\'); this.remove()"', false)
@@ -201,6 +206,7 @@ class HomepageTest extends TestCase
                 'Older tied top request',
                 'Third highest public request',
             ])
+            ->assertSee('line-clamp-2 min-w-0 text-sm font-medium leading-5', false)
             ->assertDontSee('Fourth public request')
             ->assertDontSee('Hidden request must not appear');
     }

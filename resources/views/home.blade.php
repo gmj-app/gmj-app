@@ -65,51 +65,69 @@
                         <a
                             href="{{ route('creator.queue', $creator) }}"
                             aria-label="View {{ $creator->display_name }}'s journey"
-                            class="group flex h-full min-w-0 cursor-pointer flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/60 dark:focus-visible:ring-offset-slate-950"
+                            class="group flex h-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/60 dark:focus-visible:ring-offset-slate-950"
                         >
-                            <div class="flex items-center gap-4">
-                                <x-creator-avatar :creator="$creator" />
-
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <h3 class="truncate text-lg font-bold text-slate-950 dark:text-white">{{ $creator->display_name }}</h3>
-                                        @if ($creator->verification_status === 'verified')
-                                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Verified</span>
-                                        @endif
-                                    </div>
-                                    <p class="mt-1 line-clamp-2 text-sm leading-5 text-slate-600 dark:text-slate-400">
-                                        {{ $creator->card_description }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/60">
-                                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Top requests</p>
-
-                                @if ($creatorTopRequests->isEmpty())
-                                    <p class="mt-3 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-300">
-                                        No public requests yet
-                                    </p>
-                                @else
-                                    <ol class="mt-3 space-y-2.5">
-                                        @foreach ($creatorTopRequests as $request)
-                                            <li class="flex min-w-0 items-start gap-2.5">
-                                                <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-xs font-extrabold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
-                                                    {{ $loop->iteration }}
-                                                </span>
-                                                <span class="line-clamp-2 min-w-0 text-sm font-semibold leading-5 text-slate-800 dark:text-slate-200">
-                                                    {{ $request->title }}
-                                                </span>
-                                            </li>
-                                        @endforeach
-                                    </ol>
+                            <div class="relative h-24 shrink-0 overflow-hidden bg-gradient-to-br from-indigo-600 via-sky-600 to-violet-600">
+                                @if (filled($creator->hero_url))
+                                    <img
+                                        src="{{ $creator->hero_url }}"
+                                        alt=""
+                                        loading="lazy"
+                                        class="absolute inset-0 h-full w-full object-cover object-center transition duration-300 group-hover:scale-105"
+                                        onerror="this.remove()"
+                                    >
                                 @endif
+
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-slate-950/20 to-transparent"></div>
+                                <div class="absolute inset-0 bg-gradient-to-r from-slate-950/45 via-slate-950/10 to-transparent"></div>
                             </div>
 
-                            <div class="mt-auto border-t border-slate-200/80 pt-5 dark:border-slate-800">
-                                <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
-                                    <span><strong class="text-slate-950 dark:text-white">{{ $creator->total_votes_count }}</strong> {{ Str::plural('upvote', $creator->total_votes_count) }}</span>
-                                    <span><strong class="text-slate-950 dark:text-white">{{ $creator->visible_recommendations_count }}</strong> requests</span>
+                            <div class="flex flex-1 flex-col p-5 pt-0">
+                                <div class="-mt-5 flex min-w-0 items-end gap-4">
+                                    <x-creator-avatar :creator="$creator" size="lg" class="ring-4 ring-white dark:ring-slate-900" />
+
+                                    <div class="min-w-0 flex-1 pb-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <h3 class="truncate text-lg font-bold text-slate-950 dark:text-white">{{ $creator->display_name }}</h3>
+                                            @if ($creator->verification_status === 'verified')
+                                                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Verified</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p class="mt-1 line-clamp-2 text-sm leading-5 text-slate-600 dark:text-slate-400">
+                                    {{ $creator->card_description }}
+                                </p>
+
+                                <div class="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/60">
+                                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Top requests</p>
+
+                                    @if ($creatorTopRequests->isEmpty())
+                                        <p class="mt-3 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-300">
+                                            No public requests yet
+                                        </p>
+                                    @else
+                                        <ol class="mt-3 space-y-2.5">
+                                            @foreach ($creatorTopRequests as $request)
+                                                <li class="flex min-w-0 items-start gap-2.5">
+                                                    <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-xs font-extrabold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+                                                        {{ $loop->iteration }}
+                                                    </span>
+                                                    <span class="line-clamp-2 min-w-0 text-sm font-medium leading-5 text-slate-700 dark:text-slate-100">
+                                                        {{ $request->title }}
+                                                    </span>
+                                                </li>
+                                            @endforeach
+                                        </ol>
+                                    @endif
+                                </div>
+
+                                <div class="mt-auto border-t border-slate-200/80 pt-5 dark:border-slate-800">
+                                    <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
+                                        <span><strong class="text-slate-950 dark:text-white">{{ $creator->total_votes_count }}</strong> {{ Str::plural('upvote', $creator->total_votes_count) }}</span>
+                                        <span><strong class="text-slate-950 dark:text-white">{{ $creator->visible_recommendations_count }}</strong> requests</span>
+                                    </div>
                                 </div>
                             </div>
                         </a>
