@@ -13,6 +13,9 @@
                     {{ $usage['suggestions_remaining'] }} of {{ $usage['suggestions_limit'] }}
                     suggestions remaining for this creator.
                 </p>
+                <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                    Submitting this recommendation will use 1 of your suggestion slots for this creator. Upvoting is separate.
+                </p>
 
                 @if (! $creator->submissions_open)
                     <div class="mt-6 rounded-md bg-amber-50 p-4 text-sm font-medium text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:ring-amber-900">

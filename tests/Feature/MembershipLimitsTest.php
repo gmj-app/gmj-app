@@ -135,6 +135,196 @@ class MembershipLimitsTest extends TestCase
         $this->assertSame(3, $user->userPicks()->count());
     }
 
+    public function test_submission_uses_a_suggestion_slot_without_consuming_an_upvote(): void
+    {
+        $creator = Creator::factory()->create([
+            'recommendation_approval_mode' => 'auto',
+        ]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('recommendations.store', $creator), $this->recommendationData('Independent resources'))
+            ->assertRedirect(route('creator.queue', $creator));
+
+        $recommendation = Recommendation::query()
+            ->where('title', 'Independent resources')
+            ->firstOrFail();
+
+        $this->assertSame(1, $user->fresh()->suggestionsUsedFor($creator));
+        $this->assertSame(2, $user->fresh()->suggestionsRemainingFor($creator));
+        $this->assertSame(0, $user->fresh()->votesUsedFor($creator));
+        $this->assertSame(3, $user->fresh()->votesRemainingFor($creator));
+        $this->assertSame(0, $recommendation->userPicks()->count());
+        $this->assertDatabaseCount('user_picks', 0);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSeeInOrder(['Suggestions left', '2/3'])
+            ->assertSeeInOrder(['Upvotes left', '3/3'])
+            ->assertSee('Independent resources')
+            ->assertSee('name="vote_action" value="add"', false)
+            ->assertDontSee('aria-label="Remove your upvote"', false);
+    }
+
+    public function test_user_can_explicitly_upvote_after_submitting_without_changing_suggestion_usage(): void
+    {
+        $creator = Creator::factory()->create([
+            'recommendation_approval_mode' => 'auto',
+        ]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('recommendations.store', $creator), $this->recommendationData('Upvote after submit'))
+            ->assertRedirect(route('creator.queue', $creator));
+
+        $recommendation = Recommendation::query()
+            ->where('title', 'Upvote after submit')
+            ->firstOrFail();
+
+        $this->post(route('recommendations.vote', [$creator, $recommendation]), [
+            'vote_action' => 'add',
+        ])->assertSessionHas('recommendation_action', [
+            'recommendation_id' => $recommendation->id,
+            'message' => 'Your upvote was added.',
+            'type' => 'added',
+        ]);
+
+        $this->assertSame(1, $user->fresh()->suggestionsUsedFor($creator));
+        $this->assertSame(2, $user->fresh()->suggestionsRemainingFor($creator));
+        $this->assertSame(1, $user->fresh()->votesUsedFor($creator));
+        $this->assertSame(2, $user->fresh()->votesRemainingFor($creator));
+        $this->assertSame(1, $recommendation->fresh()->userPicks()->count());
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSeeInOrder(['Suggestions left', '2/3'])
+            ->assertSeeInOrder(['Upvotes left', '2/3'])
+            ->assertSee('name="vote_action" value="remove"', false)
+            ->assertSee('aria-label="Remove your upvote"', false);
+    }
+
+    public function test_removing_an_upvote_after_submitting_returns_only_the_upvote_slot(): void
+    {
+        $creator = Creator::factory()->create([
+            'recommendation_approval_mode' => 'auto',
+        ]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('recommendations.store', $creator), $this->recommendationData('Remove explicit upvote'));
+
+        $recommendation = Recommendation::query()
+            ->where('title', 'Remove explicit upvote')
+            ->firstOrFail();
+
+        $this->post(route('recommendations.vote', [$creator, $recommendation]), [
+            'vote_action' => 'add',
+        ]);
+
+        $this->post(route('recommendations.vote', [$creator, $recommendation]), [
+            'vote_action' => 'remove',
+        ])->assertSessionHas('recommendation_action', [
+            'recommendation_id' => $recommendation->id,
+            'message' => 'Your upvote was removed.',
+            'type' => 'removed',
+        ]);
+
+        $this->assertSame(1, $user->fresh()->suggestionsUsedFor($creator));
+        $this->assertSame(2, $user->fresh()->suggestionsRemainingFor($creator));
+        $this->assertSame(0, $user->fresh()->votesUsedFor($creator));
+        $this->assertSame(3, $user->fresh()->votesRemainingFor($creator));
+        $this->assertSame(0, $recommendation->fresh()->userPicks()->count());
+    }
+
+    public function test_exhausted_upvotes_do_not_block_suggestion_submission_when_suggestions_remain(): void
+    {
+        $creator = Creator::factory()->create([
+            'recommendation_approval_mode' => 'auto',
+        ]);
+        $user = User::factory()->create();
+        $recommendations = Recommendation::factory()
+            ->count(3)
+            ->create([
+                'creator_id' => $creator->id,
+                'status' => 'approved',
+            ]);
+
+        CreatorFavorite::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+
+        foreach ($recommendations as $recommendation) {
+            $user->userPicks()->create([
+                'creator_id' => $creator->id,
+                'recommendation_id' => $recommendation->id,
+            ]);
+        }
+
+        $this->assertSame(0, $user->fresh()->votesRemainingFor($creator));
+        $this->assertSame(3, $user->fresh()->suggestionsRemainingFor($creator));
+
+        $this->actingAs($user)
+            ->post(route('recommendations.store', $creator), $this->recommendationData('Submitted with no upvotes left'))
+            ->assertRedirect(route('creator.queue', $creator));
+
+        $recommendation = Recommendation::query()
+            ->where('title', 'Submitted with no upvotes left')
+            ->firstOrFail();
+
+        $this->assertSame(2, $user->fresh()->suggestionsRemainingFor($creator));
+        $this->assertSame(0, $user->fresh()->votesRemainingFor($creator));
+        $this->assertSame(0, $recommendation->userPicks()->count());
+    }
+
+    public function test_exhausted_suggestions_do_not_block_upvoting_when_upvotes_remain(): void
+    {
+        $creator = Creator::factory()->create();
+        $user = User::factory()->create();
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+        ]);
+
+        CreatorFavorite::query()->create([
+            'creator_id' => $creator->id,
+            'user_id' => $user->id,
+        ]);
+
+        Recommendation::factory()
+            ->count(3)
+            ->create([
+                'creator_id' => $creator->id,
+                'submitted_by' => $user->id,
+                'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            ]);
+
+        $this->assertSame(0, $user->fresh()->suggestionsRemainingFor($creator));
+        $this->assertSame(3, $user->fresh()->votesRemainingFor($creator));
+
+        $this->actingAs($user)
+            ->post(route('recommendations.store', $creator), $this->recommendationData('Blocked by suggestions'))
+            ->assertSessionHasErrors([
+                'limit' => "You've used all your suggestions for this creator.",
+            ]);
+
+        $this->assertDatabaseMissing('recommendations', [
+            'title' => 'Blocked by suggestions',
+        ]);
+
+        $this->post(route('recommendations.vote', [$creator, $recommendation]), [
+            'vote_action' => 'add',
+        ])->assertSessionHas('recommendation_action', [
+            'recommendation_id' => $recommendation->id,
+            'message' => 'Your upvote was added.',
+            'type' => 'added',
+        ]);
+
+        $this->assertSame(0, $user->fresh()->suggestionsRemainingFor($creator));
+        $this->assertSame(2, $user->fresh()->votesRemainingFor($creator));
+        $this->assertSame(1, $recommendation->fresh()->userPicks()->count());
+    }
+
     public function test_queue_sidebar_shows_account_and_per_reactor_usage(): void
     {
         $creator = Creator::factory()->create(['display_name' => 'JFragment']);

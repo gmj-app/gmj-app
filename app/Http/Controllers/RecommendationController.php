@@ -248,7 +248,7 @@ class RecommendationController extends Controller
             if (! $user->canSuggestTo($creator)) {
                 throw ValidationException::withMessages([
                     'limit' => $user->suggestionsRemainingFor($creator) === 0
-                        ? "You have used all suggestions for {$creator->display_name}."
+                        ? "You've used all your suggestions for this creator."
                         : 'You’ve reached your creator favorite limit. Remove a favorite before suggesting something for this journey.',
                 ]);
             }

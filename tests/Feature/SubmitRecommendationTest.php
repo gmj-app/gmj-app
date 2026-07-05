@@ -36,6 +36,7 @@ class SubmitRecommendationTest extends TestCase
             ->assertSee('Topic')
             ->assertSee('YouTube URL')
             ->assertSee('Suggest an idea or YouTube link for something this creator could make, cover, explore, or discover.')
+            ->assertSee('Submitting this recommendation will use 1 of your suggestion slots for this creator. Upvoting is separate.')
             ->assertSee('Why should JFragment make, cover, or explore this?')
             ->assertSee('Submit recommendation');
     }
