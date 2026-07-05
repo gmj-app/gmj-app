@@ -27,6 +27,8 @@ class BetaFeedback extends Model
         'screen_height',
         'meta',
         'resolved_at',
+        'read_at',
+        'read_by_user_id',
     ];
 
     protected function casts(): array
@@ -34,11 +36,17 @@ class BetaFeedback extends Model
         return [
             'meta' => 'array',
             'resolved_at' => 'datetime',
+            'read_at' => 'datetime',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function readBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'read_by_user_id');
     }
 }

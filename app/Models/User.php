@@ -120,7 +120,18 @@ class User extends Authenticatable
             return false;
         }
 
-        return in_array(strtolower((string) $this->email), config('gmj.admin_emails', []), true);
+        return $this->isAdminTester();
+    }
+
+    public function isAdminTester(): bool
+    {
+        return in_array(strtolower((string) $this->email), config('gmj.admin_emails', []), true)
+            || (bool) $this->can_access_video_tools;
+    }
+
+    public function canViewBetaFeedbackInbox(): bool
+    {
+        return (bool) config('gmj.beta_feedback_enabled') && $this->isAdminTester();
     }
 
     public function reactorsUsed(): int

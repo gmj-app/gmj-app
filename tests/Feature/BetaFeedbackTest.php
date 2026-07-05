@@ -24,6 +24,147 @@ class BetaFeedbackTest extends TestCase
             ->assertSee('Tell us what happened. This form automatically includes the page and browser details so you do not have to.');
     }
 
+    public function test_admin_feedback_viewer_sees_inbox_modal_instead_of_submit_form(): void
+    {
+        config([
+            'gmj.beta_feedback_enabled' => true,
+            'gmj.admin_emails' => ['jfragment@gmail.com'],
+        ]);
+
+        $admin = User::factory()->create([
+            'name' => 'Jason Admin',
+            'email' => 'jfragment@gmail.com',
+            'avatar_url' => 'https://example.test/avatar.jpg',
+        ]);
+        $older = BetaFeedback::query()->create([
+            'name' => 'Older Tester',
+            'email' => 'older@example.test',
+            'type' => 'Bug',
+            'message' => 'Older feedback message.',
+            'current_url' => 'https://www.guidemyjourney.org/older',
+            'created_at' => now()->subHour(),
+            'updated_at' => now()->subHour(),
+        ]);
+        $newer = BetaFeedback::query()->create([
+            'user_id' => $admin->id,
+            'name' => 'Jason Admin',
+            'email' => 'jfragment@gmail.com',
+            'type' => 'Confusing UX',
+            'message' => 'Newest feedback message.',
+            'extra_context' => 'Screenshot link.',
+            'current_url' => 'https://www.guidemyjourney.org/newer',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/')
+            ->assertOk()
+            ->assertSee('Testing Feedback Inbox')
+            ->assertSee('Latest beta feedback from testers.')
+            ->assertSee('Open testing feedback inbox')
+            ->assertSee('Newest feedback message.')
+            ->assertSee('Older feedback message.')
+            ->assertSeeInOrder(['Newest feedback message.', 'Older feedback message.'])
+            ->assertSee('https://example.test/avatar.jpg', false)
+            ->assertSee('Screenshot link.')
+            ->assertSee('Unread')
+            ->assertSee('Mark read')
+            ->assertSee('Showing latest 25')
+            ->assertDontSee('Tell us what happened. This form automatically includes the page and browser details so you do not have to.');
+
+        $this->assertNull($older->read_at);
+        $this->assertNull($newer->read_at);
+    }
+
+    public function test_admin_feedback_inbox_routes_are_hidden_from_normal_users(): void
+    {
+        config([
+            'gmj.beta_feedback_enabled' => true,
+            'gmj.admin_emails' => ['admin@example.test'],
+        ]);
+
+        $feedback = BetaFeedback::query()->create([
+            'name' => 'Beta Tester',
+            'email' => 'tester@example.test',
+            'type' => 'Bug',
+            'message' => 'A private note.',
+        ]);
+
+        $this->actingAs(User::factory()->create(['email' => 'guide@example.test']))
+            ->get(route('internal.beta-feedback.index'))
+            ->assertNotFound();
+
+        $this->postJson(route('internal.beta-feedback.mark-read', $feedback))
+            ->assertNotFound();
+
+        auth()->logout();
+
+        $this->get(route('internal.beta-feedback.index'))
+            ->assertNotFound();
+    }
+
+    public function test_admin_feedback_inbox_routes_are_unavailable_when_beta_feedback_is_disabled(): void
+    {
+        config([
+            'gmj.beta_feedback_enabled' => false,
+            'gmj.admin_emails' => ['admin@example.test'],
+        ]);
+
+        $admin = User::factory()->create(['email' => 'admin@example.test']);
+
+        $this->actingAs($admin)
+            ->get(route('internal.beta-feedback.index'))
+            ->assertNotFound();
+    }
+
+    public function test_admin_can_fetch_latest_feedback_and_mark_it_read(): void
+    {
+        config([
+            'gmj.beta_feedback_enabled' => true,
+            'gmj.admin_emails' => ['admin@example.test'],
+        ]);
+
+        $admin = User::factory()->create([
+            'name' => 'Admin Tester',
+            'email' => 'admin@example.test',
+        ]);
+        $older = BetaFeedback::query()->create([
+            'name' => 'Older Tester',
+            'email' => 'older@example.test',
+            'type' => 'Other',
+            'message' => 'Older message.',
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
+        ]);
+        $newer = BetaFeedback::query()->create([
+            'name' => 'Newer Tester',
+            'email' => 'newer@example.test',
+            'type' => 'Bug',
+            'message' => 'Newer message.',
+            'current_url' => 'https://www.guidemyjourney.org/newer',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson(route('internal.beta-feedback.index'))
+            ->assertOk()
+            ->assertJsonPath('unread_count', 2)
+            ->assertJsonPath('feedback.0.id', $newer->id)
+            ->assertJsonPath('feedback.1.id', $older->id)
+            ->assertJsonPath('feedback.0.message', 'Newer message.');
+
+        $this->postJson(route('internal.beta-feedback.mark-read', $newer))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('read_by', 'Admin Tester')
+            ->assertJsonPath('unread_count', 1);
+
+        $this->assertNotNull($newer->fresh()->read_at);
+        $this->assertSame($admin->id, $newer->fresh()->read_by_user_id);
+    }
+
     public function test_feedback_modal_uses_direct_open_state_and_posts_to_feedback_route(): void
     {
         config(['gmj.beta_feedback_enabled' => true]);

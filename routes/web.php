@@ -22,6 +22,12 @@ Route::view('/contact', 'pages.contact')->name('contact');
 
 Route::post('/beta-feedback', [BetaFeedbackController::class, 'store'])
     ->name('beta-feedback.store');
+Route::get('/internal/beta-feedback', [BetaFeedbackController::class, 'index'])
+    ->name('internal.beta-feedback.index');
+Route::post('/internal/beta-feedback/{feedback}/read', [BetaFeedbackController::class, 'markRead'])
+    ->name('internal.beta-feedback.mark-read');
+Route::post('/internal/beta-feedback/{feedback}/unread', [BetaFeedbackController::class, 'markUnread'])
+    ->name('internal.beta-feedback.mark-unread');
 
 Route::get('/dashboard', [DashboardController::class, '__invoke'])
     ->middleware(['auth', 'verified'])

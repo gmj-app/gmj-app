@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\BetaFeedbackSubmitted;
 use App\Models\BetaFeedback;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,34 @@ use Throwable;
 
 class BetaFeedbackController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        $this->authorizeInbox($request);
+
+        $feedback = BetaFeedback::query()
+            ->with(['user', 'readBy'])
+            ->latest('created_at')
+            ->latest('id')
+            ->limit(25)
+            ->get();
+
+        return response()->json([
+            'unread_count' => BetaFeedback::query()->whereNull('read_at')->count(),
+            'feedback' => $feedback->map(fn (BetaFeedback $item): array => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'email' => $item->email,
+                'type' => $item->type,
+                'message' => $item->message,
+                'extra_context' => $item->extra_context,
+                'current_url' => $item->current_url,
+                'created_at' => $item->created_at?->toIso8601String(),
+                'read_at' => $item->read_at?->toIso8601String(),
+                'read_by' => $item->readBy?->name,
+            ]),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         abort_unless(config('gmj.beta_feedback_enabled'), 404);
@@ -78,5 +107,46 @@ class BetaFeedbackController extends Controller
         return response()->json([
             'message' => 'Thanks, your feedback was sent.',
         ]);
+    }
+
+    public function markRead(Request $request, BetaFeedback $feedback): JsonResponse
+    {
+        $user = $this->authorizeInbox($request);
+
+        $feedback->forceFill([
+            'read_at' => now(),
+            'read_by_user_id' => $user->id,
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'read_at' => $feedback->read_at?->toIso8601String(),
+            'read_by' => $user->name,
+            'unread_count' => BetaFeedback::query()->whereNull('read_at')->count(),
+        ]);
+    }
+
+    public function markUnread(Request $request, BetaFeedback $feedback): JsonResponse
+    {
+        $this->authorizeInbox($request);
+
+        $feedback->forceFill([
+            'read_at' => null,
+            'read_by_user_id' => null,
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'unread_count' => BetaFeedback::query()->whereNull('read_at')->count(),
+        ]);
+    }
+
+    private function authorizeInbox(Request $request): User
+    {
+        $user = $request->user();
+
+        abort_unless($user?->canViewBetaFeedbackInbox(), 404);
+
+        return $user;
     }
 }
