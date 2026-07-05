@@ -6,9 +6,6 @@
     $publishedDate = $recommendation->published_at ?? $recommendation->updated_at ?? $recommendation->created_at;
     $display = $recommendation->publishedDisplayData();
     $originalSource = $recommendation->channel_title ?: $recommendation->artist;
-    $body = $recommendation->recommendation_type === 'topic'
-        ? ($recommendation->description ?: $recommendation->reason)
-        : ($recommendation->reason ?: $recommendation->description);
     $hasDifferentOriginalUrl = $recommendation->youtube_url
         && $recommendation->displayPublishedUrl()
         && $recommendation->youtube_url !== $recommendation->displayPublishedUrl();
@@ -84,10 +81,12 @@
             <span>{{ $recommendation->user_picks_count }} {{ Str::plural('vote', $recommendation->user_picks_count) }} when published</span>
         </div>
 
-        @if ($body)
-            <div class="mt-5 whitespace-pre-line break-words text-base leading-7 text-slate-600 dark:text-slate-300">
-                <x-linkified-text :text="$body" />
-            </div>
+        @if ($recommendation->recommendation_type === 'topic' && $recommendation->description)
+            <x-plain-expandable-text :text="$recommendation->description" label="Topic description" />
+        @endif
+
+        @if ($recommendation->reason)
+            <x-plain-expandable-text :text="$recommendation->reason" label="Why this was suggested" />
         @endif
 
         <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5 text-base dark:border-slate-800">

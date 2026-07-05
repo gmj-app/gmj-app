@@ -586,6 +586,7 @@ class PublicCreatorQueueTest extends TestCase
             'category' => 'documentary',
             'youtube_url' => 'https://www.youtube.com/watch?v=SOURCE00001',
             'youtube_video_id' => 'SOURCE00001',
+            'reason' => 'Published context should stay plain: https://example.com <script>alert(1)</script>',
             'published_at' => '2026-07-04 12:00:00',
             'published_reaction_url' => 'https://www.youtube.com/watch?v=REACTION001',
             'published_title' => 'Creator reaction release',
@@ -626,6 +627,9 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('https://img.youtube.com/vi/REACTION001/hqdefault.jpg', false)
             ->assertSee('Creator Channel')
             ->assertSee('Original suggestion')
+            ->assertSee('Why this was suggested')
+            ->assertSee('Published context should stay plain: https://example.com &lt;script&gt;alert(1)&lt;/script&gt;', false)
+            ->assertDontSee('href="https://example.com"', false)
             ->assertSee('Newer published request')
             ->assertSee('https://www.youtube.com/watch?v=SOURCE00001', false)
             ->assertDontSee('Upvote')
@@ -694,6 +698,7 @@ class PublicCreatorQueueTest extends TestCase
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
         $submitter = User::factory()->create(['name' => 'Example Fan']);
+        $reason = str_repeat('A meaningful reason for this recommendation. ', 8);
         $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'submitted_by' => $submitter->id,
@@ -701,7 +706,7 @@ class PublicCreatorQueueTest extends TestCase
             'youtube_url' => null,
             'youtube_video_id' => null,
             'title' => 'A thoughtful community topic',
-            'reason' => str_repeat('A meaningful reason for this recommendation. ', 8),
+            'reason' => $reason,
             'status' => 'approved',
         ]);
         $viewer = User::factory()->create();
@@ -713,7 +718,11 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Submitted by Example Fan')
             ->assertSee('aria-label="Upvote this recommendation"', false)
             ->assertSee('Top requested')
-            ->assertSee(Str::limit($recommendation->reason, 160));
+            ->assertSee('Why this was suggested')
+            ->assertSee(Str::limit($reason, 250))
+            ->assertSee('Read more')
+            ->assertSee('Show less')
+            ->assertSee('x-bind:aria-expanded="expanded.toString()"', false);
 
         $this->post(route('recommendations.vote', [$creator, $recommendation]), [
             'confirm_favorite' => true,
@@ -728,6 +737,25 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('name="vote_action" value="remove"', false)
             ->assertSee('1')
             ->assertSee('upvote');
+    }
+
+    public function test_recommendation_reason_renders_as_plain_text_without_links_or_html(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'A safely rendered recommendation',
+            'reason' => '<script>alert(1)</script> Visit https://example.com for context.',
+            'status' => 'approved',
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Why this was suggested')
+            ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt; Visit https://example.com for context.', false)
+            ->assertDontSee('<script>alert(1)</script>', false)
+            ->assertDontSee('href="https://example.com"', false);
     }
 
     public function test_only_the_highest_voted_public_recommendation_is_top_requested(): void

@@ -70,6 +70,7 @@
                         youtubeUrl: @js(old('youtube_url', '')),
                         title: @js(old('title', '')),
                         channelTitle: @js(old('channel_title', '')),
+                        reason: @js(old('reason', '')),
                         lookupStatus: '',
                         lookupController: null,
                         lookupTimer: null,
@@ -296,8 +297,13 @@
                             name="reason"
                             rows="5"
                             maxlength="1000"
+                            x-model="reason"
                             class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 focus:border-indigo-500 focus:ring-indigo-500"
                         >{{ old('reason') }}</textarea>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                            Optional, up to 1,000 characters.
+                            <span class="float-right tabular-nums" x-text="`${reason.length} / 1000`">{{ mb_strlen((string) old('reason', '')) }} / 1000</span>
+                        </p>
                         @error('reason')
                             <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror

@@ -159,17 +159,11 @@
         </div>
 
         @if ($recommendation->recommendation_type === 'topic' && $recommendation->description)
-            <p class="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300">
-                {{ Str::limit($recommendation->description, 160) }}
-            </p>
-        @elseif ($recommendation->reason)
-            <p class="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300">
-                {{ Str::limit($recommendation->reason, 160) }}
-            </p>
-        @elseif ($recommendation->description)
-            <p class="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300">
-                {{ Str::limit($recommendation->description, 160) }}
-            </p>
+            <x-plain-expandable-text :text="$recommendation->description" label="Topic description" />
+        @endif
+
+        @if ($recommendation->reason)
+            <x-plain-expandable-text :text="$recommendation->reason" label="Why this was suggested" />
         @endif
 
         @if ($recommendation->status === 'scheduled' && $recommendation->scheduled_for)
