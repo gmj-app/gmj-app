@@ -6,7 +6,15 @@
                 x-on:keydown.escape.window="biographyOpen || submissionGuidanceOpen ? (biographyOpen = false, submissionGuidanceOpen = false) : creatorMenuOpen = false"
                 class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
             >
-                <x-creator-hero-background :creator="$creator" class="h-36 sm:h-44 lg:h-52">
+                @php
+                    $addRecommendationLabel = 'Add Recommendation';
+
+                    if (auth()->check() && $isFavorited && $creator->submissions_open) {
+                        $addRecommendationLabel .= " ({$usage['suggestions_remaining']}/{$usage['suggestions_limit']})";
+                    }
+                @endphp
+
+                <x-creator-hero-background :creator="$creator" class="min-h-48 sm:min-h-40 lg:min-h-44">
                     <div class="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
                         <div class="relative" x-on:click.outside="creatorMenuOpen = false">
                             <button
@@ -67,17 +75,117 @@
                         </div>
                     </div>
 
-                    <div class="absolute inset-x-0 bottom-0 p-4">
-                        <div class="flex min-w-0 items-end gap-3 sm:gap-4">
+                    <div class="relative z-10 flex min-h-48 flex-col justify-center gap-4 px-4 pb-4 pt-14 sm:min-h-40 sm:px-5 sm:py-5 sm:pr-16 lg:min-h-44 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-6">
+                        <div class="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
                             <x-creator-avatar
                                 :creator="$creator"
                                 size="xl"
-                                class="hidden border-2 border-white/40 shadow-xl ring-4 ring-slate-950/30 sm:inline-flex sm:h-20 sm:w-20 sm:text-2xl lg:h-24 lg:w-24 lg:text-3xl"
+                                class="size-16 shrink-0 border-2 border-white/50 shadow-xl ring-4 ring-slate-950/25 sm:size-20 sm:text-2xl lg:text-3xl"
                             />
 
-                            <div class="min-w-0 pb-0.5">
-                                <h1 class="max-w-3xl break-words text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl lg:text-4xl">{{ $creator->display_name }}'s Journey</h1>
+                            <div class="min-w-0 flex-1">
+                                <h1 class="max-w-3xl break-words text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl">{{ $creator->display_name }}'s Journey</h1>
+
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @auth
+                                        <a
+                                            href="{{ route('recommendations.create', $creator) }}"
+                                            aria-label="Add a recommendation for {{ $creator->display_name }}"
+                                            class="inline-flex min-h-10 items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 {{ $usage['can_suggest'] && $creator->submissions_open ? '' : 'pointer-events-none bg-slate-400 shadow-none' }}"
+                                        >
+                                            @if (! $creator->submissions_open)
+                                                Recommendations closed
+                                            @else
+                                                {{ $addRecommendationLabel }}
+                                            @endif
+                                        </a>
+                                    @else
+                                        <a
+                                            href="{{ route('recommendations.create', $creator) }}"
+                                            aria-label="Add a recommendation for {{ $creator->display_name }}"
+                                            class="inline-flex min-h-10 items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500"
+                                        >
+                                            Add Recommendation
+                                        </a>
+                                    @endauth
+
+                                    @if ($creator->youtube_channel_url ?? $creator->channel_url)
+                                        <a
+                                            href="{{ $creator->youtube_channel_url ?? $creator->channel_url }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label="Visit {{ $creator->display_name }}'s YouTube channel"
+                                            class="inline-flex min-h-10 items-center justify-center rounded-full border border-white/30 bg-white/95 px-4 py-2 text-center text-sm font-medium text-slate-800 shadow-sm hover:bg-white hover:text-red-600 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-100 dark:hover:text-red-300"
+                                        >
+                                            Visit Channel
+                                        </a>
+                                    @endif
+
+                                    @if ($ownsCreator)
+                                        <a
+                                            href="{{ route('creators.dashboard', $creator) }}"
+                                            aria-label="Open settings for {{ $creator->display_name }}"
+                                            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-white/30 bg-white/95 px-4 py-2 text-center text-sm font-medium text-slate-800 shadow-sm transition hover:bg-white hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-100 dark:hover:text-indigo-300"
+                                        >
+                                            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.592c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.66.84.09.04.18.081.267.125.34.17.742.142 1.057-.07l1.083-.722a1.125 1.125 0 0 1 1.45.133l1.833 1.833c.389.389.446.997.133 1.45l-.722 1.083c-.212.315-.24.717-.07 1.057.044.087.086.177.125.267.154.347.466.597.84.66l1.281.213c.542.09.94.56.94 1.11v2.592c0 .55-.398 1.02-.94 1.11l-1.281.213c-.374.063-.686.313-.84.66-.04.09-.081.18-.125.267-.17.34-.142.742.07 1.057l.722 1.083c.313.453.256 1.061-.133 1.45l-1.833 1.833a1.125 1.125 0 0 1-1.45.133l-1.083-.722c-.315-.212-.717-.24-1.057-.07-.087.044-.177.086-.267.125-.347.154-.597.466-.66.84l-.213 1.281c-.09.542-.56.94-1.11.94h-2.592c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.66-.84a6.978 6.978 0 0 1-.267-.125c-.34-.17-.742-.142-1.057.07l-1.083.722a1.125 1.125 0 0 1-1.45-.133L3.027 18.64a1.125 1.125 0 0 1-.133-1.45l.722-1.083c.212-.315.24-.717.07-1.057a6.978 6.978 0 0 1-.125-.267c-.154-.347-.466-.597-.84-.66l-1.281-.213A1.125 1.125 0 0 1 .5 12.8v-2.592c0-.55.398-1.02.94-1.11l1.281-.213c.374-.063.686-.313.84-.66.04-.09.081-.18.125-.267.17-.34.142-.742-.07-1.057l-.722-1.083a1.125 1.125 0 0 1 .133-1.45l1.833-1.833a1.125 1.125 0 0 1 1.45-.133l1.083.722c.315.212.717.24 1.057.07.087-.044.177-.086.267-.125.347-.154.597-.466.66-.84l.213-1.281Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                            Settings
+                                        </a>
+                                    @endif
+
+                                    @if (! $ownsCreator)
+                                        @auth
+                                            <form
+                                                id="creator-favorite-toggle"
+                                                method="POST"
+                                                action="{{ route('creator.favorite', $creator) }}"
+                                                class="sm:w-auto"
+                                                @if ($isFavorited && $usage['votes_used'] > 0)
+                                                    x-on:submit="
+                                                        if ($el.dataset.participationConfirmed === '1') return;
+                                                        $event.preventDefault();
+                                                        $dispatch('request-participation-confirmation', {
+                                                            formId: $el.id,
+                                                            mode: 'confirm',
+                                                            title: 'Remove favorite?',
+                                                            body: @js("Unfavoriting removes your upvotes from this creator. Suggestions with no other votes may be removed."),
+                                                            resourceLine: @js("Active upvotes on this creator: {$usage['votes_used']}"),
+                                                            confirmLabel: 'Remove favorite and upvotes',
+                                                            destructive: true,
+                                                        });
+                                                    "
+                                                @endif
+                                            >
+                                                @csrf
+                                                <button
+                                                    type="submit"
+                                                    class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 sm:w-auto {{ $isFavorited ? 'border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-300 dark:hover:bg-amber-500/25' : 'border-white/30 bg-white/95 text-slate-800 hover:bg-white hover:text-amber-700 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-100 dark:hover:text-amber-300' }}"
+                                                >
+                                                    <svg class="size-5 {{ $isFavorited ? 'fill-current' : 'fill-none' }}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" />
+                                                    </svg>
+                                                    {{ $isFavorited ? 'Favorited' : 'Favorite' }}
+                                                </button>
+                                            </form>
+                                        @else
+                                            <a href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false)]) }}" class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-white/30 bg-white/95 px-4 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-white hover:text-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-100 dark:hover:text-amber-300 sm:w-auto">
+                                                <svg class="size-5 fill-none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" />
+                                                </svg>
+                                                Favorite
+                                            </a>
+                                        @endauth
+                                    @endif
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 text-xs font-medium text-white/90 lg:max-w-xs lg:shrink-0 lg:justify-end">
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicRecommendationsCount }} {{ $publicRecommendationsCount === 1 ? 'recommendation' : 'recommendations' }}</span>
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $favoritesCount }} {{ $favoritesCount === 1 ? 'follower' : 'followers' }}</span>
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicVotesCount }} {{ $publicVotesCount === 1 ? 'upvote' : 'upvotes' }}</span>
                         </div>
                     </div>
                 </x-creator-hero-background>
@@ -230,128 +338,6 @@
                     </div>
                 </div>
 
-                <div class="p-4 sm:p-5">
-                    <div class="flex flex-col gap-3">
-                        <div class="-mt-10 shrink-0 sm:hidden">
-                            <x-creator-avatar
-                                :creator="$creator"
-                                size="lg"
-                                class="border-2 border-white/80 shadow-md ring-4 ring-white/70 dark:border-slate-800 dark:ring-slate-900"
-                            />
-                        </div>
-
-                        @php
-                            $addRecommendationLabel = 'Add Recommendation';
-
-                            if (auth()->check() && $isFavorited && $creator->submissions_open) {
-                                $addRecommendationLabel .= " ({$usage['suggestions_remaining']}/{$usage['suggestions_limit']})";
-                            }
-                        @endphp
-
-                        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                            <div class="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
-                                @auth
-                                    <a
-                                        href="{{ route('recommendations.create', $creator) }}"
-                                        aria-label="Add a recommendation for {{ $creator->display_name }}"
-                                        class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 {{ $usage['can_suggest'] && $creator->submissions_open ? '' : 'pointer-events-none bg-slate-400 shadow-none' }}"
-                                    >
-                                        @if (! $creator->submissions_open)
-                                            Recommendations closed
-                                        @else
-                                            {{ $addRecommendationLabel }}
-                                        @endif
-                                    </a>
-                                @else
-                                    <a
-                                        href="{{ route('recommendations.create', $creator) }}"
-                                        aria-label="Add a recommendation for {{ $creator->display_name }}"
-                                        class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500"
-                                    >
-                                        Add Recommendation
-                                    </a>
-                                @endauth
-
-                                @if ($creator->youtube_channel_url ?? $creator->channel_url)
-                                    <a
-                                        href="{{ $creator->youtube_channel_url ?? $creator->channel_url }}"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        aria-label="Visit {{ $creator->display_name }}'s YouTube channel"
-                                        class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2.5 text-center text-sm font-medium text-slate-700 hover:border-red-200 hover:text-red-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                                    >
-                                        Visit Channel
-                                    </a>
-                                @endif
-
-                                @if ($ownsCreator)
-                                    <a
-                                        href="{{ route('creators.dashboard', $creator) }}"
-                                        aria-label="Open settings for {{ $creator->display_name }}"
-                                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-500/60 dark:hover:text-indigo-300 dark:focus-visible:ring-offset-slate-900"
-                                    >
-                                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.592c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.66.84.09.04.18.081.267.125.34.17.742.142 1.057-.07l1.083-.722a1.125 1.125 0 0 1 1.45.133l1.833 1.833c.389.389.446.997.133 1.45l-.722 1.083c-.212.315-.24.717-.07 1.057.044.087.086.177.125.267.154.347.466.597.84.66l1.281.213c.542.09.94.56.94 1.11v2.592c0 .55-.398 1.02-.94 1.11l-1.281.213c-.374.063-.686.313-.84.66-.04.09-.081.18-.125.267-.17.34-.142.742.07 1.057l.722 1.083c.313.453.256 1.061-.133 1.45l-1.833 1.833a1.125 1.125 0 0 1-1.45.133l-1.083-.722c-.315-.212-.717-.24-1.057-.07-.087.044-.177.086-.267.125-.347.154-.597.466-.66.84l-.213 1.281c-.09.542-.56.94-1.11.94h-2.592c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.66-.84a6.978 6.978 0 0 1-.267-.125c-.34-.17-.742-.142-1.057.07l-1.083.722a1.125 1.125 0 0 1-1.45-.133L3.027 18.64a1.125 1.125 0 0 1-.133-1.45l.722-1.083c.212-.315.24-.717.07-1.057a6.978 6.978 0 0 1-.125-.267c-.154-.347-.466-.597-.84-.66l-1.281-.213A1.125 1.125 0 0 1 .5 12.8v-2.592c0-.55.398-1.02.94-1.11l1.281-.213c.374-.063.686-.313.84-.66.04-.09.081-.18.125-.267.17-.34.142-.742-.07-1.057l-.722-1.083a1.125 1.125 0 0 1 .133-1.45l1.833-1.833a1.125 1.125 0 0 1 1.45-.133l1.083.722c.315.212.717.24 1.057.07.087-.044.177-.086.267-.125.347-.154.597-.466.66-.84l.213-1.281Z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                        </svg>
-                                        Settings
-                                    </a>
-                                @endif
-
-                                @if (! $ownsCreator)
-                                    @auth
-                                        <form
-                                            id="creator-favorite-toggle"
-                                            method="POST"
-                                            action="{{ route('creator.favorite', $creator) }}"
-                                            class="sm:w-auto"
-                                            @if ($isFavorited && $usage['votes_used'] > 0)
-                                                x-on:submit="
-                                                    if ($el.dataset.participationConfirmed === '1') return;
-                                                    $event.preventDefault();
-                                                    $dispatch('request-participation-confirmation', {
-                                                        formId: $el.id,
-                                                        mode: 'confirm',
-                                                        title: 'Remove favorite?',
-                                                        body: @js("Unfavoriting removes your upvotes from this creator. Suggestions with no other votes may be removed."),
-                                                        resourceLine: @js("Active upvotes on this creator: {$usage['votes_used']}"),
-                                                        confirmLabel: 'Remove favorite and upvotes',
-                                                        destructive: true,
-                                                    });
-                                                "
-                                            @endif
-                                        >
-                                            @csrf
-                                            <button
-                                                type="submit"
-                                                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 sm:w-auto {{ $isFavorited ? 'border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-300 dark:hover:bg-amber-500/25' : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:text-amber-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-amber-400/60 dark:hover:text-amber-300' }}"
-                                            >
-                                                <svg class="size-5 {{ $isFavorited ? 'fill-current' : 'fill-none' }}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" />
-                                                </svg>
-                                                {{ $isFavorited ? 'Favorited' : 'Favorite' }}
-                                            </button>
-                                        </form>
-                                    @else
-                                        <a href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false)]) }}" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-amber-300 hover:text-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-amber-400/60 dark:hover:text-amber-300 dark:focus-visible:ring-offset-slate-900 sm:w-auto">
-                                            <svg class="size-5 fill-none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" />
-                                            </svg>
-                                            Favorite
-                                        </a>
-                                    @endauth
-                                @endif
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 lg:max-w-sm lg:justify-end">
-                                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-white/5">{{ $publicRecommendationsCount }} {{ $publicRecommendationsCount === 1 ? 'recommendation' : 'recommendations' }}</span>
-                                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-white/5">{{ $favoritesCount }} {{ $favoritesCount === 1 ? 'follower' : 'followers' }}</span>
-                                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-white/5">{{ $publicVotesCount }} {{ $publicVotesCount === 1 ? 'upvote' : 'upvotes' }}</span>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
             </div>
         </div>
     </section>
