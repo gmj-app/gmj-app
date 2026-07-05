@@ -53,10 +53,11 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('Visit YouTube channel')
             ->assertSeeInOrder([
                 'Your limits',
-                'Filters',
-                'Search and filter suggestions',
+                'Filter suggestions',
             ])
             ->assertSee('aria-expanded="false"', false)
+            ->assertSee('aria-controls="creator-queue-filters"', false)
+            ->assertDontSee('Search and filter suggestions')
             ->assertSee('x-cloak', false)
             ->assertDontSee('data-active-filter-count=', false)
             ->assertDontSee('Queue controls');
@@ -377,8 +378,8 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Newest')
             ->assertSee('Status')
             ->assertSee('Scheduled date')
-            ->assertSee('Filters')
-            ->assertSee('Show filters')
+            ->assertSee('Filter suggestions')
+            ->assertDontSee('Search and filter suggestions')
             ->assertSee('Hide filters')
             ->assertSee('aria-controls="creator-queue-filters"', false)
             ->assertSee('x-bind:aria-expanded="open.toString()"', false)

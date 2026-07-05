@@ -524,33 +524,26 @@
                         x-data="{ open: false }"
                         class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
                     >
-                        <div class="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
-                            <div class="min-w-0">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <h2 class="text-base font-semibold text-slate-950 dark:text-white">Filters</h2>
-                                    @if ($activeFilterCount > 0)
-                                        <span
-                                            data-active-filter-count="{{ $activeFilterCount }}"
-                                            aria-label="{{ $activeFilterCount }} active {{ Str::plural('filter', $activeFilterCount) }}"
-                                            class="inline-flex min-w-6 items-center justify-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
-                                        >
-                                            {{ $activeFilterCount }}
-                                        </span>
-                                    @endif
-                                </div>
-                                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Search and filter suggestions</p>
-                            </div>
-
+                        <div class="flex items-center justify-end px-4 py-2.5 sm:px-5">
                             <button
                                 type="button"
                                 x-on:click="open = ! open"
                                 aria-expanded="false"
                                 x-bind:aria-expanded="open.toString()"
-                                x-bind:aria-label="open ? 'Hide filters' : 'Show filters'"
+                                x-bind:aria-label="open ? 'Hide filters' : 'Filter suggestions'"
                                 aria-controls="creator-queue-filters"
                                 class="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:text-indigo-300 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-200 dark:focus-visible:ring-offset-slate-900"
                             >
-                                <span x-text="open ? 'Hide filters' : 'Show filters'">Show filters</span>
+                                <span x-text="open ? 'Hide filters' : 'Filter suggestions'">Filter suggestions</span>
+                                @if ($activeFilterCount > 0)
+                                    <span
+                                        data-active-filter-count="{{ $activeFilterCount }}"
+                                        aria-label="{{ $activeFilterCount }} active {{ Str::plural('filter', $activeFilterCount) }}"
+                                        class="inline-flex min-w-6 items-center justify-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                                    >
+                                        {{ $activeFilterCount }}
+                                    </span>
+                                @endif
                                 <svg
                                     class="size-4 transition-transform duration-200"
                                     x-bind:class="{ 'rotate-180': open }"
