@@ -354,7 +354,14 @@
             @endif
 
             @error('limit')
-                <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{{ $message }}</div>
+                <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+                    <p>{{ $message }}</p>
+                    @if ($message === 'You’ve used all your upvotes for this creator.')
+                        <p class="mt-1 text-xs font-medium leading-5 text-red-600 dark:text-red-300">
+                            You’ll get upvotes back when recommendations you supported are published or closed.
+                        </p>
+                    @endif
+                </div>
             @enderror
 
             @error('favorite')

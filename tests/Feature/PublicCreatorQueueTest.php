@@ -10,7 +10,9 @@ use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserPick;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class PublicCreatorQueueTest extends TestCase
@@ -545,6 +547,26 @@ class PublicCreatorQueueTest extends TestCase
             ->assertOk()
             ->assertSee('Recently Published')
             ->assertSee('No published recommendations yet.');
+    }
+
+    public function test_exhausted_upvote_alert_explains_when_upvotes_return(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $user = User::factory()->create();
+
+        $errors = (new ViewErrorBag)->put(
+            'default',
+            new MessageBag([
+                'limit' => ['You’ve used all your upvotes for this creator.'],
+            ]),
+        );
+
+        $this->actingAs($user)
+            ->withSession(['errors' => $errors])
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('You’ve used all your upvotes for this creator.')
+            ->assertSee('You’ll get upvotes back when recommendations you supported are published or closed.');
     }
 
     public function test_published_page_lists_searches_and_selects_published_recommendations(): void
