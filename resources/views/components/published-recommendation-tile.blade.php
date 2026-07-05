@@ -5,7 +5,7 @@
 
 @php
     $publishedDate = $recommendation->published_at ?? $recommendation->updated_at ?? $recommendation->created_at;
-    $source = $recommendation->channel_title ?: $recommendation->artist;
+    $display = $recommendation->publishedDisplayData();
 @endphp
 
 <a
@@ -16,10 +16,10 @@
     ]) }}
 >
     <span class="relative block aspect-video overflow-hidden bg-slate-100 dark:bg-slate-950">
-        @if ($recommendation->youtubeThumbnailUrl())
+        @if ($display['thumbnail_url'])
             <img
-                src="{{ $recommendation->youtubeThumbnailUrl() }}"
-                alt="Thumbnail for {{ $recommendation->title }}"
+                src="{{ $display['thumbnail_url'] }}"
+                alt="Thumbnail for {{ $display['title'] }}"
                 loading="lazy"
                 onerror="this.hidden = true"
                 class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
@@ -41,20 +41,20 @@
         @endif
 
         <span class="absolute left-3 top-3 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm">
-            Published
+            {{ $display['has_published_url'] ? 'Published work' : 'Published' }}
         </span>
     </span>
 
     <span class="flex min-w-0 flex-1 flex-col p-4">
         <span class="line-clamp-2 min-h-10 break-words text-sm font-extrabold leading-5 text-slate-950 transition group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
-            {{ $recommendation->title }}
+            {{ $display['title'] }}
         </span>
 
         <span class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
             <span>Published {{ $publishedDate->format('M j, Y') }}</span>
-            @if ($source)
+            @if ($display['channel'])
                 <span aria-hidden="true">&middot;</span>
-                <span class="min-w-0 max-w-full truncate">{{ $source }}</span>
+                <span class="min-w-0 max-w-full truncate">{{ $display['channel'] }}</span>
             @endif
         </span>
 

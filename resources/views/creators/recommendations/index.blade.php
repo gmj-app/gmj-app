@@ -193,15 +193,16 @@
                                             </div>
 
                                             <div class="space-y-2" x-show="status === 'published'" x-cloak>
-                                                <label for="reaction-url-{{ $recommendation->id }}" class="sr-only">Published content URL</label>
+                                                <label for="reaction-url-{{ $recommendation->id }}" class="sr-only">Published URL</label>
                                                 <input
                                                     id="reaction-url-{{ $recommendation->id }}"
                                                     name="published_reaction_url"
                                                     type="url"
                                                     value="{{ $recommendation->published_reaction_url }}"
-                                                    placeholder="Published content URL"
+                                                    placeholder="Published URL"
                                                     class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
                                                 >
+                                                <p class="text-[11px] leading-4 text-gray-500 dark:text-slate-400">Add the link to the video or content you made from this recommendation.</p>
                                                 <label for="published-at-{{ $recommendation->id }}" class="sr-only">Published date</label>
                                                 <input
                                                     id="published-at-{{ $recommendation->id }}"
@@ -312,8 +313,15 @@
                                                         </div>
 
                                                         <div class="md:col-span-2">
-                                                            <x-input-label :for="'reaction-edit-'.$recommendation->id" value="Published content URL" />
+                                                            <x-input-label :for="'reaction-edit-'.$recommendation->id" value="Published URL" />
                                                             <x-text-input :id="'reaction-edit-'.$recommendation->id" name="published_reaction_url" type="url" class="mt-1 block w-full" :value="$recommendation->published_reaction_url" />
+                                                            <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">Add the link to the video or content you made from this recommendation.</p>
+                                                            @if ($recommendation->published_title || $recommendation->published_channel)
+                                                                <p class="mt-2 text-xs font-semibold text-gray-600 dark:text-slate-300">
+                                                                    Current published metadata:
+                                                                    {{ collect([$recommendation->published_title, $recommendation->published_channel])->filter()->implode(' from ') }}
+                                                                </p>
+                                                            @endif
                                                         </div>
 
                                                         <div class="md:col-span-2">

@@ -5,17 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Creator;
 use App\Models\Recommendation;
 use App\Services\CreatorTagService;
+use App\Services\YouTubeUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class CreatorRecommendationController extends Controller
 {
     public function __construct(
         private readonly CreatorTagService $tags,
+        private readonly YouTubeUrlService $youtubeUrls,
     ) {}
 
     public function index(Request $request, Creator $creator): View
@@ -92,9 +96,12 @@ class CreatorRecommendationController extends Controller
         $tagInput = $validated['tags'] ?? '';
         unset($validated['tags']);
 
-        $releasedUpvotes = DB::transaction(function () use ($creator, $recommendation, $request, $shouldSyncTags, $tagInput, $validated): int {
+        $publishedAttributes = $this->publishedAttributesFromRequest($validated, $recommendation, $request->exists('published_reaction_url'));
+
+        $releasedUpvotes = DB::transaction(function () use ($creator, $recommendation, $request, $shouldSyncTags, $tagInput, $validated, $publishedAttributes): int {
             $releasedUpvotes = $this->updateRecommendationAndReleaseUpvotes($recommendation, [
                 ...$validated,
+                ...$publishedAttributes,
                 'is_pinned' => $request->boolean('is_pinned'),
                 'published_at' => ($validated['status'] ?? $recommendation->status) === 'published'
                     ? ($validated['published_at'] ?? $recommendation->published_at ?? now())
@@ -130,6 +137,8 @@ class CreatorRecommendationController extends Controller
             'published_reaction_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
+        $publishedAttributes = $this->publishedAttributesFromRequest($validated, $recommendation, $request->exists('published_reaction_url'));
+
         $releasedUpvotes = $this->updateRecommendationAndReleaseUpvotes($recommendation, [
             'status' => $validated['status'],
             'scheduled_for' => $validated['status'] === 'scheduled'
@@ -138,7 +147,7 @@ class CreatorRecommendationController extends Controller
             'published_at' => $validated['status'] === 'published'
                 ? ($validated['published_at'] ?? $recommendation->published_at ?? now())
                 : $recommendation->published_at,
-            'published_reaction_url' => $validated['published_reaction_url'] ?? $recommendation->published_reaction_url,
+            ...$publishedAttributes,
             'moderated_by' => $request->user()->id,
             'moderated_at' => now(),
         ]);
@@ -221,5 +230,80 @@ class CreatorRecommendationController extends Controller
         $verb = $releasedUpvotes === 1 ? 'was' : 'were';
 
         return "{$message} {$releasedUpvotes} {$upvotes} {$verb} released back to users.";
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function publishedAttributesFromRequest(
+        array $validated,
+        Recommendation $recommendation,
+        bool $urlWasSubmitted,
+    ): array {
+        if (! $urlWasSubmitted) {
+            return [
+                'published_reaction_url' => $recommendation->published_reaction_url,
+            ];
+        }
+
+        $url = $validated['published_reaction_url'] ?? null;
+
+        if (blank($url)) {
+            return [
+                'published_reaction_url' => null,
+                'published_title' => null,
+                'published_channel' => null,
+                'published_thumbnail_url' => null,
+                'published_video_id' => null,
+                'published_metadata' => null,
+            ];
+        }
+
+        $attributes = [
+            'published_reaction_url' => $url,
+        ];
+        $videoId = $this->youtubeUrls->extractVideoId($url);
+
+        if (! $videoId) {
+            return [
+                ...$attributes,
+                'published_title' => null,
+                'published_channel' => null,
+                'published_thumbnail_url' => null,
+                'published_video_id' => null,
+                'published_metadata' => null,
+            ];
+        }
+
+        $attributes['published_video_id'] = $videoId;
+        $attributes['published_thumbnail_url'] = "https://img.youtube.com/vi/{$videoId}/hqdefault.jpg";
+
+        try {
+            $metadata = Http::timeout(5)
+                ->acceptJson()
+                ->get('https://www.youtube.com/oembed', [
+                    'format' => 'json',
+                    'url' => $url,
+                ])
+                ->throw()
+                ->json();
+        } catch (Throwable) {
+            return [
+                ...$attributes,
+                'published_title' => null,
+                'published_channel' => null,
+                'published_metadata' => [
+                    'metadata_unavailable' => true,
+                ],
+            ];
+        }
+
+        return [
+            ...$attributes,
+            'published_title' => $metadata['title'] ?? null,
+            'published_channel' => $metadata['author_name'] ?? null,
+            'published_metadata' => $metadata,
+        ];
     }
 }

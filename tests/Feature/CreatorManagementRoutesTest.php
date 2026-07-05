@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\UserPick;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -364,6 +365,12 @@ class CreatorManagementRoutesTest extends TestCase
     public function test_status_update_publishes_with_reaction_fields_and_default_published_at(): void
     {
         [$creator, $owner] = $this->creatorWithOwner();
+        Http::fake([
+            '*youtube.com/oembed*' => Http::response([
+                'title' => 'Creator published video',
+                'author_name' => 'Creator Channel',
+            ]),
+        ]);
         $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'status' => 'recorded',
@@ -381,6 +388,10 @@ class CreatorManagementRoutesTest extends TestCase
         $recommendation->refresh();
         $this->assertSame('published', $recommendation->status);
         $this->assertSame('https://www.youtube.com/watch?v=REACTION001', $recommendation->published_reaction_url);
+        $this->assertSame('Creator published video', $recommendation->published_title);
+        $this->assertSame('Creator Channel', $recommendation->published_channel);
+        $this->assertSame('REACTION001', $recommendation->published_video_id);
+        $this->assertSame('https://img.youtube.com/vi/REACTION001/hqdefault.jpg', $recommendation->published_thumbnail_url);
         $this->assertNotNull($recommendation->published_at);
         $this->assertSame($owner->id, $recommendation->moderated_by);
     }

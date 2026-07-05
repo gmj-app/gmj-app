@@ -188,6 +188,9 @@ class RecommendationController extends Controller
                         ->orWhere('reason', 'like', "%{$filters['q']}%")
                         ->orWhere('category', 'like', "%{$filters['q']}%")
                         ->orWhere('youtube_url', 'like', "%{$filters['q']}%")
+                        ->orWhere('published_title', 'like', "%{$filters['q']}%")
+                        ->orWhere('published_channel', 'like', "%{$filters['q']}%")
+                        ->orWhere('published_reaction_url', 'like', "%{$filters['q']}%")
                         ->orWhereHas('creatorTags', fn ($query) => $query
                             ->where('creator_tags.creator_id', $creator->id)
                             ->where(function ($query) use ($filters): void {

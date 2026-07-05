@@ -509,6 +509,9 @@ class PublicCreatorQueueTest extends TestCase
             'status' => 'published',
             'category' => 'music',
             'published_at' => '2026-07-04 12:00:00',
+            'published_reaction_url' => 'https://www.youtube.com/watch?v=PUBLISHED01',
+            'published_title' => 'Creator finished video',
+            'published_channel' => 'Creator Finished Channel',
         ]);
 
         $this->addPicks($creator, $published, 2);
@@ -520,11 +523,13 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Recently Published')
             ->assertSee('View all published')
             ->assertSee('Published Jul 4, 2026')
+            ->assertSee('Creator finished video')
+            ->assertSee('Creator Finished Channel')
             ->assertSee(route('creators.published', $creator).'#recommendation-'.$published->id, false)
             ->assertSee('2 votes');
 
         $this->assertStringContainsString('Active community request', $response->getContent());
-        $this->assertSame(1, substr_count($response->getContent(), 'Published community request'));
+        $this->assertStringNotContainsString('Published community request', $response->getContent());
         $this->assertStringNotContainsString('id="recommendation-'.$published->id.'"', $response->getContent());
         $this->assertStringContainsString('id="recommendation-'.$active->id.'"', $response->getContent());
     }
@@ -555,8 +560,12 @@ class PublicCreatorQueueTest extends TestCase
             'description' => 'A finished community outcome.',
             'category' => 'documentary',
             'youtube_url' => 'https://www.youtube.com/watch?v=SOURCE00001',
+            'youtube_video_id' => 'SOURCE00001',
             'published_at' => '2026-07-04 12:00:00',
             'published_reaction_url' => 'https://www.youtube.com/watch?v=REACTION001',
+            'published_title' => 'Creator reaction release',
+            'published_channel' => 'Creator Channel',
+            'published_thumbnail_url' => 'https://img.youtube.com/vi/REACTION001/hqdefault.jpg',
         ]);
         $older = Recommendation::factory()->create([
             'creator_id' => $creator->id,
@@ -578,7 +587,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Published Recommendations')
             ->assertSee('Ideas this creator has already made, covered, explored, or published.')
             ->assertSeeInOrder([
-                'Newer published request',
+                'Creator reaction release',
                 'Older published request',
             ])
             ->assertDontSee('Active request')
@@ -589,12 +598,23 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('href="'.route('creators.published', $creator).'#recommendation-'.$newer->id.'"', false)
             ->assertSee('Watch published content')
             ->assertSee('https://www.youtube.com/watch?v=REACTION001', false)
+            ->assertSee('https://img.youtube.com/vi/REACTION001/hqdefault.jpg', false)
+            ->assertSee('Creator Channel')
+            ->assertSee('Original suggestion')
+            ->assertSee('Newer published request')
+            ->assertSee('https://www.youtube.com/watch?v=SOURCE00001', false)
             ->assertDontSee('Upvote')
             ->assertDontSee('No longer accepting upvotes');
 
+        $this->get(route('creators.published', ['creator' => $creator, 'q' => 'Creator reaction']))
+            ->assertOk()
+            ->assertSee('Creator reaction release')
+            ->assertDontSee('Older published request')
+            ->assertSee('value="Creator reaction"', false);
+
         $this->get(route('creators.published', ['creator' => $creator, 'q' => 'Deep Dive']))
             ->assertOk()
-            ->assertSee('Newer published request')
+            ->assertSee('Creator reaction release')
             ->assertDontSee('Older published request')
             ->assertSee('value="Deep Dive"', false);
 

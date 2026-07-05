@@ -105,6 +105,11 @@ class Recommendation extends Model
         'moderated_by',
         'moderated_at',
         'published_reaction_url',
+        'published_title',
+        'published_channel',
+        'published_thumbnail_url',
+        'published_video_id',
+        'published_metadata',
     ];
 
     protected function casts(): array
@@ -114,6 +119,7 @@ class Recommendation extends Model
             'scheduled_for' => 'datetime',
             'published_at' => 'datetime',
             'moderated_at' => 'datetime',
+            'published_metadata' => 'array',
         ];
     }
 
@@ -152,6 +158,61 @@ class Recommendation extends Model
         }
 
         return "https://img.youtube.com/vi/{$videoId}/hqdefault.jpg";
+    }
+
+    public function displayPublishedTitle(): string
+    {
+        return filled($this->published_title)
+            ? (string) $this->published_title
+            : (string) $this->title;
+    }
+
+    public function displayPublishedChannel(): ?string
+    {
+        if (filled($this->published_channel)) {
+            return (string) $this->published_channel;
+        }
+
+        if (filled($this->channel_title)) {
+            return (string) $this->channel_title;
+        }
+
+        return filled($this->artist) ? (string) $this->artist : null;
+    }
+
+    public function displayPublishedThumbnailUrl(): ?string
+    {
+        return filled($this->published_thumbnail_url)
+            ? (string) $this->published_thumbnail_url
+            : $this->youtubeThumbnailUrl();
+    }
+
+    public function displayPublishedUrl(): ?string
+    {
+        if (filled($this->published_reaction_url)) {
+            return (string) $this->published_reaction_url;
+        }
+
+        return filled($this->youtube_url) ? (string) $this->youtube_url : null;
+    }
+
+    public function hasPublishedUrl(): bool
+    {
+        return filled($this->published_reaction_url);
+    }
+
+    /**
+     * @return array{title: string, channel: string|null, thumbnail_url: string|null, url: string|null, has_published_url: bool}
+     */
+    public function publishedDisplayData(): array
+    {
+        return [
+            'title' => $this->displayPublishedTitle(),
+            'channel' => $this->displayPublishedChannel(),
+            'thumbnail_url' => $this->displayPublishedThumbnailUrl(),
+            'url' => $this->displayPublishedUrl(),
+            'has_published_url' => $this->hasPublishedUrl(),
+        ];
     }
 
     public function statusLabel(): string

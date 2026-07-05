@@ -474,6 +474,7 @@
                                     @foreach ($recentPublishedRecommendations as $publishedRecommendation)
                                         @php
                                             $publishedDate = $publishedRecommendation->published_at ?? $publishedRecommendation->updated_at ?? $publishedRecommendation->created_at;
+                                            $publishedDisplay = $publishedRecommendation->publishedDisplayData();
                                         @endphp
                                         <a
                                             href="{{ route('creators.published', $creator) }}#recommendation-{{ $publishedRecommendation->id }}"
@@ -485,9 +486,12 @@
                                                 </svg>
                                             </span>
                                             <span class="min-w-0 flex-1">
-                                                <span class="block break-words text-sm font-medium leading-5 text-slate-800 group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-300">{{ $publishedRecommendation->title }}</span>
+                                                <span class="block break-words text-sm font-medium leading-5 text-slate-800 group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-300">{{ $publishedDisplay['title'] }}</span>
                                                 <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-normal text-slate-500 dark:text-slate-400">
                                                     <span>Published {{ $publishedDate->format('M j, Y') }}</span>
+                                                    @if ($publishedDisplay['channel'])
+                                                        <span class="min-w-0 max-w-full truncate">{{ $publishedDisplay['channel'] }}</span>
+                                                    @endif
                                                     @if ($publishedRecommendation->category)
                                                         <span class="capitalize">{{ $publishedRecommendation->category }}</span>
                                                     @endif
