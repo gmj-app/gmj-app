@@ -103,7 +103,7 @@
                         x-on:click.stop
                     >
                         <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-[#212121] px-6 py-5">
-                            <h2 id="creator-biography-title" class="text-xl font-extrabold tracking-tight sm:text-2xl">{{ $creator->display_name }}</h2>
+                            <h2 id="creator-biography-title" class="text-xl font-semibold tracking-tight sm:text-2xl">{{ $creator->display_name }}</h2>
                             <button
                                 type="button"
                                 x-on:click="biographyOpen = false"
@@ -118,13 +118,13 @@
 
                         <div class="max-h-[calc(100vh-9rem)] overflow-y-auto px-6 pb-6">
                             <section>
-                                <h3 class="text-lg font-extrabold">Description</h3>
+                                <h3 class="text-lg font-semibold">Description</h3>
                                 <div class="mt-3 space-y-4 whitespace-pre-line break-words text-sm font-medium leading-6 text-slate-100 [overflow-wrap:anywhere] sm:text-base sm:leading-7"><x-linkified-text :text="filled($creator->bio) ? $creator->bio : 'No biography has been added for this creator yet.'" /></div>
                             </section>
 
                             <section class="mt-7">
-                                <h3 class="text-lg font-extrabold">More info</h3>
-                                <div class="mt-4 space-y-4 text-sm font-semibold text-slate-100 sm:text-base">
+                                <h3 class="text-lg font-semibold">More info</h3>
+                                <div class="mt-4 space-y-4 text-sm font-medium text-slate-100 sm:text-base">
                                     @if ($creator->youtube_channel_url ?? $creator->channel_url)
                                         <a
                                             href="{{ $creator->youtube_channel_url ?? $creator->channel_url }}"
@@ -197,8 +197,8 @@
                                 />
 
                                 <div class="min-w-0">
-                                    <h2 id="creator-submission-guidance-title" class="text-xl font-extrabold tracking-tight sm:text-2xl">Submission guidance</h2>
-                                    <p class="mt-0.5 truncate text-sm font-semibold text-slate-400">A note from {{ $creator->display_name }}</p>
+                                    <h2 id="creator-submission-guidance-title" class="text-xl font-semibold tracking-tight sm:text-2xl">Submission guidance</h2>
+                                    <p class="mt-0.5 truncate text-sm font-medium text-slate-400">A note from {{ $creator->display_name }}</p>
                                 </div>
                             </div>
 
@@ -254,7 +254,7 @@
                                     <a
                                         href="{{ route('recommendations.create', $creator) }}"
                                         aria-label="Add a recommendation for {{ $creator->display_name }}"
-                                        class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-5 py-2.5 text-center text-sm font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 {{ $usage['can_suggest'] && $creator->submissions_open ? '' : 'pointer-events-none bg-slate-400 shadow-none' }}"
+                                        class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 {{ $usage['can_suggest'] && $creator->submissions_open ? '' : 'pointer-events-none bg-slate-400 shadow-none' }}"
                                     >
                                         @if (! $creator->submissions_open)
                                             Recommendations closed
@@ -266,7 +266,7 @@
                                     <a
                                         href="{{ route('recommendations.create', $creator) }}"
                                         aria-label="Add a recommendation for {{ $creator->display_name }}"
-                                        class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-5 py-2.5 text-center text-sm font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500"
+                                        class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500"
                                     >
                                         Add Recommendation
                                     </a>
@@ -278,7 +278,7 @@
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         aria-label="Visit {{ $creator->display_name }}'s YouTube channel"
-                                        class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2.5 text-center text-sm font-bold text-slate-700 hover:border-red-200 hover:text-red-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                                        class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2.5 text-center text-sm font-medium text-slate-700 hover:border-red-200 hover:text-red-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                                     >
                                         Visit Channel
                                     </a>
@@ -288,7 +288,7 @@
                                     <a
                                         href="{{ route('creators.dashboard', $creator) }}"
                                         aria-label="Open settings for {{ $creator->display_name }}"
-                                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-center text-sm font-bold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-500/60 dark:hover:text-indigo-300 dark:focus-visible:ring-offset-slate-900"
+                                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-500/60 dark:hover:text-indigo-300 dark:focus-visible:ring-offset-slate-900"
                                     >
                                         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.592c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.66.84.09.04.18.081.267.125.34.17.742.142 1.057-.07l1.083-.722a1.125 1.125 0 0 1 1.45.133l1.833 1.833c.389.389.446.997.133 1.45l-.722 1.083c-.212.315-.24.717-.07 1.057.044.087.086.177.125.267.154.347.466.597.84.66l1.281.213c.542.09.94.56.94 1.11v2.592c0 .55-.398 1.02-.94 1.11l-1.281.213c-.374.063-.686.313-.84.66-.04.09-.081.18-.125.267-.17.34-.142.742.07 1.057l.722 1.083c.313.453.256 1.061-.133 1.45l-1.833 1.833a1.125 1.125 0 0 1-1.45.133l-1.083-.722c-.315-.212-.717-.24-1.057-.07-.087.044-.177.086-.267.125-.347.154-.597.466-.66.84l-.213 1.281c-.09.542-.56.94-1.11.94h-2.592c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.66-.84a6.978 6.978 0 0 1-.267-.125c-.34-.17-.742-.142-1.057.07l-1.083.722a1.125 1.125 0 0 1-1.45-.133L3.027 18.64a1.125 1.125 0 0 1-.133-1.45l.722-1.083c.212-.315.24-.717.07-1.057a6.978 6.978 0 0 1-.125-.267c-.154-.347-.466-.597-.84-.66l-1.281-.213A1.125 1.125 0 0 1 .5 12.8v-2.592c0-.55.398-1.02.94-1.11l1.281-.213c.374-.063.686-.313.84-.66.04-.09.081-.18.125-.267.17-.34.142-.742-.07-1.057l-.722-1.083a1.125 1.125 0 0 1 .133-1.45l1.833-1.833a1.125 1.125 0 0 1 1.45-.133l1.083.722c.315.212.717.24 1.057.07.087-.044.177-.086.267-.125.347-.154.597-.466.66-.84l.213-1.281Z" />
@@ -324,7 +324,7 @@
                                             @csrf
                                             <button
                                                 type="submit"
-                                                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 sm:w-auto {{ $isFavorited ? 'border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-300 dark:hover:bg-amber-500/25' : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:text-amber-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-amber-400/60 dark:hover:text-amber-300' }}"
+                                                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 sm:w-auto {{ $isFavorited ? 'border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-300 dark:hover:bg-amber-500/25' : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:text-amber-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-amber-400/60 dark:hover:text-amber-300' }}"
                                             >
                                                 <svg class="size-5 {{ $isFavorited ? 'fill-current' : 'fill-none' }}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" />
@@ -333,7 +333,7 @@
                                             </button>
                                         </form>
                                     @else
-                                        <a href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false)]) }}" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-amber-300 hover:text-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-amber-400/60 dark:hover:text-amber-300 dark:focus-visible:ring-offset-slate-900 sm:w-auto">
+                                        <a href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false)]) }}" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-amber-300 hover:text-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-amber-400/60 dark:hover:text-amber-300 dark:focus-visible:ring-offset-slate-900 sm:w-auto">
                                             <svg class="size-5 fill-none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" />
                                             </svg>
@@ -343,7 +343,7 @@
                                 @endif
                             </div>
 
-                            <div class="flex flex-wrap gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 lg:max-w-sm lg:justify-end">
+                            <div class="flex flex-wrap gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 lg:max-w-sm lg:justify-end">
                                 <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-white/5">{{ $publicRecommendationsCount }} {{ $publicRecommendationsCount === 1 ? 'recommendation' : 'recommendations' }}</span>
                                 <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-white/5">{{ $favoritesCount }} {{ $favoritesCount === 1 ? 'follower' : 'followers' }}</span>
                                 <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-white/5">{{ $publicVotesCount }} {{ $publicVotesCount === 1 ? 'upvote' : 'upvotes' }}</span>
@@ -390,11 +390,11 @@
                                     class="flex w-full min-w-0 items-start gap-3 px-4 py-4 text-left transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/60"
                                 >
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate font-bold text-slate-950 dark:text-white">{{ auth()->user()->name }}</span>
-                                        <span class="mt-0.5 block truncate text-xs font-semibold text-slate-500 dark:text-slate-400">{{ auth()->user()->email }}</span>
+                                        <span class="block truncate font-semibold text-slate-950 dark:text-white">{{ auth()->user()->name }}</span>
+                                        <span class="mt-0.5 block truncate text-xs font-normal text-slate-500 dark:text-slate-400">{{ auth()->user()->email }}</span>
                                     </span>
 
-                                    <span class="shrink-0 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">{{ $usage['tier'] }}</span>
+                                    <span class="shrink-0 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">{{ $usage['tier'] }}</span>
 
                                     <svg
                                         class="mt-1 size-5 shrink-0 text-slate-400 transition-transform duration-200"
@@ -416,8 +416,8 @@
                                         ['Upvotes left', $usage['votes_remaining'], $usage['votes_limit']],
                                     ] as [$label, $remaining, $limit])
                                         <div class="min-w-0 rounded-xl bg-slate-50 px-2 py-2 text-center dark:bg-slate-950/60">
-                                            <dt class="truncate text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ $label }}</dt>
-                                            <dd class="mt-1 text-sm font-extrabold leading-none text-slate-950 dark:text-white">{{ $remaining }}/{{ $limit }}</dd>
+                                            <dt class="truncate text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ $label }}</dt>
+                                            <dd class="mt-1 text-sm font-semibold leading-none text-slate-950 dark:text-white">{{ $remaining }}/{{ $limit }}</dd>
                                         </div>
                                     @endforeach
                                 </dl>
@@ -434,7 +434,7 @@
                                     x-transition:leave-end="opacity-0 -translate-y-1"
                                     class="border-t border-slate-100 px-4 pb-4 pt-3 dark:border-slate-800"
                                 >
-                                    <h2 class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Your limits</h2>
+                                    <h2 class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Your limits</h2>
                                     <dl class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">
                                         @foreach ([
                                             ['Creator favorites remaining', $usage['reactors_remaining'], $usage['reactors_used'], $usage['reactors_limit']],
@@ -443,13 +443,13 @@
                                         ] as [$label, $remaining, $used, $limit])
                                             <div class="rounded-2xl bg-slate-50 px-3 py-2.5 dark:bg-slate-950/60">
                                                 <dt class="text-xs font-semibold leading-4 text-slate-500 dark:text-slate-400">{{ $label }}</dt>
-                                                <dd class="mt-1 text-lg font-extrabold leading-none text-slate-950 dark:text-white">{{ $remaining }}</dd>
+                                                <dd class="mt-1 text-lg font-semibold leading-none text-slate-950 dark:text-white">{{ $remaining }}</dd>
                                                 <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{{ $used }} of {{ $limit }} used</p>
                                             </div>
                                         @endforeach
                                     </dl>
 
-                                    <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-sm font-bold dark:border-slate-800">
+                                    <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-sm font-medium dark:border-slate-800">
                                         <a href="{{ route('profile.edit') }}" class="inline-flex min-h-10 items-center rounded-xl px-3 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-500 dark:text-indigo-400 dark:hover:bg-indigo-950/60">
                                             Profile
                                         </a>
@@ -465,11 +465,11 @@
                             </div>
                         @else
                             <div class="p-5">
-                                <p class="font-bold text-slate-950 dark:text-white">Join the community</p>
+                                <p class="font-semibold text-slate-950 dark:text-white">Join the community</p>
                                 <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Create a free account to suggest ideas and upvote this journey.</p>
                                 <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                                    <a href="{{ route('register') }}" class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">Register</a>
-                                    <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:border-indigo-200 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-200">Log in</a>
+                                    <a href="{{ route('register') }}" class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">Register</a>
+                                    <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:border-indigo-200 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-200">Log in</a>
                                 </div>
                             </div>
                         @endauth
@@ -477,8 +477,8 @@
 
                         <section class="w-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="recently-published-title">
                             <div class="flex items-center justify-between gap-3">
-                                <h2 id="recently-published-title" class="text-sm font-extrabold text-slate-950 dark:text-white">Recently Published</h2>
-                                <span class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Published</span>
+                                <h2 id="recently-published-title" class="text-sm font-semibold text-slate-950 dark:text-white">Recently Published</h2>
+                                <span class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Published</span>
                             </div>
 
                             @if ($recentPublishedRecommendations->isEmpty())
@@ -499,8 +499,8 @@
                                                 </svg>
                                             </span>
                                             <span class="min-w-0 flex-1">
-                                                <span class="block break-words text-sm font-bold leading-5 text-slate-800 group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-300">{{ $publishedRecommendation->title }}</span>
-                                                <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                                <span class="block break-words text-sm font-medium leading-5 text-slate-800 group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-300">{{ $publishedRecommendation->title }}</span>
+                                                <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-normal text-slate-500 dark:text-slate-400">
                                                     <span>Published {{ $publishedDate->format('M j, Y') }}</span>
                                                     @if ($publishedRecommendation->category)
                                                         <span class="capitalize">{{ $publishedRecommendation->category }}</span>
@@ -512,7 +512,7 @@
                                     @endforeach
                                 </div>
 
-                                <a href="{{ route('creators.published', $creator) }}" class="mt-4 inline-flex text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                                <a href="{{ route('creators.published', $creator) }}" class="mt-4 inline-flex text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                                     View all published
                                 </a>
                             @endif
@@ -537,12 +537,12 @@
                         <div class="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <h2 class="text-base font-extrabold text-slate-950 dark:text-white">Filters</h2>
+                                    <h2 class="text-base font-semibold text-slate-950 dark:text-white">Filters</h2>
                                     @if ($activeFilterCount > 0)
                                         <span
                                             data-active-filter-count="{{ $activeFilterCount }}"
                                             aria-label="{{ $activeFilterCount }} active {{ Str::plural('filter', $activeFilterCount) }}"
-                                            class="inline-flex min-w-6 items-center justify-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-extrabold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                                            class="inline-flex min-w-6 items-center justify-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
                                         >
                                             {{ $activeFilterCount }}
                                         </span>
@@ -558,7 +558,7 @@
                                 x-bind:aria-expanded="open.toString()"
                                 x-bind:aria-label="open ? 'Hide filters' : 'Show filters'"
                                 aria-controls="creator-queue-filters"
-                                class="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:text-indigo-300 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-200 dark:focus-visible:ring-offset-slate-900"
+                                class="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:text-indigo-300 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-200 dark:focus-visible:ring-offset-slate-900"
                             >
                                 <span x-text="open ? 'Hide filters' : 'Show filters'">Show filters</span>
                                 <svg
@@ -589,7 +589,7 @@
                         >
                             <form method="GET" action="{{ route('creator.queue', $creator) }}" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[repeat(14,minmax(0,1fr))] xl:items-end">
                             <div class="md:col-span-2 xl:col-span-4">
-                                <label for="queue-search" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Search recommendations</label>
+                                <label for="queue-search" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Search recommendations</label>
                                 <input
                                     id="queue-search"
                                     name="q"
@@ -601,7 +601,7 @@
                             </div>
 
                             <div class="xl:col-span-2">
-                                <label for="queue-status" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Status</label>
+                                <label for="queue-status" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Status</label>
                                 <select id="queue-status" name="status" class="mt-1 block w-full rounded-xl border-slate-300 bg-white text-slate-950 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white">
                                     <option value="">All statuses</option>
                                     @foreach ($statusOptions as $status => $label)
@@ -612,7 +612,7 @@
 
                             @if ($categoryOptions->isNotEmpty())
                                 <div class="xl:col-span-2">
-                                    <label for="queue-category" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Category</label>
+                                    <label for="queue-category" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Category</label>
                                     <select id="queue-category" name="category" class="mt-1 block w-full rounded-xl border-slate-300 bg-white text-slate-950 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white">
                                         <option value="">All categories</option>
                                         @foreach ($categoryOptions as $category)
@@ -624,7 +624,7 @@
 
                             @if ($tagOptions->isNotEmpty())
                                 <div class="xl:col-span-2">
-                                    <label for="queue-tag" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Tag</label>
+                                    <label for="queue-tag" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Tag</label>
                                     <select id="queue-tag" name="tag" class="mt-1 block w-full rounded-xl border-slate-300 bg-white text-slate-950 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white">
                                         <option value="">All tags</option>
                                         @foreach ($tagOptions as $tag)
@@ -635,7 +635,7 @@
                             @endif
 
                             <div class="xl:col-span-2">
-                                <label for="queue-sort" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Sort</label>
+                                <label for="queue-sort" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Sort</label>
                                 <select id="queue-sort" name="sort" class="mt-1 block w-full rounded-xl border-slate-300 bg-white text-slate-950 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white">
                                     <option value="votes" @selected($filters['sort'] === 'votes')>Most upvotes</option>
                                     <option value="newest" @selected($filters['sort'] === 'newest')>Newest</option>
@@ -645,12 +645,12 @@
                             </div>
 
                             <div class="flex w-full flex-col gap-2 xl:col-span-2 xl:flex-row">
-                                <button type="submit" class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">
+                                <button type="submit" class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">
                                     Apply
                                 </button>
 
                                 @if ($filters['q'] !== '' || $filters['status'] !== '' || $filters['category'] !== '' || $filters['tag'] !== '' || $filters['sort'] !== 'votes')
-                                    <a href="{{ route('creator.queue', $creator) }}" class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300">
+                                    <a href="{{ route('creator.queue', $creator) }}" class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300">
                                         Clear
                                     </a>
                                 @endif
@@ -717,12 +717,12 @@
                                 aria-controls="recommendation-details-{{ $recommendation->id }}"
                                 class="flex min-h-16 w-full min-w-0 cursor-pointer items-start gap-3 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/70 sm:min-h-20 sm:gap-4 sm:px-5"
                             >
-                                <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-extrabold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
+                                <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
                                     {{ $rankLabel }}
                                 </span>
 
                                 <span class="min-w-0 flex-1 pt-0.5">
-                                    <span class="block break-words text-sm font-extrabold leading-5 text-slate-950 dark:text-white sm:text-base sm:leading-6">
+                                    <span class="block break-words text-sm font-semibold leading-snug text-slate-950 dark:text-white sm:text-base">
                                         {{ $recommendation->title }}
                                     </span>
                                     <span class="pointer-events-none mt-2 block min-h-6">
@@ -740,8 +740,8 @@
                                 </span>
 
                                 <span class="shrink-0 pt-0.5 text-right">
-                                    <span class="block text-base font-extrabold leading-none text-slate-950 dark:text-white sm:text-lg">{{ $recommendation->user_picks_count }}</span>
-                                    <span class="mt-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</span>
+                                    <span class="block text-base font-semibold leading-none text-slate-950 dark:text-white sm:text-lg">{{ $recommendation->user_picks_count }}</span>
+                                    <span class="mt-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</span>
                                 </span>
 
                                 <svg
@@ -781,16 +781,16 @@
                     @empty
                         <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-slate-900">
                             @if ($publicRecommendationsCount === 0)
-                                <h2 class="text-lg font-bold text-slate-950 dark:text-white">No recommendations yet. Be the first to suggest something for this journey.</h2>
+                                <h2 class="text-lg font-semibold text-slate-950 dark:text-white">No recommendations yet. Be the first to suggest something for this journey.</h2>
 
                                 @if ($creator->submissions_open)
-                                    <a href="{{ route('recommendations.create', $creator) }}" class="mt-5 inline-flex rounded-full bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-500">
+                                    <a href="{{ route('recommendations.create', $creator) }}" class="mt-5 inline-flex rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-500">
                                         Submit recommendation
                                     </a>
                                 @endif
                             @else
-                                <h2 class="text-lg font-bold text-slate-950 dark:text-white">No recommendations found.</h2>
-                                <a href="{{ route('creator.queue', $creator) }}" class="mt-4 inline-flex text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                                <h2 class="text-lg font-semibold text-slate-950 dark:text-white">No recommendations found.</h2>
+                                <a href="{{ route('creator.queue', $creator) }}" class="mt-4 inline-flex text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                                     Clear filters
                                 </a>
                             @endif

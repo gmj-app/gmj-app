@@ -27,7 +27,7 @@
                     <span class="mx-auto flex h-16 w-20 items-center justify-center rounded-2xl bg-slate-700 text-white shadow-lg">
                         <svg viewBox="0 0 24 24" aria-hidden="true" class="h-8 w-8 fill-current"><path d="M8 5v14l11-7z"/></svg>
                     </span>
-                    <p class="mt-3 text-sm font-bold text-slate-300">Video preview unavailable</p>
+                    <p class="mt-3 text-sm font-medium text-slate-300">Video preview unavailable</p>
                 </div>
             </div>
             <img
@@ -55,7 +55,7 @@
                 <span class="mx-auto flex h-16 w-20 items-center justify-center rounded-2xl bg-slate-700 text-white shadow-lg dark:bg-slate-600">
                     <svg viewBox="0 0 24 24" aria-hidden="true" class="h-8 w-8 fill-current"><path d="M8 5v14l11-7z"/></svg>
                 </span>
-                <span class="mt-3 block text-sm font-bold text-slate-500 dark:text-slate-400">Video preview unavailable</span>
+                <span class="mt-3 block text-sm font-medium text-slate-500 dark:text-slate-400">Video preview unavailable</span>
             </span>
         </a>
     @else
@@ -64,7 +64,7 @@
                 <span class="mx-auto flex h-16 w-20 items-center justify-center rounded-2xl bg-slate-700 text-white shadow-lg dark:bg-slate-600">
                     <svg viewBox="0 0 24 24" aria-hidden="true" class="h-8 w-8 fill-current"><path d="M8 5v14l11-7z"/></svg>
                 </span>
-                <p class="mt-3 text-sm font-bold text-slate-500 dark:text-slate-400">
+                <p class="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                     {{ $recommendation->recommendation_type === 'topic' ? 'Community topic' : 'Video preview unavailable' }}
                 </p>
             </div>
@@ -74,19 +74,19 @@
     <div class="p-5 sm:p-6">
         <div class="flex flex-wrap items-center gap-2">
             @if ($topRequested)
-                <span class="rounded-full bg-fuchsia-100 px-3 py-1.5 text-sm font-bold text-fuchsia-800 dark:bg-fuchsia-950 dark:text-fuchsia-300">Top requested</span>
+                <span class="rounded-full bg-fuchsia-100 px-3 py-1.5 text-sm font-semibold text-fuchsia-800 dark:bg-fuchsia-950 dark:text-fuchsia-300">Top requested</span>
             @endif
             @if ($recommendation->is_pinned)
-                <span class="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">Pinned</span>
+                <span class="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">Pinned</span>
             @endif
             @if ($recommendation->isCreatorAdded())
-                <span class="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Added by creator</span>
+                <span class="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-semibold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Added by creator</span>
             @endif
-            <span class="rounded-full px-3 py-1.5 text-sm font-bold {{ $recommendation->status === 'already_seen' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }}">{{ $recommendation->statusLabel() }}</span>
+            <span class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $recommendation->status === 'already_seen' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }}">{{ $recommendation->statusLabel() }}</span>
         </div>
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
-            <span class="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span class="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                 {{ $recommendation->recommendation_type === 'topic' ? 'Topic' : 'YouTube' }}
             </span>
             @if ($recommendation->category)
@@ -102,17 +102,17 @@
                     </span>
                 @endforeach
                 @if ($recommendation->creatorTags->count() > 3)
-                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400">+{{ $recommendation->creatorTags->count() - 3 }} more</span>
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">+{{ $recommendation->creatorTags->count() - 3 }} more</span>
                 @endif
             </div>
         @endif
 
-        <h3 class="mt-5 break-words text-xl font-extrabold leading-7 text-slate-950 dark:text-white sm:text-2xl">{{ $recommendation->title }}</h3>
+        <h3 class="mt-5 break-words text-xl font-semibold leading-7 text-slate-950 dark:text-white sm:text-2xl">{{ $recommendation->title }}</h3>
 
         @if ($recommendation->channel_title)
-            <p class="mt-2 text-base font-semibold text-slate-600 dark:text-slate-300">from {{ $recommendation->channel_title }}</p>
+            <p class="mt-2 text-base font-medium text-slate-600 dark:text-slate-300">from {{ $recommendation->channel_title }}</p>
         @elseif ($recommendation->artist)
-            <p class="mt-2 text-base font-semibold text-slate-600 dark:text-slate-300">by {{ $recommendation->artist }}</p>
+            <p class="mt-2 text-base font-medium text-slate-600 dark:text-slate-300">by {{ $recommendation->artist }}</p>
         @endif
 
         <div class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
@@ -127,7 +127,7 @@
         <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70">
             <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
                 <div class="min-w-0">
-                    <p class="text-xs font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">Requested by</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Requested by</p>
                     @if ($recommendation->submittedBy)
                         <div class="mt-2 flex min-w-0 items-center gap-3">
                             <x-recommendation-support-avatars
@@ -136,15 +136,15 @@
                                 :include-upvoters="false"
                                 size="md"
                             />
-                            <p class="min-w-0 truncate text-sm font-bold text-slate-700 dark:text-slate-200">{{ $recommendation->submittedBy->name }}</p>
+                            <p class="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{{ $recommendation->submittedBy->name }}</p>
                         </div>
                     @else
-                        <p class="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400">Original requester unavailable.</p>
+                        <p class="mt-2 text-sm font-normal text-slate-500 dark:text-slate-400">Original requester unavailable.</p>
                     @endif
                 </div>
 
                 <div class="min-w-0">
-                    <p class="text-xs font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">Community support</p>
+                    <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Community support</p>
                     <x-recommendation-support-avatars
                         :recommendation="$recommendation"
                         :limit="20"
@@ -173,7 +173,7 @@
         @endif
 
         @if ($recommendation->status === 'scheduled' && $recommendation->scheduled_for)
-            <p class="mt-4 rounded-xl bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+            <p class="mt-4 rounded-xl bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                 Scheduled for {{ $recommendation->scheduled_for->format('M j, Y \a\t g:i A') }}
             </p>
         @endif
@@ -187,21 +187,21 @@
         @if (($recommendation->status === 'published' && $recommendation->published_reaction_url) || ! $recommendation->youtube_url)
             <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5 text-base dark:border-slate-800">
                 @if ($recommendation->status === 'published' && $recommendation->published_reaction_url)
-                    <a href="{{ $recommendation->published_reaction_url }}" target="_blank" rel="noopener noreferrer" class="font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                    <a href="{{ $recommendation->published_reaction_url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                         Watch published content
                     </a>
                 @endif
 
                 @if (! $recommendation->youtube_url)
-                    <span class="font-bold text-slate-500">Topic suggestion</span>
+                    <span class="font-medium text-slate-500">Topic suggestion</span>
                 @endif
             </div>
         @endif
 
         <div class="mt-5 flex flex-col items-stretch gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <p class="text-3xl font-extrabold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</p>
-                <p class="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</p>
+                <p class="text-3xl font-semibold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</p>
+                <p class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</p>
             </div>
 
             @if ($showVotingControls && $recommendation->consumesUpvotes())
@@ -236,7 +236,7 @@
                     </a>
                 @endauth
             @elseif ($showVotingControls)
-                <span class="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-center text-sm font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 sm:w-auto">
+                <span class="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 sm:w-auto">
                     No longer accepting upvotes
                 </span>
             @endif
