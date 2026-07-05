@@ -18,7 +18,7 @@
         <a
             href="{{ $recommendation->youtube_url }}"
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer nofollow ugc"
             class="relative block aspect-video overflow-hidden bg-slate-950"
             aria-label="Watch {{ $recommendation->title }} on YouTube"
         >
@@ -41,6 +41,21 @@
                 <span class="flex h-14 w-20 items-center justify-center rounded-2xl bg-red-600/95 text-white shadow-xl transition group-hover:scale-105 group-hover:bg-red-500">
                     <svg viewBox="0 0 24 24" aria-hidden="true" class="h-7 w-7 fill-current"><path d="M8 5v14l11-7z"/></svg>
                 </span>
+            </span>
+        </a>
+    @elseif ($recommendation->youtube_url)
+        <a
+            href="{{ $recommendation->youtube_url }}"
+            target="_blank"
+            rel="noopener noreferrer nofollow ugc"
+            class="flex aspect-video items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 transition hover:from-slate-200 hover:to-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:from-slate-800 dark:to-slate-950 dark:hover:from-slate-800/80 dark:hover:to-slate-900"
+            aria-label="Open original link for {{ $recommendation->title }}"
+        >
+            <span class="text-center">
+                <span class="mx-auto flex h-16 w-20 items-center justify-center rounded-2xl bg-slate-700 text-white shadow-lg dark:bg-slate-600">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" class="h-8 w-8 fill-current"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+                <span class="mt-3 block text-sm font-bold text-slate-500 dark:text-slate-400">Video preview unavailable</span>
             </span>
         </a>
     @else
@@ -169,35 +184,24 @@
             </p>
         @endif
 
-        <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5 text-base dark:border-slate-800">
-            @if ($recommendation->youtube_url)
-                <a href="{{ $recommendation->youtube_url }}" target="_blank" rel="noopener noreferrer" class="font-bold text-red-600 hover:text-red-500">
-                    {{ $recommendation->youtube_video_id ? 'Watch original' : 'Open original link' }}
-                </a>
-            @endif
+        @if (($recommendation->status === 'published' && $recommendation->published_reaction_url) || ! $recommendation->youtube_url)
+            <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5 text-base dark:border-slate-800">
+                @if ($recommendation->status === 'published' && $recommendation->published_reaction_url)
+                    <a href="{{ $recommendation->published_reaction_url }}" target="_blank" rel="noopener noreferrer" class="font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                        Watch published content
+                    </a>
+                @endif
 
-            @if ($recommendation->status === 'published' && $recommendation->published_reaction_url)
-                <a href="{{ $recommendation->published_reaction_url }}" target="_blank" rel="noopener noreferrer" class="font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-                    Watch published content
-                </a>
-            @endif
-
-            @if (! $recommendation->youtube_url)
-                <span class="font-bold text-slate-500">Topic suggestion</span>
-            @endif
-        </div>
+                @if (! $recommendation->youtube_url)
+                    <span class="font-bold text-slate-500">Topic suggestion</span>
+                @endif
+            </div>
+        @endif
 
         <div class="mt-5 flex flex-col items-stretch gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70 sm:flex-row sm:items-center sm:justify-between">
-            <div class="flex items-center gap-3">
-                <span class="flex size-11 shrink-0 items-center justify-center rounded-xl border {{ $recommendation->consumesUpvotes() && ($recommendation->picked_by_user ?? false) ? 'border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' : 'border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300' }}">
-                    <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6" />
-                    </svg>
-                </span>
-                <div>
-                    <p class="text-3xl font-extrabold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</p>
-                    <p class="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</p>
-                </div>
+            <div>
+                <p class="text-3xl font-extrabold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</p>
+                <p class="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</p>
             </div>
 
             @if ($showVotingControls && $recommendation->consumesUpvotes())
@@ -206,24 +210,29 @@
                         id="recommendation-vote-{{ $recommendation->id }}"
                         method="POST"
                         action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
-                        class="w-full sm:w-auto"
+                        class="self-end"
                     >
                         @csrf
                         <input type="hidden" name="vote_action" value="{{ $recommendation->picked_by_user ? 'remove' : 'add' }}">
                         <button
                             type="submit"
-                            aria-label="{{ $recommendation->picked_by_user ? 'Remove your upvote from this recommendation' : 'Upvote this recommendation' }}"
-                            class="min-h-12 w-full rounded-full px-5 py-3 text-base font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 sm:w-auto {{ $recommendation->picked_by_user ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:bg-slate-900 dark:text-indigo-300' }}"
+                            aria-label="{{ $recommendation->picked_by_user ? 'Remove your upvote' : 'Upvote this recommendation' }}"
+                            class="inline-flex size-12 items-center justify-center rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 {{ $recommendation->picked_by_user ? 'border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 ring-1 ring-indigo-300/60 hover:bg-indigo-500 dark:border-indigo-400 dark:bg-indigo-500 dark:ring-indigo-400/40' : 'border-slate-200 bg-white text-slate-500 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300' }}"
                         >
-                            {{ $recommendation->picked_by_user ? 'Remove upvote' : 'Upvote' }}
+                            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6" />
+                            </svg>
                         </button>
                     </form>
                 @else
                     <a
                         href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id]) }}"
-                        class="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-indigo-200 bg-white px-5 py-3 text-base font-bold text-indigo-700 dark:border-indigo-800 dark:bg-slate-900 dark:text-indigo-300 sm:w-auto"
+                        aria-label="Upvote this recommendation"
+                        class="inline-flex size-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 dark:focus-visible:ring-offset-slate-950"
                     >
-                        Log in to upvote
+                        <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6" />
+                        </svg>
                     </a>
                 @endauth
             @elseif ($showVotingControls)

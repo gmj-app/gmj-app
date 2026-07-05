@@ -105,8 +105,9 @@ class CreatorStarterSuggestionsTest extends TestCase
             ->assertSee('React to this live performance')
             ->assertSee('Explore the history of local bridges')
             ->assertSee('Added by creator')
-            ->assertSee('Open original link')
-            ->assertSee('Log in to upvote');
+            ->assertSee('aria-label="Open original link for Explore the history of local bridges"', false)
+            ->assertSee('rel="noopener noreferrer nofollow ugc"', false)
+            ->assertSee('aria-label="Upvote this recommendation"', false);
 
         $fan = User::factory()->create();
         $youtubeSuggestion = Recommendation::query()

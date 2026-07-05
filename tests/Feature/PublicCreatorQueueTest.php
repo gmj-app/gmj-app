@@ -150,7 +150,8 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('JFragment')
             ->assertSee('Example Artist')
             ->assertSee('Music')
-            ->assertSee('Watch original')
+            ->assertDontSee('Watch original')
+            ->assertSee('rel="noopener noreferrer nofollow ugc"', false)
             ->assertSee('Submitted');
 
         foreach (['approved', 'coming_soon', 'scheduled', 'recorded', 'passed'] as $status) {
@@ -665,7 +666,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertOk()
             ->assertSee('Community topic')
             ->assertSee('Submitted by Example Fan')
-            ->assertSee('Upvote')
+            ->assertSee('aria-label="Upvote this recommendation"', false)
             ->assertSee('Top requested')
             ->assertSee(Str::limit($recommendation->reason, 160));
 
@@ -677,7 +678,8 @@ class PublicCreatorQueueTest extends TestCase
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Remove upvote')
+            ->assertDontSee('Remove upvote')
+            ->assertSee('aria-label="Remove your upvote"', false)
             ->assertSee('name="vote_action" value="remove"', false)
             ->assertSee('1')
             ->assertSee('upvote');
