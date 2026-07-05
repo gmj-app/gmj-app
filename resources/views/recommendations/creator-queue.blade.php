@@ -1,4 +1,4 @@
-<x-public-layout :title="$creator->display_name.' Journey | '.config('app.name', 'Guide My Journey')">
+<x-public-layout :title="$creator->display_name.' | '.config('app.name', 'Guide My Journey')">
     <section class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         <div class="mx-auto min-w-0 max-w-5xl">
             <div
@@ -84,7 +84,7 @@
                             />
 
                             <div class="min-w-0 flex-1">
-                                <h1 class="max-w-3xl break-words text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl">{{ $creator->display_name }}'s Journey</h1>
+                                <h1 class="max-w-3xl break-words text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl">{{ $creator->display_name }}</h1>
 
                                 <div class="mt-3 flex flex-wrap gap-2">
                                     @auth

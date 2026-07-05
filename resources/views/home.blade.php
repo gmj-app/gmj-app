@@ -64,7 +64,7 @@
 
                         <a
                             href="{{ route('creator.queue', $creator) }}"
-                            aria-label="View {{ $creator->display_name }}'s journey"
+                            aria-label="View {{ $creator->display_name }}"
                             class="group flex h-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/60 dark:focus-visible:ring-offset-slate-950"
                         >
                             <div class="relative h-24 shrink-0 overflow-hidden bg-gradient-to-br from-indigo-600 via-sky-600 to-violet-600">

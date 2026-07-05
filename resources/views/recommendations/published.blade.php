@@ -44,7 +44,7 @@
 
                             <div class="min-w-0 pb-0.5">
                                 <a href="{{ route('creator.queue', $creator) }}" class="text-sm font-bold text-white/85 drop-shadow hover:text-white">
-                                    {{ $creator->display_name }}'s Journey
+                                    {{ $creator->display_name }}
                                 </a>
                                 <h1 class="mt-1 break-words text-2xl font-extrabold leading-tight text-white drop-shadow-sm sm:text-3xl">Published Recommendations</h1>
                             </div>
