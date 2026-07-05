@@ -47,6 +47,11 @@ return [
         })(),
     ],
 
+    'youtube' => [
+        'enabled' => (bool) env('YOUTUBE_API_ENABLED', false),
+        'redirect' => env('YOUTUBE_REDIRECT_URI', rtrim((string) env('APP_URL'), '/').'/tools/admin/youtube/callback'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

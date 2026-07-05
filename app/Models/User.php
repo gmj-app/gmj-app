@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -29,6 +30,7 @@ class User extends Authenticatable
         'auth_provider',
         'membership_tier',
         'plan_slug',
+        'can_access_video_tools',
         'password',
     ];
 
@@ -51,6 +53,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'can_access_video_tools' => 'boolean',
             'password' => 'hashed',
         ];
     }
@@ -79,6 +82,11 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Creator::class, 'creator_favorites')
             ->withTimestamps();
+    }
+
+    public function youtubeChannelToken(): HasOne
+    {
+        return $this->hasOne(YoutubeChannelToken::class);
     }
 
     public function ownedCreators(): BelongsToMany

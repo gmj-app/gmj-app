@@ -11,6 +11,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\ToolsAdminController;
+use App\Http\Controllers\YoutubeToolsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -85,6 +87,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/internal/plan-testing', [InternalPlanTestingController::class, 'edit'])
         ->name('internal.plan-testing');
     Route::post('/internal/plan-testing', [InternalPlanTestingController::class, 'update']);
+
+    Route::prefix('tools/admin')
+        ->name('tools.')
+        ->middleware('can:access-video-tools')
+        ->group(function () {
+            Route::get('/', ToolsAdminController::class)->name('admin');
+            Route::get('/youtube', [YoutubeToolsController::class, 'index'])->name('youtube.index');
+            Route::get('/youtube/connect', [YoutubeToolsController::class, 'connect'])->name('youtube.connect');
+            Route::get('/youtube/callback', [YoutubeToolsController::class, 'callback'])->name('youtube.callback');
+            Route::post('/youtube/preview', [YoutubeToolsController::class, 'preview'])->name('youtube.preview');
+            Route::post('/youtube/apply', [YoutubeToolsController::class, 'apply'])->middleware('throttle:3,1')->name('youtube.apply');
+        });
 });
 
 require __DIR__.'/auth.php';
