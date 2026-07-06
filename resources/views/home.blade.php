@@ -32,6 +32,18 @@
                     </button>
                 </div>
             </form>
+
+            <div class="mt-6 flex flex-wrap justify-center gap-3" aria-label="Platform stats">
+                <div class="min-w-36 rounded-2xl border border-slate-200/80 bg-white/70 px-5 py-3 shadow-sm shadow-indigo-950/5 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:shadow-black/20">
+                    <div class="text-2xl font-extrabold leading-none text-slate-950 dark:text-white">{{ number_format($creatorCount) }}</div>
+                    <div class="mt-1 text-sm font-semibold text-indigo-600 dark:text-indigo-300">Creators</div>
+                </div>
+
+                <div class="min-w-36 rounded-2xl border border-slate-200/80 bg-white/70 px-5 py-3 shadow-sm shadow-violet-950/5 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:shadow-black/20">
+                    <div class="text-2xl font-extrabold leading-none text-slate-950 dark:text-white">{{ number_format($guideCount) }}</div>
+                    <div class="mt-1 text-sm font-semibold text-violet-600 dark:text-violet-300">Guides</div>
+                </div>
+            </div>
         </div>
     </section>
 

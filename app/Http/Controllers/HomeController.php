@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Creator;
 use App\Models\Recommendation;
+use App\Services\HomepageStatsService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, HomepageStatsService $homepageStats): View
     {
         $search = trim((string) $request->query('q', ''));
 
@@ -49,6 +50,11 @@ class HomeController extends Controller
             ->groupBy('creator_id')
             ->map(fn ($requests) => $requests->take(3)->values());
 
-        return view('home', compact('creators', 'search', 'topRequests'));
+        [
+            'creatorCount' => $creatorCount,
+            'guideCount' => $guideCount,
+        ] = $homepageStats->counts();
+
+        return view('home', compact('creatorCount', 'creators', 'guideCount', 'search', 'topRequests'));
     }
 }

@@ -80,6 +80,26 @@ class HomepageTest extends TestCase
             ->assertSee(route('logout'), false);
     }
 
+    public function test_homepage_hero_shows_live_platform_stats(): void
+    {
+        Creator::factory()->count(2)->create();
+        Creator::factory()->create([
+            'display_name' => 'Inactive Stats Creator',
+            'status' => 'inactive',
+            'deactivated_at' => now(),
+        ]);
+        User::factory()->count(1001)->create();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('aria-label="Platform stats"', false)
+            ->assertSee('>2</div>', false)
+            ->assertSee('Creators')
+            ->assertSee('>1,001</div>', false)
+            ->assertSee('Guides')
+            ->assertDontSee('Inactive Stats Creator');
+    }
+
     public function test_homepage_ranks_creators_by_votes_on_visible_recommendations(): void
     {
         $popularCreator = Creator::factory()->create([
