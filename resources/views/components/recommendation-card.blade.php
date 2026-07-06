@@ -192,47 +192,61 @@
             </div>
         @endif
 
-        <div class="mt-5 flex flex-col items-stretch gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <p class="text-3xl font-semibold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</p>
-                <p class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</p>
-            </div>
-
+        <div class="mt-5 flex items-center justify-end">
             @if ($showVotingControls && $recommendation->consumesUpvotes())
-                @auth
-                    <form
-                        id="recommendation-vote-{{ $recommendation->id }}"
-                        method="POST"
-                        action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
-                        class="self-end"
-                    >
-                        @csrf
-                        <input type="hidden" name="vote_action" value="{{ $recommendation->picked_by_user ? 'remove' : 'add' }}">
-                        <button
-                            type="submit"
-                            aria-label="{{ $recommendation->picked_by_user ? 'Remove your upvote' : 'Upvote this recommendation' }}"
-                            class="inline-flex size-12 items-center justify-center rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 {{ $recommendation->picked_by_user ? 'border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 ring-1 ring-indigo-300/60 hover:bg-indigo-500 dark:border-indigo-400 dark:bg-indigo-500 dark:ring-indigo-400/40' : 'border-slate-200 bg-white text-slate-500 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300' }}"
+                <div class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+                    @auth
+                        <form
+                            id="recommendation-vote-{{ $recommendation->id }}"
+                            method="POST"
+                            action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
+                            class="shrink-0"
+                        >
+                            @csrf
+                            <input type="hidden" name="vote_action" value="{{ $recommendation->picked_by_user ? 'remove' : 'add' }}">
+                            <button
+                                type="submit"
+                                aria-label="{{ $recommendation->picked_by_user ? 'Remove your upvote' : 'Upvote this recommendation' }}"
+                                class="inline-flex size-12 items-center justify-center rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 {{ $recommendation->picked_by_user ? 'border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 ring-1 ring-indigo-300/60 hover:bg-indigo-500 dark:border-indigo-400 dark:bg-indigo-500 dark:ring-indigo-400/40' : 'border-slate-200 bg-white text-slate-500 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300' }}"
+                            >
+                                <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6" />
+                                </svg>
+                            </button>
+                        </form>
+                    @else
+                        <a
+                            href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id]) }}"
+                            aria-label="Upvote this recommendation"
+                            class="inline-flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 dark:focus-visible:ring-offset-slate-950"
                         >
                             <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6" />
                             </svg>
-                        </button>
-                    </form>
-                @else
-                    <a
-                        href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id]) }}"
-                        aria-label="Upvote this recommendation"
-                        class="inline-flex size-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 dark:focus-visible:ring-offset-slate-950"
-                    >
-                        <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6" />
-                        </svg>
-                    </a>
-                @endauth
+                        </a>
+                    @endauth
+
+                    <div class="leading-tight">
+                        <p class="text-lg font-extrabold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</p>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</p>
+                    </div>
+                </div>
             @elseif ($showVotingControls)
-                <span class="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 sm:w-auto">
-                    No longer accepting upvotes
-                </span>
+                <div class="inline-flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+                    <div class="text-right leading-tight">
+                        <p class="text-lg font-extrabold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</p>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</p>
+                    </div>
+
+                    <span class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                        No longer accepting upvotes
+                    </span>
+                </div>
+            @else
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right leading-tight shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+                    <p class="text-lg font-extrabold leading-none text-slate-950 dark:text-white">{{ $recommendation->user_picks_count }}</p>
+                    <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</p>
+                </div>
             @endif
         </div>
 

@@ -717,6 +717,13 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Community topic')
             ->assertSee('Submitted by Example Fan')
             ->assertSee('aria-label="Upvote this recommendation"', false)
+            ->assertSee('mt-5 flex items-center justify-end', false)
+            ->assertSee('inline-flex items-center gap-3 rounded-2xl', false)
+            ->assertSeeInOrder([
+                'aria-label="Upvote this recommendation"',
+                '>0</p>',
+                '>upvotes</p>',
+            ], false)
             ->assertSee('Top requested')
             ->assertSee('Why this was suggested')
             ->assertSee(Str::limit($reason, 250))
