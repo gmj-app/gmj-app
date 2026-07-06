@@ -16,6 +16,7 @@ class UserPick extends Model
         'user_id',
         'creator_id',
         'recommendation_id',
+        'vote_count',
         'rank',
     ];
 
@@ -23,6 +24,7 @@ class UserPick extends Model
     {
         return [
             'rank' => 'integer',
+            'vote_count' => 'integer',
         ];
     }
 

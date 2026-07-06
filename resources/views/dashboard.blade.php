@@ -20,7 +20,7 @@
                         Fans suggest. Communities vote. Creators decide.
                     </p>
                     <p class="mt-2 text-base leading-7 text-slate-600 dark:text-slate-300">
-                        Use your resources to favorite creators, submit suggestions, and upvote ideas.
+                        Use your resources to favorite creators, submit suggestions, and vote for ideas.
                     </p>
                 </div>
 
@@ -33,7 +33,7 @@
                         </dd>
                     </div>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/50">
-                        <dt class="text-sm font-semibold text-slate-500 dark:text-slate-400">Active upvotes</dt>
+                        <dt class="text-sm font-semibold text-slate-500 dark:text-slate-400">Active votes</dt>
                         <dd class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">{{ $resources['active_upvotes'] }}</dd>
                     </div>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/50">
@@ -99,14 +99,14 @@
 
                     <h2 class="mt-5 text-2xl font-extrabold text-slate-950 dark:text-white">I'm a Guide</h2>
                     <p class="mt-3 leading-7 text-slate-600 dark:text-slate-300">
-                        Favorite creators, suggest ideas or links, and upvote what you want to see next.
+                        Favorite creators, suggest ideas or links, and vote for what you want to see next.
                     </p>
 
                     <ul class="mt-5 space-y-3 text-sm font-medium text-slate-700 dark:text-slate-200">
                         @foreach ([
                             'Favorite creators you follow',
                             'Submit suggestions',
-                            'Upvote active ideas',
+                            'Vote for active ideas',
                             'Track your resources',
                         ] as $benefit)
                             <li class="flex gap-3">

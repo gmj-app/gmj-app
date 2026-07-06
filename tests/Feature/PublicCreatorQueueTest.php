@@ -240,7 +240,7 @@ class PublicCreatorQueueTest extends TestCase
             ->withSession([
                 'recommendation_action' => [
                     'recommendation_id' => $second->id,
-                    'message' => 'Your upvote was added.',
+                    'message' => 'Your vote was added.',
                     'type' => 'added',
                 ],
             ])
@@ -252,11 +252,11 @@ class PublicCreatorQueueTest extends TestCase
                 '1st',
                 'First ranked request',
                 '2',
-                'upvotes',
+                'votes',
                 '2nd',
                 'Second ranked request',
                 '1',
-                'upvote',
+                'vote',
             ])
             ->assertSee('id="recommendation-'.$first->id.'"', false)
             ->assertSee('id="recommendation-details-'.$first->id.'"', false)
@@ -266,7 +266,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('x-data="{ open: false }"', false)
             ->assertSee('x-data="{ open: true }"', false)
             ->assertSee('data-recommendation-action-feedback', false)
-            ->assertSee('Your upvote was added.');
+            ->assertSee('Your vote was added.');
 
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$first->id.'"'));
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
@@ -314,11 +314,11 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('title="Requested by Original Fan"', false)
             ->assertSee('aria-label="Requested by Original Fan"', false)
             ->assertSee('src="https://example.test/avatar-0.jpg"', false)
-            ->assertSee('title="Upvoted by Voter 01"', false)
+            ->assertSee('title="Supported by Voter 01"', false)
             ->assertSee('Community support')
-            ->assertSee('title="14 more upvoters"', false)
-            ->assertSee('title="19 more upvoters"', false)
-            ->assertSee('title="3 more upvoters"', false)
+            ->assertSee('title="14 more supporters"', false)
+            ->assertSee('title="19 more supporters"', false)
+            ->assertSee('title="3 more supporters"', false)
             ->assertDontSee('this.nextElementSibling.hidden', false)
             ->assertDontSee('original@example.test');
     }
@@ -379,7 +379,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('value="scheduled" selected', false)
             ->assertSee('value="documentary" selected', false)
             ->assertSee('value="scheduled" selected', false)
-            ->assertSee('Most upvotes')
+            ->assertSee('Most votes')
             ->assertSee('Newest')
             ->assertSee('Status')
             ->assertSee('Scheduled date')
@@ -550,7 +550,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('No published recommendations yet.');
     }
 
-    public function test_exhausted_upvote_alert_explains_when_upvotes_return(): void
+    public function test_exhausted_vote_alert_explains_when_votes_return(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
         $user = User::factory()->create();
@@ -558,7 +558,7 @@ class PublicCreatorQueueTest extends TestCase
         $errors = (new ViewErrorBag)->put(
             'default',
             new MessageBag([
-                'limit' => ['You’ve used all your upvotes for this creator.'],
+                'limit' => ["You've used all your votes for this creator."],
             ]),
         );
 
@@ -566,8 +566,8 @@ class PublicCreatorQueueTest extends TestCase
             ->withSession(['errors' => $errors])
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('You’ve used all your upvotes for this creator.')
-            ->assertSee('You’ll get upvotes back when recommendations you supported are published or closed.');
+            ->assertSee("You've used all your votes for this creator.")
+            ->assertSee('You’ll get votes back when recommendations you supported are published or closed.');
     }
 
     public function test_published_page_lists_searches_and_selects_published_recommendations(): void
@@ -634,7 +634,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Newer published request')
             ->assertSee('https://www.youtube.com/watch?v=SOURCE00001', false)
             ->assertDontSee('Upvote')
-            ->assertDontSee('No longer accepting upvotes');
+            ->assertDontSee('No longer accepting votes');
 
         $this->get(route('creators.published', ['creator' => $creator, 'q' => 'Creator reaction']))
             ->assertOk()
@@ -717,13 +717,14 @@ class PublicCreatorQueueTest extends TestCase
             ->assertOk()
             ->assertSee('Community topic')
             ->assertSee('Submitted by Example Fan')
-            ->assertSee('aria-label="Upvote this recommendation"', false)
+            ->assertSee('aria-label="Add vote to this recommendation"', false)
             ->assertSee('mt-5 flex items-center justify-end', false)
-            ->assertSee('inline-flex items-center gap-3 rounded-2xl', false)
+            ->assertSee('flex w-full flex-col gap-3 rounded-2xl', false)
             ->assertSeeInOrder([
-                'aria-label="Upvote this recommendation"',
                 '>0</p>',
-                '>upvotes</p>',
+                '>votes total</p>',
+                '>0/3</p>',
+                'aria-label="Add vote to this recommendation"',
             ], false)
             ->assertSee('Top requested')
             ->assertSee('Why this was suggested')
@@ -741,10 +742,10 @@ class PublicCreatorQueueTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertDontSee('Remove upvote')
-            ->assertSee('aria-label="Remove your upvote"', false)
+            ->assertSee('aria-label="Remove vote from this recommendation"', false)
             ->assertSee('name="vote_action" value="remove"', false)
             ->assertSee('1')
-            ->assertSee('upvote');
+            ->assertSee('vote');
     }
 
     public function test_logged_in_guides_can_privately_suggest_an_alternative_video(): void
@@ -1030,9 +1031,9 @@ class PublicCreatorQueueTest extends TestCase
             ->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSee('Remove favorite?')
-            ->assertSee('Unfavoriting removes your upvotes from this creator. Suggestions with no other votes may be removed.')
-            ->assertSee('Remove favorite and upvotes')
-            ->assertSee('Active upvotes on this creator: 1')
+            ->assertSee('Unfavoriting removes your active votes from this creator. Suggestions with no other votes may be removed.')
+            ->assertSee('Remove favorite and active votes')
+            ->assertSee('Active votes on this creator: 1')
             ->assertSee('request-participation-confirmation', false)
             ->assertSee('data-modal-root="participation-confirmation"', false)
             ->assertSee('pointer-events-none invisible', false)
@@ -1044,7 +1045,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->post(route('creator.favorite', $creator))
             ->assertSessionHas(
                 'success',
-                'Creator removed from your favorites. Your upvotes for this creator were removed.',
+                'Creator removed from your favorites. Your active votes for this creator were removed.',
             );
 
         $this->assertDatabaseMissing('creator_favorites', [
@@ -1125,7 +1126,7 @@ class PublicCreatorQueueTest extends TestCase
             ->post(route('creator.favorite', $creator))
             ->assertSessionHas(
                 'success',
-                'Creator removed from your favorites. Your upvotes for this creator were removed.',
+                'Creator removed from your favorites. Your active votes for this creator were removed.',
             );
 
         $this->assertDatabaseMissing('recommendations', ['id' => $pending->id]);
@@ -1133,7 +1134,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertDatabaseHas('recommendations', ['id' => $approvedWithSupport->id]);
         $this->assertDatabaseHas('recommendations', ['id' => $published->id]);
         $this->assertDatabaseHas('recommendations', ['id' => $creatorAdded->id]);
-        $this->assertDatabaseMissing('user_picks', [
+        $this->assertDatabaseHas('user_picks', [
             'recommendation_id' => $published->id,
             'user_id' => $user->id,
         ]);
@@ -1172,7 +1173,7 @@ class PublicCreatorQueueTest extends TestCase
 
         foreach ($recommendations as $recommendation) {
             $this->assertDatabaseHas('recommendations', ['id' => $recommendation->id]);
-            $this->assertDatabaseMissing('user_picks', [
+            $this->assertDatabaseHas('user_picks', [
                 'recommendation_id' => $recommendation->id,
                 'user_id' => $user->id,
             ]);
@@ -1236,7 +1237,7 @@ class PublicCreatorQueueTest extends TestCase
         ]);
     }
 
-    public function test_non_consuming_public_statuses_do_not_show_an_upvote_action(): void
+    public function test_non_consuming_public_statuses_do_not_show_a_vote_action(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
         $recommendation = Recommendation::factory()->create([
@@ -1250,12 +1251,12 @@ class PublicCreatorQueueTest extends TestCase
             ->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSee('Locked recommendation')
-            ->assertSee('No longer accepting upvotes')
-            ->assertDontSee('aria-label="Upvote this recommendation"', false);
+            ->assertSee('No longer accepting votes')
+            ->assertDontSee('aria-label="Add vote to this recommendation"', false);
 
         $this->post(route('recommendations.vote', [$creator, $recommendation]))
             ->assertSessionHasErrors([
-                'limit' => 'This suggestion is no longer accepting upvotes.',
+                'limit' => 'This suggestion is no longer accepting votes.',
             ]);
 
         $this->assertDatabaseCount('user_picks', 0);
@@ -1282,7 +1283,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSeeInOrder([
                 '1 recommendation',
                 '0 followers',
-                '3 upvotes',
+                '3 votes',
             ]);
     }
 

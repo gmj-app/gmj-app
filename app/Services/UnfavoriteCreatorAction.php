@@ -32,9 +32,13 @@ class UnfavoriteCreatorAction
                 ];
             }
 
-            $removedUpvotes = $lockedUser->userPicks()
+            $activeVotesQuery = $lockedUser->userPicks()
                 ->where('creator_id', $creator->id)
-                ->delete();
+                ->whereHas('recommendation', fn ($query) => $query
+                    ->whereIn('status', Recommendation::unfavoriteRemovableStatuses()));
+
+            $removedUpvotes = (int) $activeVotesQuery->sum('vote_count');
+            $activeVotesQuery->delete();
 
             $removedRecommendations = Recommendation::query()
                 ->where('creator_id', $creator->id)

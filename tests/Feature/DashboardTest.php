@@ -24,17 +24,17 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Welcome back, Guide User')
             ->assertSee('Fans suggest. Communities vote. Creators decide.')
-            ->assertSee('Use your resources to favorite creators, submit suggestions, and upvote ideas.')
+            ->assertSee('Use your resources to favorite creators, submit suggestions, and vote for ideas.')
             ->assertSee('My Hub')
             ->assertSee("I'm a Creator", false)
             ->assertSee('Create your creator page so fans can suggest, vote, and help guide what you make next.')
             ->assertSee('Set up creator page')
             ->assertSee('href="'.route('creators.create').'"', false)
             ->assertSee("I'm a Guide", false)
-            ->assertSee('Favorite creators, suggest ideas or links, and upvote what you want to see next.')
+            ->assertSee('Favorite creators, suggest ideas or links, and vote for what you want to see next.')
             ->assertSee('Explore creators')
             ->assertSee('Creator favorites')
-            ->assertSee('Active upvotes')
+            ->assertSee('Active votes')
             ->assertSee('Suggestions submitted')
             ->assertDontSee('Your resources')
             ->assertDontSee('Link Creator Account')
@@ -118,6 +118,7 @@ class DashboardTest extends TestCase
                 'user_id' => $user->id,
                 'creator_id' => $favoriteCreator->id,
                 'recommendation_id' => $recommendation->id,
+                'vote_count' => $recommendation->is($activeRecommendation) ? 2 : 5,
             ]);
         }
 
@@ -125,7 +126,7 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSeeInOrder(['Creator favorites', '2', '/ 3'])
-            ->assertSeeInOrder(['Active upvotes', '1'])
+            ->assertSeeInOrder(['Active votes', '2'])
             ->assertSeeInOrder(['Suggestions submitted', '2'])
             ->assertSee('My favorite creators')
             ->assertSee('Favorite Journey')

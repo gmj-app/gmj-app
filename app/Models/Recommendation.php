@@ -226,6 +226,40 @@ class Recommendation extends Model
             ?? str($this->status)->replace('_', ' ')->title()->toString();
     }
 
+    public function totalVotes(): int
+    {
+        if (array_key_exists('user_picks_count', $this->attributes)) {
+            return (int) $this->attributes['user_picks_count'];
+        }
+
+        if ($this->relationLoaded('userPicks')) {
+            return (int) $this->userPicks->sum('vote_count');
+        }
+
+        return (int) $this->userPicks()->sum('vote_count');
+    }
+
+    public function currentUserVoteCount(?User $user): int
+    {
+        if (! $user) {
+            return 0;
+        }
+
+        if (array_key_exists('current_user_votes_count', $this->attributes)) {
+            return (int) $this->attributes['current_user_votes_count'];
+        }
+
+        if ($this->relationLoaded('userPicks')) {
+            return (int) $this->userPicks
+                ->where('user_id', $user->id)
+                ->sum('vote_count');
+        }
+
+        return (int) $this->userPicks()
+            ->where('user_id', $user->id)
+            ->sum('vote_count');
+    }
+
     public static function upvoteConsumingStatuses(): array
     {
         return self::UPVOTE_CONSUMING_STATUSES;
@@ -249,6 +283,11 @@ class Recommendation extends Model
     public function consumesUpvotes(): bool
     {
         return self::statusConsumesUpvotes($this->status);
+    }
+
+    public function isVotable(): bool
+    {
+        return $this->consumesUpvotes();
     }
 
     public function isCreatorAdded(): bool

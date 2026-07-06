@@ -36,7 +36,7 @@
         $supporters->push([
             'user' => $upvoter,
             'isRequester' => false,
-            'title' => "Upvoted by {$upvoter->name}",
+            'title' => "Supported by {$upvoter->name}",
         ]);
     }
 
@@ -93,8 +93,8 @@
         @if ($hiddenSupportersCount > 0)
             <span
                 class="{{ $morePillClasses }} {{ $stackSpacing }} inline-flex shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 font-semibold text-slate-600 ring-2 ring-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-900"
-                title="{{ $hiddenSupportersCount }} more upvoters"
-                aria-label="{{ $hiddenSupportersCount }} more upvoters"
+                title="{{ $hiddenSupportersCount }} more supporters"
+                aria-label="{{ $hiddenSupportersCount }} more supporters"
             >
                 +{{ $hiddenSupportersCount }}
             </span>
@@ -102,6 +102,6 @@
     </span>
 @elseif ($showEmpty)
     <span {{ $attributes->merge(['class' => 'text-sm font-normal text-slate-500 dark:text-slate-400']) }}>
-        No upvotes yet.
+        No votes yet.
     </span>
 @endif

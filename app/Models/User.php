@@ -177,11 +177,11 @@ class User extends Authenticatable
 
     public function votesUsedFor(Creator $creator): int
     {
-        return $this->userPicks()
+        return (int) $this->userPicks()
             ->where('creator_id', $creator->id)
             ->whereHas('recommendation', fn ($query) => $query
                 ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
-            ->count();
+            ->sum('vote_count');
     }
 
     public function votesRemainingFor(Creator $creator): int
@@ -208,5 +208,12 @@ class User extends Authenticatable
     public function canFavoriteMoreCreators(): bool
     {
         return $this->creatorFavoritesRemaining() > 0;
+    }
+
+    public function votesAllocatedToRecommendation(Recommendation $recommendation): int
+    {
+        return (int) $this->userPicks()
+            ->where('recommendation_id', $recommendation->id)
+            ->sum('vote_count');
     }
 }

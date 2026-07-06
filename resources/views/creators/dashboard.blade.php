@@ -120,7 +120,7 @@
 
                                         <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-slate-400">
                                             <span>Submitted {{ $recommendation->created_at->format('M j, Y') }}</span>
-                                            <span>{{ $recommendation->user_picks_count }} {{ Str::plural('vote', $recommendation->user_picks_count) }}</span>
+                                            <span>{{ $recommendation->totalVotes() }} {{ Str::plural('vote', $recommendation->totalVotes()) }}</span>
                                         </div>
                                     </div>
 

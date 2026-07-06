@@ -98,18 +98,18 @@ class MembershipLimitsTest extends TestCase
             ]);
         $user = User::factory()->create();
 
-        foreach ($recommendations->take(3) as $recommendation) {
+        foreach (range(1, 3) as $vote) {
             $this->actingAs($user)
-                ->post(route('recommendations.vote', [$creator, $recommendation]))
+                ->post(route('recommendations.vote', [$creator, $recommendations->first()]))
                 ->assertRedirect(
-                    route('creator.queue', $creator)."#recommendation-{$recommendation->id}",
+                    route('creator.queue', $creator).'#recommendation-'.$recommendations->first()->id,
                 );
         }
 
         $this->actingAs($user)
             ->post(route('recommendations.vote', [$creator, $recommendations->last()]))
             ->assertSessionHasErrors([
-                'limit' => 'You’ve used all your upvotes for this creator.',
+                'limit' => "You've used all your votes for this creator. You'll get them back when supported recommendations are published or closed.",
             ]);
 
         $this->actingAs($user)
@@ -119,7 +119,7 @@ class MembershipLimitsTest extends TestCase
             ->assertSessionMissing('success')
             ->assertSessionHas('recommendation_action', [
                 'recommendation_id' => $recommendations->first()->id,
-                'message' => 'Your upvote was removed.',
+                'message' => 'Your vote was removed.',
                 'type' => 'removed',
             ]);
 
@@ -128,11 +128,17 @@ class MembershipLimitsTest extends TestCase
             ->assertSessionMissing('success')
             ->assertSessionHas('recommendation_action', [
                 'recommendation_id' => $recommendations->last()->id,
-                'message' => 'Your upvote was added.',
+                'message' => 'Your vote was added.',
                 'type' => 'added',
             ]);
 
-        $this->assertSame(3, $user->userPicks()->count());
+        $this->assertSame(2, $user->userPicks()->count());
+        $this->assertDatabaseHas('user_picks', [
+            'user_id' => $user->id,
+            'recommendation_id' => $recommendations->first()->id,
+            'vote_count' => 2,
+        ]);
+        $this->assertSame(3, $user->fresh()->votesUsedFor($creator));
     }
 
     public function test_submission_uses_a_suggestion_slot_without_consuming_an_upvote(): void
@@ -160,10 +166,11 @@ class MembershipLimitsTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSeeInOrder(['Suggestions left', '2/3'])
-            ->assertSeeInOrder(['Upvotes left', '3/3'])
+            ->assertSeeInOrder(['Votes left', '3/3'])
             ->assertSee('Independent resources')
             ->assertSee('name="vote_action" value="add"', false)
-            ->assertDontSee('aria-label="Remove your upvote"', false);
+            ->assertSee('aria-label="Remove vote from this recommendation"', false)
+            ->assertSee('0/3');
     }
 
     public function test_user_can_explicitly_upvote_after_submitting_without_changing_suggestion_usage(): void
@@ -185,7 +192,7 @@ class MembershipLimitsTest extends TestCase
             'vote_action' => 'add',
         ])->assertSessionHas('recommendation_action', [
             'recommendation_id' => $recommendation->id,
-            'message' => 'Your upvote was added.',
+            'message' => 'Your vote was added.',
             'type' => 'added',
         ]);
 
@@ -198,9 +205,10 @@ class MembershipLimitsTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSeeInOrder(['Suggestions left', '2/3'])
-            ->assertSeeInOrder(['Upvotes left', '2/3'])
+            ->assertSeeInOrder(['Votes left', '2/3'])
             ->assertSee('name="vote_action" value="remove"', false)
-            ->assertSee('aria-label="Remove your upvote"', false);
+            ->assertSee('aria-label="Remove vote from this recommendation"', false)
+            ->assertSee('1/3');
     }
 
     public function test_removing_an_upvote_after_submitting_returns_only_the_upvote_slot(): void
@@ -225,7 +233,7 @@ class MembershipLimitsTest extends TestCase
             'vote_action' => 'remove',
         ])->assertSessionHas('recommendation_action', [
             'recommendation_id' => $recommendation->id,
-            'message' => 'Your upvote was removed.',
+            'message' => 'Your vote was removed.',
             'type' => 'removed',
         ]);
 
@@ -316,7 +324,7 @@ class MembershipLimitsTest extends TestCase
             'vote_action' => 'add',
         ])->assertSessionHas('recommendation_action', [
             'recommendation_id' => $recommendation->id,
-            'message' => 'Your upvote was added.',
+            'message' => 'Your vote was added.',
             'type' => 'added',
         ]);
 
@@ -349,13 +357,13 @@ class MembershipLimitsTest extends TestCase
             ->assertSee('x-bind:aria-expanded="open.toString()"', false)
             ->assertSee('Favorites left')
             ->assertSee('Suggestions left')
-            ->assertSee('Upvotes left')
+            ->assertSee('Votes left')
             ->assertSee('5/5')
             ->assertSee('4/5')
             ->assertSee('Your limits')
             ->assertSee('Creator favorites remaining')
             ->assertSee('Suggestions remaining')
-            ->assertSee('Upvotes remaining')
+            ->assertSee('Votes remaining')
             ->assertSee('1 of 5 used')
             ->assertSee('0 of 5 used')
             ->assertSee('Profile')
@@ -365,7 +373,7 @@ class MembershipLimitsTest extends TestCase
             ->assertSeeInOrder([
                 'Favorites left',
                 'Suggestions left',
-                'Upvotes left',
+                'Votes left',
                 'Your limits',
                 'Profile',
                 'Log out',
@@ -390,7 +398,7 @@ class MembershipLimitsTest extends TestCase
             ->assertSessionMissing('success')
             ->assertSessionHas('recommendation_action', [
                 'recommendation_id' => $recommendation->id,
-                'message' => 'Your upvote was added.',
+                'message' => 'Your vote was added.',
                 'type' => 'added',
             ]);
 
@@ -408,7 +416,7 @@ class MembershipLimitsTest extends TestCase
             'vote_action' => 'add',
         ])->assertSessionHas('recommendation_action', [
             'recommendation_id' => $recommendation->id,
-            'message' => 'Your upvote was added.',
+            'message' => 'Your vote was added.',
             'type' => 'added',
         ]);
 
@@ -421,16 +429,15 @@ class MembershipLimitsTest extends TestCase
             ->assertOk()
             ->assertDontSee('1 user has favorited this creator.')
             ->assertSee('1 follower')
-            ->assertDontSee('Remove upvote')
-            ->assertSee('aria-label="Remove your upvote"', false)
+            ->assertSee('aria-label="Remove vote from this recommendation"', false)
             ->assertSee('name="vote_action" value="remove"', false)
             ->assertDontSee('data-global-success-alert', false)
             ->assertSee('data-recommendation-action-feedback', false)
-            ->assertSee('Your upvote was added.')
+            ->assertSee('Your vote was added.')
             ->assertSeeInOrder(['Favorites left', '2/3'])
-            ->assertSeeInOrder(['Upvotes left', '2/3'])
+            ->assertSeeInOrder(['Votes left', '1/3'])
             ->assertSeeInOrder(['Creator favorites remaining', '2', '1 of 3 used'])
-            ->assertSeeInOrder(['Upvotes remaining', '2', '1 of 3 used']);
+            ->assertSeeInOrder(['Votes remaining', '1', '2 of 3 used']);
 
         $this->assertSame(
             1,
@@ -468,7 +475,7 @@ class MembershipLimitsTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSee('name="vote_action" value="add"', false)
-            ->assertSee('Upvote')
+            ->assertSee('Add vote to this recommendation')
             ->assertDontSee('Continue and upvote')
             ->assertDontSee('Upvoting on this journey will add this creator');
     }
@@ -605,7 +612,7 @@ class MembershipLimitsTest extends TestCase
         $this->actingAs($user)
             ->post(route('recommendations.vote', [$creator, $recommendations->last()]))
             ->assertSessionHasErrors([
-                'limit' => 'You’ve used all your upvotes for this creator.',
+                'limit' => "You've used all your votes for this creator. You'll get them back when supported recommendations are published or closed.",
             ]);
 
         $this->assertDatabaseMissing('creator_favorites', [
@@ -636,7 +643,7 @@ class MembershipLimitsTest extends TestCase
             ->post(route('recommendations.vote', [$creator, $recommendation]))
             ->assertSessionHas('recommendation_action', [
                 'recommendation_id' => $recommendation->id,
-                'message' => 'Your upvote was added.',
+                'message' => 'Your vote was added.',
                 'type' => 'added',
             ]);
 

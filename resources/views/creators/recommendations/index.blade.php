@@ -216,7 +216,7 @@
                                             <button class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">Save status</button>
                                         </form>
                                     </td>
-                                    <td class="px-3 py-4 font-semibold text-gray-900 dark:text-slate-50">{{ $recommendation->user_picks_count }}</td>
+                                    <td class="px-3 py-4 font-semibold text-gray-900 dark:text-slate-50">{{ $recommendation->totalVotes() }}</td>
                                     <td class="break-words px-3 py-4">
                                         @if ($recommendation->isCreatorAdded())
                                             <p class="font-medium text-violet-700 dark:text-violet-300">Creator-added</p>

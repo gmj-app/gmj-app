@@ -59,7 +59,7 @@
         </span>
 
         <span class="mt-auto pt-4 text-xs font-bold text-slate-500 dark:text-slate-400">
-            {{ $recommendation->user_picks_count }} {{ Str::plural('vote', $recommendation->user_picks_count) }}
+            {{ $recommendation->totalVotes() }} {{ Str::plural('vote', $recommendation->totalVotes()) }}
         </span>
     </span>
 </a>

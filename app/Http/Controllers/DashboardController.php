@@ -27,7 +27,7 @@ class DashboardController extends Controller
             'active_upvotes' => $user->userPicks()
                 ->whereHas('recommendation', fn ($query) => $query
                     ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
-                ->count(),
+                ->sum('vote_count'),
             'suggestions_submitted' => $user->recommendationsSubmitted()
                 ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
                 ->count(),

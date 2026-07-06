@@ -78,7 +78,7 @@
             @endif
             <span>Submitted {{ $recommendation->created_at->format('M j, Y') }}</span>
             <span>Published {{ $publishedDate->format('M j, Y') }}</span>
-            <span>{{ $recommendation->user_picks_count }} {{ Str::plural('vote', $recommendation->user_picks_count) }} when published</span>
+            <span>{{ $recommendation->totalVotes() }} {{ Str::plural('vote', $recommendation->totalVotes()) }} when published</span>
         </div>
 
         @if ($recommendation->recommendation_type === 'topic' && $recommendation->description)

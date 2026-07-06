@@ -150,9 +150,9 @@
                                                             formId: $el.id,
                                                             mode: 'confirm',
                                                             title: 'Remove favorite?',
-                                                            body: @js("Unfavoriting removes your upvotes from this creator. Suggestions with no other votes may be removed."),
-                                                            resourceLine: @js("Active upvotes on this creator: {$usage['votes_used']}"),
-                                                            confirmLabel: 'Remove favorite and upvotes',
+                                                            body: @js("Unfavoriting removes your active votes from this creator. Suggestions with no other votes may be removed."),
+                                                            resourceLine: @js("Active votes on this creator: {$usage['votes_used']}"),
+                                                            confirmLabel: 'Remove favorite and active votes',
                                                             destructive: true,
                                                         });
                                                     "
@@ -185,7 +185,7 @@
                         <div class="flex flex-wrap gap-2 text-xs font-medium text-white/90 lg:max-w-xs lg:shrink-0 lg:justify-end">
                             <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicRecommendationsCount }} {{ $publicRecommendationsCount === 1 ? 'recommendation' : 'recommendations' }}</span>
                             <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $favoritesCount }} {{ $favoritesCount === 1 ? 'follower' : 'followers' }}</span>
-                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicVotesCount }} {{ $publicVotesCount === 1 ? 'upvote' : 'upvotes' }}</span>
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicVotesCount }} {{ Str::plural('vote', $publicVotesCount) }}</span>
                         </div>
                     </div>
                 </x-creator-hero-background>
@@ -268,7 +268,7 @@
                                         <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="m7 11 5-7 5 7h-3v8h-4v-8H7Z" />
                                         </svg>
-                                        <span>{{ $publicVotesCount }} {{ $publicVotesCount === 1 ? 'upvote' : 'upvotes' }}</span>
+                                        <span>{{ $publicVotesCount }} {{ Str::plural('vote', $publicVotesCount) }}</span>
                                     </div>
                                 </div>
                             </section>
@@ -356,9 +356,9 @@
             @error('limit')
                 <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
                     <p>{{ $message }}</p>
-                    @if ($message === 'You’ve used all your upvotes for this creator.')
+                    @if (str_contains((string) $message, 'used all your votes for this creator'))
                         <p class="mt-1 text-xs font-medium leading-5 text-red-600 dark:text-red-300">
-                            You’ll get upvotes back when recommendations you supported are published or closed.
+                            You’ll get votes back when recommendations you supported are published or closed.
                         </p>
                     @endif
                 </div>
@@ -406,7 +406,7 @@
                                     @foreach ([
                                         ['Favorites left', $usage['reactors_remaining'], $usage['reactors_limit']],
                                         ['Suggestions left', $usage['suggestions_remaining'], $usage['suggestions_limit']],
-                                        ['Upvotes left', $usage['votes_remaining'], $usage['votes_limit']],
+                                        ['Votes left', $usage['votes_remaining'], $usage['votes_limit']],
                                     ] as [$label, $remaining, $limit])
                                         <div class="min-w-0 rounded-xl bg-slate-50 px-2 py-2 text-center dark:bg-slate-950/60">
                                             <dt class="truncate text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ $label }}</dt>
@@ -432,7 +432,7 @@
                                         @foreach ([
                                             ['Creator favorites remaining', $usage['reactors_remaining'], $usage['reactors_used'], $usage['reactors_limit']],
                                             ['Suggestions remaining', $usage['suggestions_remaining'], $usage['suggestions_used'], $usage['suggestions_limit']],
-                                            ['Upvotes remaining', $usage['votes_remaining'], $usage['votes_used'], $usage['votes_limit']],
+                                            ['Votes remaining', $usage['votes_remaining'], $usage['votes_used'], $usage['votes_limit']],
                                         ] as [$label, $remaining, $used, $limit])
                                             <div class="rounded-2xl bg-slate-50 px-3 py-2.5 dark:bg-slate-950/60">
                                                 <dt class="text-xs font-semibold leading-4 text-slate-500 dark:text-slate-400">{{ $label }}</dt>
@@ -459,7 +459,7 @@
                         @else
                             <div class="p-5">
                                 <p class="font-semibold text-slate-950 dark:text-white">Join the community</p>
-                                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Create a free account to suggest ideas and upvote this journey.</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Create a free account to suggest ideas and vote on this journey.</p>
                                 <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
                                     <a href="{{ route('register') }}" class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">Register</a>
                                     <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:border-indigo-200 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-200">Log in</a>
@@ -502,7 +502,7 @@
                                                     @if ($publishedRecommendation->category)
                                                         <span class="capitalize">{{ $publishedRecommendation->category }}</span>
                                                     @endif
-                                                    <span>{{ $publishedRecommendation->user_picks_count }} {{ Str::plural('vote', $publishedRecommendation->user_picks_count) }}</span>
+                                                    <span>{{ $publishedRecommendation->totalVotes() }} {{ Str::plural('vote', $publishedRecommendation->totalVotes()) }}</span>
                                                 </span>
                                             </span>
                                         </a>
@@ -628,7 +628,7 @@
                             <div class="xl:col-span-2">
                                 <label for="queue-sort" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Sort</label>
                                 <select id="queue-sort" name="sort" class="mt-1 block w-full rounded-xl border-slate-300 bg-white text-slate-950 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white">
-                                    <option value="votes" @selected($filters['sort'] === 'votes')>Most upvotes</option>
+                                    <option value="votes" @selected($filters['sort'] === 'votes')>Most votes</option>
                                     <option value="newest" @selected($filters['sort'] === 'newest')>Newest</option>
                                     <option value="status" @selected($filters['sort'] === 'status')>Status</option>
                                     <option value="scheduled" @selected($filters['sort'] === 'scheduled')>Scheduled date</option>
@@ -731,8 +731,8 @@
                                 </span>
 
                                 <span class="shrink-0 pt-0.5 text-right">
-                                    <span class="block text-base font-semibold leading-none text-slate-950 dark:text-white sm:text-lg">{{ $recommendation->user_picks_count }}</span>
-                                    <span class="mt-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('upvote', $recommendation->user_picks_count) }}</span>
+                                    <span class="block text-base font-semibold leading-none text-slate-950 dark:text-white sm:text-lg">{{ $recommendation->totalVotes() }}</span>
+                                    <span class="mt-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $recommendation->totalVotes()) }}</span>
                                 </span>
 
                                 <svg

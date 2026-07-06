@@ -25,6 +25,7 @@ class UserPickFactory extends Factory
             'creator_id' => fn (array $attributes) => Recommendation::findOrFail(
                 $attributes['recommendation_id']
             )->creator_id,
+            'vote_count' => 1,
             'rank' => fake()->optional()->numberBetween(1, 10),
         ];
     }

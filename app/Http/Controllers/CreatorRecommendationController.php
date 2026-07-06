@@ -41,7 +41,7 @@ class CreatorRecommendationController extends Controller
 
         $recommendations = $creator->recommendations()
             ->with(['submittedBy:id,name,email', 'creatorTags:id,creator_id,name,slug'])
-            ->withCount('userPicks')
+            ->withSum('userPicks as user_picks_count', 'vote_count')
             ->when($filters['q'] ?? null, function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
@@ -98,8 +98,8 @@ class CreatorRecommendationController extends Controller
 
         $publishedAttributes = $this->publishedAttributesFromRequest($validated, $recommendation, $request->exists('published_reaction_url'));
 
-        $releasedUpvotes = DB::transaction(function () use ($creator, $recommendation, $request, $shouldSyncTags, $tagInput, $validated, $publishedAttributes): int {
-            $releasedUpvotes = $this->updateRecommendationAndReleaseUpvotes($recommendation, [
+        $releasedVotes = DB::transaction(function () use ($creator, $recommendation, $request, $shouldSyncTags, $tagInput, $validated, $publishedAttributes): int {
+            $releasedVotes = $this->updateRecommendation($recommendation, [
                 ...$validated,
                 ...$publishedAttributes,
                 'is_pinned' => $request->boolean('is_pinned'),
@@ -114,12 +114,12 @@ class CreatorRecommendationController extends Controller
                 $this->tags->syncFromCommaSeparated($creator, $recommendation, $tagInput);
             }
 
-            return $releasedUpvotes;
+            return $releasedVotes;
         });
 
         return back()->with(
             'success',
-            $this->statusMessage('Recommendation updated.', $releasedUpvotes),
+            $this->statusMessage('Recommendation updated.', $releasedVotes),
         );
     }
 
@@ -139,7 +139,7 @@ class CreatorRecommendationController extends Controller
 
         $publishedAttributes = $this->publishedAttributesFromRequest($validated, $recommendation, $request->exists('published_reaction_url'));
 
-        $releasedUpvotes = $this->updateRecommendationAndReleaseUpvotes($recommendation, [
+        $releasedVotes = $this->updateRecommendation($recommendation, [
             'status' => $validated['status'],
             'scheduled_for' => $validated['status'] === 'scheduled'
                 ? ($validated['scheduled_for'] ?? $recommendation->scheduled_for)
@@ -154,7 +154,7 @@ class CreatorRecommendationController extends Controller
 
         return back()->with(
             'success',
-            $this->statusMessage('Status updated.', $releasedUpvotes),
+            $this->statusMessage('Status updated.', $releasedVotes),
         );
     }
 
@@ -170,7 +170,7 @@ class CreatorRecommendationController extends Controller
             'moderation_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $releasedUpvotes = $this->updateRecommendationAndReleaseUpvotes($recommendation, [
+        $releasedVotes = $this->updateRecommendation($recommendation, [
             ...$validated,
             'moderation_reason' => $validated['moderation_reason'] ?? 'creator_hidden',
             'status' => 'hidden',
@@ -180,7 +180,7 @@ class CreatorRecommendationController extends Controller
 
         return back()->with(
             'success',
-            $this->statusMessage('Recommendation hidden.', $releasedUpvotes),
+            $this->statusMessage('Recommendation hidden.', $releasedVotes),
         );
     }
 
@@ -201,7 +201,7 @@ class CreatorRecommendationController extends Controller
     /**
      * @param  array<string, mixed>  $attributes
      */
-    private function updateRecommendationAndReleaseUpvotes(
+    private function updateRecommendation(
         Recommendation $recommendation,
         array $attributes,
     ): int {
@@ -210,26 +210,26 @@ class CreatorRecommendationController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($recommendation->id);
             $newStatus = $attributes['status'] ?? $lockedRecommendation->status;
-            $shouldReleaseUpvotes = $lockedRecommendation->shouldClearUpvotesWhenStatusIs($newStatus);
+            $releasedVotes = $lockedRecommendation->shouldClearUpvotesWhenStatusIs($newStatus)
+                ? (int) $lockedRecommendation->userPicks()->sum('vote_count')
+                : 0;
 
             $lockedRecommendation->update($attributes);
 
-            return $shouldReleaseUpvotes
-                ? $lockedRecommendation->userPicks()->delete()
-                : 0;
+            return $releasedVotes;
         });
     }
 
-    private function statusMessage(string $message, int $releasedUpvotes): string
+    private function statusMessage(string $message, int $releasedVotes): string
     {
-        if ($releasedUpvotes === 0) {
+        if ($releasedVotes === 0) {
             return $message;
         }
 
-        $upvotes = str('upvote')->plural($releasedUpvotes);
-        $verb = $releasedUpvotes === 1 ? 'was' : 'were';
+        $votes = str('vote')->plural($releasedVotes);
+        $verb = $releasedVotes === 1 ? 'is' : 'are';
 
-        return "{$message} {$releasedUpvotes} {$upvotes} {$verb} released back to users.";
+        return "{$message} {$releasedVotes} {$votes} {$verb} no longer active and returned to Guides.";
     }
 
     /**

@@ -52,10 +52,10 @@ class RecommendationController extends Controller
         $publicRecommendationsCount = $creator->recommendations()
             ->whereIn('status', $activePublicStatuses)
             ->count();
-        $publicVotesCount = $creator->userPicks()
+        $publicVotesCount = (int) $creator->userPicks()
             ->whereHas('recommendation', fn ($query) => $query
                 ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
-            ->count();
+            ->sum('vote_count');
         $ownsCreator = $request->user()
             ? $creator->creatorOwners()
                 ->where('user_id', $request->user()->id)
@@ -65,7 +65,7 @@ class RecommendationController extends Controller
         $topRequestedId = $creator->recommendations()
             ->whereIn('status', $activePublicStatuses)
             ->whereIn('status', Recommendation::upvoteConsumingStatuses())
-            ->withCount('userPicks')
+            ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('user_picks_count')
             ->orderByDesc('is_pinned')
             ->latest()
@@ -111,12 +111,16 @@ class RecommendationController extends Controller
                     ->with(['user:id,name,avatar_url'])
                     ->latest(),
             ]))
-            ->withCount('userPicks');
+            ->withSum('userPicks as user_picks_count', 'vote_count');
 
         if ($request->user()) {
-            $recommendationsQuery->withExists([
-                'userPicks as picked_by_user' => fn ($query) => $query->where('user_id', $request->user()->id),
-            ]);
+            $recommendationsQuery
+                ->withExists([
+                    'userPicks as picked_by_user' => fn ($query) => $query->where('user_id', $request->user()->id),
+                ])
+                ->withSum([
+                    'userPicks as current_user_votes_count' => fn ($query) => $query->where('user_id', $request->user()->id),
+                ], 'vote_count');
         }
 
         $recommendationsQuery->orderByDesc('is_pinned');
@@ -140,7 +144,7 @@ class RecommendationController extends Controller
             ->get();
         $recentPublishedRecommendations = $creator->recommendations()
             ->where('status', 'published')
-            ->withCount('userPicks')
+            ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('published_at')
             ->orderByDesc('updated_at')
             ->latest()
@@ -206,7 +210,7 @@ class RecommendationController extends Controller
                 });
             })
             ->with(['submittedBy:id,name', 'creatorTags:id,creator_id,name,slug'])
-            ->withCount('userPicks')
+            ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('published_at')
             ->orderByDesc('updated_at')
             ->latest();
@@ -348,9 +352,9 @@ class RecommendationController extends Controller
             404,
         );
 
-        if (! $recommendation->consumesUpvotes()) {
+        if (! $recommendation->isVotable()) {
             throw ValidationException::withMessages([
-                'limit' => 'This suggestion is no longer accepting upvotes.',
+                'limit' => 'This suggestion is no longer accepting votes.',
             ]);
         }
 
@@ -359,16 +363,32 @@ class RecommendationController extends Controller
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
             $existingPick = $user->userPicks()
                 ->where('recommendation_id', $recommendation->id)
+                ->lockForUpdate()
                 ->first();
+            $voteAction ??= 'add';
 
             if ($existingPick) {
-                if ($voteAction === 'add') {
-                    return false;
+                if ($voteAction === 'remove') {
+                    if ($existingPick->vote_count > 1) {
+                        $existingPick->decrement('vote_count');
+
+                        return true;
+                    }
+
+                    $existingPick->delete();
+
+                    return true;
                 }
 
-                $existingPick->delete();
+                if ($user->votesRemainingFor($creator) === 0) {
+                    throw ValidationException::withMessages([
+                        'limit' => "You've used all your votes for this creator. You'll get them back when supported recommendations are published or closed.",
+                    ]);
+                }
 
-                return true;
+                $existingPick->increment('vote_count');
+
+                return false;
             }
 
             if ($voteAction === 'remove') {
@@ -379,7 +399,7 @@ class RecommendationController extends Controller
 
             if ($user->votesRemainingFor($creator) === 0) {
                 throw ValidationException::withMessages([
-                    'limit' => 'You’ve used all your upvotes for this creator.',
+                    'limit' => "You've used all your votes for this creator. You'll get them back when supported recommendations are published or closed.",
                 ]);
             }
 
@@ -387,6 +407,7 @@ class RecommendationController extends Controller
                 'recommendation_id' => $recommendation->id,
             ], [
                 'creator_id' => $creator->id,
+                'vote_count' => 1,
             ]);
 
             return false;
@@ -396,7 +417,7 @@ class RecommendationController extends Controller
             ->to(route('creator.queue', $creator)."#recommendation-{$recommendation->id}")
             ->with('recommendation_action', [
                 'recommendation_id' => $recommendation->id,
-                'message' => $removed ? 'Your upvote was removed.' : 'Your upvote was added.',
+                'message' => $removed ? 'Your vote was removed.' : 'Your vote was added.',
                 'type' => $removed ? 'removed' : 'added',
             ]);
     }
@@ -422,7 +443,7 @@ class RecommendationController extends Controller
             return back()->with(
                 'success',
                 $result['removed_upvotes'] > 0
-                    ? 'Creator removed from your favorites. Your upvotes for this creator were removed.'
+                    ? 'Creator removed from your favorites. Your active votes for this creator were removed.'
                     : 'Creator removed from your favorites.',
             );
         }

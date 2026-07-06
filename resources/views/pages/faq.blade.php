@@ -18,23 +18,23 @@
             'For Fans and Guides' => [
                 [
                     'What is a Guide?',
-                    'A Guide is a fan who helps shape a creator\'s journey. Guides can favorite creators, submit suggestions, and upvote active ideas they want to see next.',
+                    'A Guide is a fan who helps shape a creator\'s journey. Guides can favorite creators, submit suggestions, and vote for active ideas they want to see next.',
                 ],
                 [
                     'What are resources?',
-                    'Resources are the limits that help keep participation meaningful. Your resources include how many creators you can favorite, how many suggestions you can submit, and how many active upvotes you can use for each creator.',
+                    'Resources are the limits that help keep participation meaningful. Your resources include how many creators you can favorite, how many suggestions you can submit, and how many active votes you can use for each creator.',
                 ],
                 [
-                    'Why do I have a limited number of upvotes?',
-                    'Limited upvotes make each vote more meaningful. Instead of every idea getting a casual like, Guides choose the suggestions they care about most.',
+                    'Why do I have a limited number of votes?',
+                    'Limited votes make each choice more meaningful. Instead of every idea getting a casual like, Guides choose the suggestions they care about most.',
                 ],
                 [
                     'Why do I need to favorite a creator before suggesting or upvoting?',
-                    'Favoriting a creator means you want to participate in that creator\'s journey. Once you favorite a creator, you can use your suggestion and upvote resources on that creator\'s page.',
+                    'Favoriting a creator means you want to participate in that creator\'s journey. Once you favorite a creator, you can use your suggestion and vote resources on that creator\'s page.',
                 ],
                 [
                     'What happens if I unfavorite a creator?',
-                    'If you unfavorite a creator, your active upvotes on that creator\'s suggestions are removed. This frees that creator slot so you can favorite someone else.',
+                    'If you unfavorite a creator, your active votes on that creator\'s suggestions are removed. This frees that creator slot so you can favorite someone else.',
                 ],
                 [
                     'Do votes guarantee a creator will make something?',
@@ -47,16 +47,16 @@
                     'You can suggest ideas, topics, questions, YouTube videos, source links, tutorials, reviews, deep dives, or anything that fits the creator\'s page and submission guidelines.',
                 ],
                 [
-                    'What is the difference between a suggestion and an upvote?',
-                    'A suggestion is a new idea added to a creator\'s board. An upvote is your way of supporting an existing suggestion so the creator can see what the community wants most.',
+                    'What is the difference between a suggestion and a vote?',
+                    'A suggestion is a new idea added to a creator\'s board. A vote is your way of supporting an existing suggestion so the creator can see what the community wants most.',
                 ],
                 [
-                    'Can I upvote my own suggestion?',
-                    'Yes. If you suggest something you care about, you can also use one of your upvotes on it.',
+                    'Can I vote for my own suggestion?',
+                    'Yes. If you suggest something you care about, you can also use one of your votes on it.',
                 ],
                 [
                     'What happens when a creator marks a suggestion as Scheduled, Published, Passed, Hidden, or Already Seen?',
-                    'When a suggestion is no longer actively being considered, its upvotes are released back to users. This lets Guides use those upvotes on other active suggestions.',
+                    'When a suggestion is no longer actively being considered, its votes stop counting against active limits. This lets Guides use those votes on other active suggestions while preserving historical support.',
                 ],
                 [
                     'What does Already Seen mean?',
@@ -108,7 +108,7 @@
                 ],
                 [
                     'Is Guide My Journey free?',
-                    'The core product is free first. Fans can favorite creators, submit suggestions, and upvote ideas within their available resources. Paid features may come later, but the free creator and fan experience comes first.',
+                    'The core product is free first. Fans can favorite creators, submit suggestions, and vote for ideas within their available resources. Paid features may come later, but the free creator and fan experience comes first.',
                 ],
             ],
         ];
@@ -122,7 +122,7 @@
                     Frequently asked questions
                 </h1>
                 <p class="mt-5 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg sm:leading-8">
-                    Learn how suggestions, upvotes, creator pages, and community resources work across Guide My Journey.
+                    Learn how suggestions, votes, creator pages, and community resources work across Guide My Journey.
                 </p>
             </div>
 

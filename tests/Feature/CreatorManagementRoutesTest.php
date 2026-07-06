@@ -416,10 +416,10 @@ class CreatorManagementRoutesTest extends TestCase
                 ->assertRedirect()
                 ->assertSessionHas(
                     'success',
-                    'Status updated. 2 upvotes were released back to users.',
+                    'Status updated. 2 votes are no longer active and returned to Guides.',
                 );
 
-            $this->assertDatabaseMissing('user_picks', [
+            $this->assertDatabaseHas('user_picks', [
                 'recommendation_id' => $recommendation->id,
             ]);
         }
@@ -470,19 +470,19 @@ class CreatorManagementRoutesTest extends TestCase
             ])
             ->assertSessionHas(
                 'success',
-                'Recommendation updated. 1 upvote was released back to users.',
+                'Recommendation updated. 1 vote is no longer active and returned to Guides.',
             );
 
         $this->patch(route('creators.recommendations.hide', [$creator, $hiddenRecommendation]))
             ->assertSessionHas(
                 'success',
-                'Recommendation hidden. 1 upvote was released back to users.',
+                'Recommendation hidden. 1 vote is no longer active and returned to Guides.',
             );
 
-        $this->assertDatabaseMissing('user_picks', [
+        $this->assertDatabaseHas('user_picks', [
             'recommendation_id' => $editedRecommendation->id,
         ]);
-        $this->assertDatabaseMissing('user_picks', [
+        $this->assertDatabaseHas('user_picks', [
             'recommendation_id' => $hiddenRecommendation->id,
         ]);
     }
