@@ -56,6 +56,12 @@ class RecommendationController extends Controller
             ->whereHas('recommendation', fn ($query) => $query
                 ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
             ->count();
+        $ownsCreator = $request->user()
+            ? $creator->creatorOwners()
+                ->where('user_id', $request->user()->id)
+                ->where('role', 'owner')
+                ->exists()
+            : false;
         $topRequestedId = $creator->recommendations()
             ->whereIn('status', $activePublicStatuses)
             ->whereIn('status', Recommendation::upvoteConsumingStatuses())
@@ -100,6 +106,11 @@ class RecommendationController extends Controller
                 'creatorTags:id,creator_id,name,slug',
                 'userPicks.user:id,name,avatar_url',
             ])
+            ->when($ownsCreator, fn ($query) => $query->with([
+                'alternatives' => fn ($query) => $query
+                    ->with(['user:id,name,avatar_url'])
+                    ->latest(),
+            ]))
             ->withCount('userPicks');
 
         if ($request->user()) {
@@ -142,12 +153,6 @@ class RecommendationController extends Controller
         $favoritesCount = $creator->creatorFavorites()->count();
         $isFavorited = $request->user()
             ? $creator->creatorFavorites()->where('user_id', $request->user()->id)->exists()
-            : false;
-        $ownsCreator = $request->user()
-            ? $creator->creatorOwners()
-                ->where('user_id', $request->user()->id)
-                ->where('role', 'owner')
-                ->exists()
             : false;
 
         return view('recommendations.creator-queue', compact(

@@ -143,6 +143,11 @@ class Recommendation extends Model
         return $this->hasMany(UserPick::class);
     }
 
+    public function alternatives(): HasMany
+    {
+        return $this->hasMany(RecommendationAlternative::class);
+    }
+
     public function creatorTags(): BelongsToMany
     {
         return $this->belongsToMany(CreatorTag::class, 'recommendation_tag')

@@ -7,6 +7,7 @@ use App\Models\CreatorFavorite;
 use App\Models\CreatorOwner;
 use App\Models\CreatorTag;
 use App\Models\Recommendation;
+use App\Models\RecommendationAlternative;
 use App\Models\User;
 use App\Models\UserPick;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -744,6 +745,132 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('name="vote_action" value="remove"', false)
             ->assertSee('1')
             ->assertSee('upvote');
+    }
+
+    public function test_logged_in_guides_can_privately_suggest_an_alternative_video(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Original request',
+            'status' => 'approved',
+        ]);
+        $guide = User::factory()->create();
+
+        $this->actingAs($guide)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Suggest alternative')
+            ->assertSee('Suggest an alternative')
+            ->assertSee(route('recommendations.alternatives.store', [$creator, $recommendation]), false)
+            ->assertSee('Know a better version of this request?');
+
+        $this->post(route('recommendations.alternatives.store', [$creator, $recommendation]), [
+            'alternative_url' => 'https://www.youtube.com/watch?v=ALTernatE01',
+            'reason' => '<strong>This live version has clearer audio.</strong>',
+            'alternative_recommendation_id' => $recommendation->id,
+        ])
+            ->assertRedirect(route('creator.queue', $creator).'#recommendation-'.$recommendation->id);
+
+        $this->assertDatabaseHas('recommendation_alternatives', [
+            'recommendation_id' => $recommendation->id,
+            'user_id' => $guide->id,
+            'alternative_url' => 'https://www.youtube.com/watch?v=ALTernatE01',
+            'alternative_video_id' => 'ALTernatE01',
+            'reason' => 'This live version has clearer audio.',
+            'status' => RecommendationAlternative::STATUS_PENDING,
+        ]);
+    }
+
+    public function test_alternatives_are_private_to_creator_owners(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $owner = User::factory()->create(['name' => 'Creator Owner']);
+        $guide = User::factory()->create(['name' => 'Helpful Guide']);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Request with private alternatives',
+            'status' => 'approved',
+        ]);
+        $creator->creatorOwners()->create([
+            'user_id' => $owner->id,
+            'role' => 'owner',
+        ]);
+        $recommendation->alternatives()->create([
+            'user_id' => $guide->id,
+            'alternative_url' => 'https://www.youtube.com/watch?v=PRIVATEalt1',
+            'alternative_video_id' => 'PRIVATEalt1',
+            'reason' => 'This version has official captions.',
+        ]);
+
+        $this->actingAs($guide)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('Alternative suggestions')
+            ->assertDontSee('PRIVATEalt1')
+            ->assertDontSee('This version has official captions.');
+
+        $this->actingAs($owner)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Creator only')
+            ->assertSee('1 alternative suggested')
+            ->assertSee('Private')
+            ->assertSee('https://www.youtube.com/watch?v=PRIVATEalt1')
+            ->assertSee('This version has official captions.')
+            ->assertSee('Suggested by Helpful Guide')
+            ->assertSee('Use this alternative')
+            ->assertSee('Dismiss');
+    }
+
+    public function test_creator_owner_can_accept_or_dismiss_alternatives(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $owner = User::factory()->create();
+        $guide = User::factory()->create();
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'youtube_url' => 'https://www.youtube.com/watch?v=ORIGINAL001',
+            'youtube_video_id' => 'ORIGINAL001',
+            'status' => 'approved',
+        ]);
+        $creator->creatorOwners()->create([
+            'user_id' => $owner->id,
+            'role' => 'owner',
+        ]);
+        $acceptedAlternative = $recommendation->alternatives()->create([
+            'user_id' => $guide->id,
+            'alternative_url' => 'https://www.youtube.com/watch?v=ACCEPTED001',
+            'alternative_video_id' => 'ACCEPTED001',
+            'reason' => 'Better source.',
+        ]);
+        $dismissedAlternative = $recommendation->alternatives()->create([
+            'user_id' => $guide->id,
+            'alternative_url' => 'https://www.youtube.com/watch?v=DISMISSED01',
+            'alternative_video_id' => 'DISMISSED01',
+            'reason' => 'Duplicate source.',
+        ]);
+
+        $this->actingAs($owner)
+            ->patch(route('recommendations.alternatives.accept', [$creator, $recommendation, $acceptedAlternative]))
+            ->assertRedirect(route('creator.queue', $creator).'#recommendation-'.$recommendation->id);
+
+        $this->assertDatabaseHas('recommendation_alternatives', [
+            'id' => $acceptedAlternative->id,
+            'status' => RecommendationAlternative::STATUS_ACCEPTED,
+            'reviewed_by' => $owner->id,
+        ]);
+        $this->assertSame('https://www.youtube.com/watch?v=ACCEPTED001', $recommendation->fresh()->youtube_url);
+        $this->assertSame('ACCEPTED001', $recommendation->fresh()->youtube_video_id);
+
+        $this->patch(route('recommendations.alternatives.dismiss', [$creator, $recommendation, $dismissedAlternative]))
+            ->assertRedirect(route('creator.queue', $creator).'#recommendation-'.$recommendation->id);
+
+        $this->assertDatabaseHas('recommendation_alternatives', [
+            'id' => $dismissedAlternative->id,
+            'status' => RecommendationAlternative::STATUS_DISMISSED,
+            'reviewed_by' => $owner->id,
+        ]);
     }
 
     public function test_recommendation_reason_renders_as_plain_text_without_links_or_html(): void

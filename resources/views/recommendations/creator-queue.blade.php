@@ -531,6 +531,7 @@
                         x-data="{ open: false }"
                         class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
                     >
+                        <h2 class="sr-only">Filters</h2>
                         <div class="flex items-center justify-end px-4 py-2.5 sm:px-5">
                             <button
                                 type="button"
@@ -764,6 +765,7 @@
                                     :creator="$creator"
                                     :usage="$usage"
                                     :top-requested="$recommendation->id === $topRequestedId"
+                                    :owns-creator="$ownsCreator"
                                     :anchor="false"
                                 />
                             </div>

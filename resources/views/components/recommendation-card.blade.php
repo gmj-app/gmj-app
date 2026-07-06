@@ -5,15 +5,24 @@
     'topRequested' => false,
     'anchor' => true,
     'showVotingControls' => true,
+    'ownsCreator' => false,
 ])
 
 @php
     $recommendationAction = session('recommendation_action');
     $hasRecommendationAction = is_array($recommendationAction)
         && (int) ($recommendationAction['recommendation_id'] ?? 0) === $recommendation->id;
+    $alternativeErrorsOpen = $errors->any() && (int) old('alternative_recommendation_id') === $recommendation->id;
+    $alternatives = $ownsCreator && $recommendation->relationLoaded('alternatives')
+        ? $recommendation->alternatives
+        : collect();
 @endphp
 
-<article @if ($anchor) id="recommendation-{{ $recommendation->id }}" @endif class="group min-w-0 scroll-mt-24 overflow-hidden rounded-3xl border bg-white shadow-sm transition duration-200 dark:bg-slate-900 md:hover:-translate-y-0.5 md:hover:shadow-xl {{ $hasRecommendationAction ? 'border-indigo-300 ring-1 ring-indigo-400/40 dark:border-indigo-700 dark:ring-indigo-500/40' : 'border-slate-200 dark:border-slate-800 md:hover:border-indigo-200 dark:md:hover:border-indigo-800' }}">
+<article
+    @if ($anchor) id="recommendation-{{ $recommendation->id }}" @endif
+    x-data="{ alternativeOpen: @js($alternativeErrorsOpen) }"
+    class="group min-w-0 scroll-mt-24 overflow-hidden rounded-3xl border bg-white shadow-sm transition duration-200 dark:bg-slate-900 md:hover:-translate-y-0.5 md:hover:shadow-xl {{ $hasRecommendationAction ? 'border-indigo-300 ring-1 ring-indigo-400/40 dark:border-indigo-700 dark:ring-indigo-500/40' : 'border-slate-200 dark:border-slate-800 md:hover:border-indigo-200 dark:md:hover:border-indigo-800' }}"
+>
     @if ($recommendation->youtubeThumbnailUrl())
         <a
             href="{{ $recommendation->youtube_url }}"
@@ -124,6 +133,16 @@
             <span>Submitted {{ $recommendation->created_at->format('M j, Y') }}</span>
         </div>
 
+        @auth
+            <button
+                type="button"
+                x-on:click="alternativeOpen = true"
+                class="mt-3 text-sm font-semibold text-indigo-600 transition hover:text-indigo-500 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+                Suggest alternative
+            </button>
+        @endauth
+
         <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70">
             <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
                 <div class="min-w-0">
@@ -157,6 +176,61 @@
                 </div>
             </div>
         </div>
+
+        @if ($ownsCreator && $alternatives->isNotEmpty())
+            <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-950/20">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-wide text-amber-700 dark:text-amber-300">Creator only</p>
+                        <h4 class="mt-1 text-sm font-bold text-slate-950 dark:text-white">
+                            {{ $alternatives->count() }} {{ Str::plural('alternative', $alternatives->count()) }} suggested
+                        </h4>
+                    </div>
+                    <span class="rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-amber-800 ring-1 ring-amber-200 dark:bg-slate-950/70 dark:text-amber-200 dark:ring-amber-500/30">Private</span>
+                </div>
+
+                <div class="mt-4 space-y-3">
+                    @foreach ($alternatives as $alternative)
+                        <div class="rounded-xl border border-amber-200/80 bg-white p-3 dark:border-amber-500/20 dark:bg-slate-950/70">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <a href="{{ $alternative->alternative_url }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="break-all text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300">
+                                        {{ $alternative->alternative_url }}
+                                    </a>
+                                    <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700 dark:text-slate-200">{{ $alternative->reason }}</p>
+                                    <p class="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                        Suggested by {{ $alternative->user?->name ?? 'Unknown guide' }} on {{ $alternative->created_at->format('M j, Y') }}
+                                    </p>
+                                </div>
+
+                                <span class="rounded-full px-2.5 py-1 text-xs font-bold capitalize {{ $alternative->status === 'accepted' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : ($alternative->status === 'dismissed' ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300') }}">
+                                    {{ $alternative->status }}
+                                </span>
+                            </div>
+
+                            @if ($alternative->status === 'pending')
+                                <div class="mt-3 flex flex-wrap justify-end gap-2">
+                                    <form method="POST" action="{{ route('recommendations.alternatives.dismiss', [$creator, $recommendation, $alternative]) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
+                                            Dismiss
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('recommendations.alternatives.accept', [$creator, $recommendation, $alternative]) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-indigo-500">
+                                            Use this alternative
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         @if ($recommendation->recommendation_type === 'topic' && $recommendation->description)
             <x-plain-expandable-text :text="$recommendation->description" label="Topic description" />
@@ -263,4 +337,91 @@
             </div>
         @endif
     </div>
+
+    @auth
+        <template x-teleport="body">
+        <div
+            x-show="alternativeOpen"
+            x-cloak
+            class="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="alternative-title-{{ $recommendation->id }}"
+        >
+            <div x-show="alternativeOpen" x-transition.opacity class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" x-on:click="alternativeOpen = false"></div>
+
+            <div
+                x-show="alternativeOpen"
+                x-transition
+                class="relative mx-auto mt-10 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+            >
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 id="alternative-title-{{ $recommendation->id }}" class="text-lg font-extrabold text-slate-950 dark:text-white">Suggest an alternative</h3>
+                        <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                            Know a better version of this request? Share the video link and tell the creator why this version may be a better fit.
+                        </p>
+                    </div>
+                    <button type="button" x-on:click="alternativeOpen = false" class="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200" aria-label="Close alternative suggestion form">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form method="POST" action="{{ route('recommendations.alternatives.store', [$creator, $recommendation]) }}" class="mt-6 space-y-5">
+                    @csrf
+                    <input type="hidden" name="alternative_recommendation_id" value="{{ $recommendation->id }}">
+
+                    <div>
+                        <label for="alternative-url-{{ $recommendation->id }}" class="text-sm font-bold text-slate-700 dark:text-slate-200">Alternative video URL</label>
+                        <input
+                            id="alternative-url-{{ $recommendation->id }}"
+                            name="alternative_url"
+                            type="url"
+                            required
+                            value="{{ $alternativeErrorsOpen ? old('alternative_url') : '' }}"
+                            class="mt-2 block w-full rounded-xl border-slate-300 bg-white text-slate-950 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                            placeholder="https://www.youtube.com/watch?v=..."
+                        >
+                        @if ($alternativeErrorsOpen)
+                            @error('alternative_url')
+                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                        @endif
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between gap-3">
+                            <label for="alternative-reason-{{ $recommendation->id }}" class="text-sm font-bold text-slate-700 dark:text-slate-200">Why this version is better</label>
+                            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">500 max</span>
+                        </div>
+                        <textarea
+                            id="alternative-reason-{{ $recommendation->id }}"
+                            name="reason"
+                            rows="4"
+                            maxlength="500"
+                            required
+                            class="mt-2 block w-full rounded-xl border-slate-300 bg-white text-slate-950 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                        >{{ $alternativeErrorsOpen ? old('reason') : '' }}</textarea>
+                        @if ($alternativeErrorsOpen)
+                            @error('reason')
+                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                        @endif
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <button type="button" x-on:click="alternativeOpen = false" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                            Cancel
+                        </button>
+                        <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-500">
+                            Submit alternative
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        </template>
+    @endauth
 </article>

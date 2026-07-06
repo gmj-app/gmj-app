@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\ToolsAdminController;
 use App\Http\Controllers\YoutubeToolsController;
@@ -85,6 +86,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/{creator:slug}/recommendations/{recommendation}/vote', [RecommendationController::class, 'toggleVote'])
         ->scopeBindings()
         ->name('recommendations.vote');
+    Route::post('/{creator:slug}/recommendations/{recommendation}/alternatives', [RecommendationAlternativeController::class, 'store'])
+        ->scopeBindings()
+        ->name('recommendations.alternatives.store');
+    Route::patch('/{creator:slug}/recommendations/{recommendation}/alternatives/{alternative}/accept', [RecommendationAlternativeController::class, 'accept'])
+        ->scopeBindings()
+        ->name('recommendations.alternatives.accept');
+    Route::patch('/{creator:slug}/recommendations/{recommendation}/alternatives/{alternative}/dismiss', [RecommendationAlternativeController::class, 'dismiss'])
+        ->scopeBindings()
+        ->name('recommendations.alternatives.dismiss');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
