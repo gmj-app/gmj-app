@@ -8,22 +8,27 @@
     $display = $recommendation->publishedDisplayData();
 @endphp
 
-<a
+<article
     id="recommendation-{{ $recommendation->id }}"
-    href="{{ route('creators.published', $creator) }}#recommendation-{{ $recommendation->id }}"
+    role="button"
+    tabindex="0"
+    x-on:keydown.enter.prevent="$el.click()"
+    x-on:keydown.space.prevent="$el.click()"
     {{ $attributes->merge([
         'class' => 'group flex h-full min-w-0 scroll-mt-28 cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700 dark:focus-visible:ring-offset-slate-950',
     ]) }}
 >
     <span class="relative block aspect-video overflow-hidden bg-slate-100 dark:bg-slate-950">
         @if ($display['thumbnail_url'])
-            <img
-                src="{{ $display['thumbnail_url'] }}"
-                alt="Thumbnail for {{ $display['title'] }}"
-                loading="lazy"
-                onerror="this.hidden = true"
-                class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-            >
+            <x-youtube-thumbnail
+                :thumbnail-url="$display['thumbnail_url']"
+                :title="$display['title']"
+                :url="$display['url']"
+                :aria-label="'Open published video: '.$display['title']"
+                x-on:click.stop
+                class="h-full w-full"
+                image-class="group-hover:scale-105"
+            />
             <span class="absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/10"></span>
         @else
             <span class="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-950">
@@ -46,6 +51,7 @@
     </span>
 
     <span class="flex min-w-0 flex-1 flex-col p-4">
+        <a href="{{ route('creators.published', $creator) }}#recommendation-{{ $recommendation->id }}" class="sr-only" tabindex="-1">View details for {{ $display['title'] }}</a>
         <span class="line-clamp-2 min-h-10 break-words text-sm font-extrabold leading-5 text-slate-950 transition group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
             {{ $display['title'] }}
         </span>
@@ -62,4 +68,4 @@
             {{ $recommendation->totalVotes() }} {{ Str::plural('vote', $recommendation->totalVotes()) }}
         </span>
     </span>
-</a>
+</article>

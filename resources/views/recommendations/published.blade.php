@@ -33,35 +33,32 @@
             x-on:hashchange.window="syncFromHash(); $nextTick(() => scrollToSelected())"
         >
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <x-creator-hero-background :creator="$creator" class="h-28 sm:h-36">
-                    <div class="absolute inset-x-0 bottom-0 p-4">
-                        <div class="flex min-w-0 items-end gap-3">
+                <x-creator-hero-background :creator="$creator" class="min-h-40 sm:min-h-36">
+                    <div class="relative z-10 flex min-h-40 flex-col justify-center gap-4 px-4 py-5 sm:min-h-36 sm:px-5 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-6">
+                        <div class="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
                             <x-creator-avatar
                                 :creator="$creator"
-                                size="lg"
-                                class="hidden border-2 border-white/40 shadow-xl ring-4 ring-slate-950/30 sm:inline-flex"
+                                size="xl"
+                                class="size-16 shrink-0 border-2 border-white/50 shadow-xl ring-4 ring-slate-950/25 sm:size-20 sm:text-2xl lg:text-3xl"
                             />
 
-                            <div class="min-w-0 pb-0.5">
+                            <div class="min-w-0 flex-1">
                                 <a href="{{ route('creator.queue', $creator) }}" class="text-sm font-bold text-white/85 drop-shadow hover:text-white">
                                     {{ $creator->display_name }}
                                 </a>
-                                <h1 class="mt-1 break-words text-2xl font-extrabold leading-tight text-white drop-shadow-sm sm:text-3xl">Published Recommendations</h1>
+                                <h1 class="mt-1 max-w-3xl break-words text-2xl font-extrabold leading-tight text-white drop-shadow-sm sm:text-3xl">Published Recommendations</h1>
+                                <p class="mt-2 max-w-2xl text-sm font-medium leading-5 text-white/85 drop-shadow">
+                                    Ideas this creator has already made, covered, explored, or published.
+                                </p>
                             </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 text-xs font-medium text-white/90 lg:max-w-xs lg:shrink-0 lg:justify-end">
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publishedRecommendationsCount }} {{ $publishedRecommendationsCount === 1 ? 'published recommendation' : 'published recommendations' }}</span>
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">Made from the community's suggestions</span>
                         </div>
                     </div>
                 </x-creator-hero-background>
-
-                <div class="p-4 sm:p-5">
-                    <p class="max-w-2xl text-sm font-medium leading-6 text-slate-600 dark:text-slate-300">
-                        Ideas this creator has already made, covered, explored, or published.
-                    </p>
-
-                    <div class="mt-4 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
-                        <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-white/5">{{ $publishedRecommendationsCount }} {{ $publishedRecommendationsCount === 1 ? 'published recommendation' : 'published recommendations' }}</span>
-                        <span class="rounded-full bg-emerald-100 px-3 py-1.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Made from the community's suggestions</span>
-                    </div>
-                </div>
             </div>
 
             <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">

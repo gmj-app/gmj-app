@@ -13,21 +13,14 @@
 
 <article {{ $attributes->merge(['class' => 'overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900']) }}>
     @if ($display['thumbnail_url'])
-        <a
-            href="{{ $display['url'] ?: $recommendation->youtube_url }}"
-            target="_blank"
-            rel="noopener noreferrer"
+        <x-youtube-thumbnail
+            :thumbnail-url="$display['thumbnail_url']"
+            :title="$display['title']"
+            :url="$display['url'] ?: $recommendation->youtube_url"
+            :aria-label="'Open published video: '.$display['title']"
             class="relative block aspect-video overflow-hidden bg-slate-950"
-            aria-label="Open {{ $display['title'] }}"
-        >
-            <img
-                src="{{ $display['thumbnail_url'] }}"
-                alt="Thumbnail for {{ $display['title'] }}"
-                loading="lazy"
-                onerror="this.hidden = true"
-                class="h-full w-full object-cover transition duration-300 hover:scale-105 hover:opacity-90"
-            >
-        </a>
+            image-class="hover:scale-105 hover:opacity-90"
+        />
     @else
         <div class="flex aspect-video items-center justify-center bg-slate-100 dark:bg-slate-950">
             <div class="text-center">
@@ -91,7 +84,7 @@
 
         <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5 text-base dark:border-slate-800">
             @if ($display['url'])
-                <a href="{{ $display['url'] }}" target="_blank" rel="noopener noreferrer" class="font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                <a href="{{ $display['url'] }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                     Watch published content
                 </a>
             @endif
@@ -108,7 +101,7 @@
                 <p class="mt-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{{ $recommendation->channel_title ? 'from' : 'by' }} {{ $originalSource }}</p>
             @endif
             @if ($recommendation->youtube_url && $hasDifferentOriginalUrl)
-                <a href="{{ $recommendation->youtube_url }}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex text-sm font-bold text-red-600 hover:text-red-500">
+                <a href="{{ $recommendation->youtube_url }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="mt-3 inline-flex text-sm font-bold text-red-600 hover:text-red-500">
                     {{ $recommendation->youtube_video_id ? 'Watch original' : 'Open original link' }}
                 </a>
             @endif

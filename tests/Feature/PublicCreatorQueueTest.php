@@ -598,6 +598,8 @@ class PublicCreatorQueueTest extends TestCase
             'creator_id' => $creator->id,
             'title' => 'Older published request',
             'status' => 'published',
+            'youtube_url' => 'https://www.youtube.com/watch?v=ORIGINAL001',
+            'youtube_video_id' => 'ORIGINAL001',
             'published_at' => '2026-07-03 12:00:00',
         ]);
         Recommendation::factory()->create([
@@ -625,6 +627,9 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('href="'.route('creators.published', $creator).'#recommendation-'.$newer->id.'"', false)
             ->assertSee('Watch published content')
             ->assertSee('https://www.youtube.com/watch?v=REACTION001', false)
+            ->assertSee('aria-label="Open published video: Creator reaction release"', false)
+            ->assertSee('rel="noopener noreferrer nofollow ugc"', false)
+            ->assertSee('bg-red-600/95', false)
             ->assertSee('https://img.youtube.com/vi/REACTION001/hqdefault.jpg', false)
             ->assertSee('Creator Channel')
             ->assertSee('Original suggestion')
@@ -633,6 +638,8 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('href="https://example.com"', false)
             ->assertSee('Newer published request')
             ->assertSee('https://www.youtube.com/watch?v=SOURCE00001', false)
+            ->assertSee('href="https://www.youtube.com/watch?v=ORIGINAL001"', false)
+            ->assertSee('aria-label="Open published video: Older published request"', false)
             ->assertDontSee('Upvote')
             ->assertDontSee('No longer accepting votes');
 
