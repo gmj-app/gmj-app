@@ -155,7 +155,8 @@
                     <button
                         type="button"
                         x-on:click="withdrawOpen = true"
-                        class="text-sm font-semibold text-slate-500 transition hover:text-red-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-red-500 dark:text-slate-400 dark:hover:text-red-300"
+                        aria-label="Withdraw this suggestion"
+                        class="text-sm font-semibold text-red-600 transition hover:text-red-500 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:text-red-200"
                     >
                         Withdraw suggestion
                     </button>
@@ -418,7 +419,7 @@
                         <div>
                             <h3 id="withdraw-title-{{ $recommendation->id }}" class="text-lg font-extrabold text-slate-950 dark:text-white">Withdraw this suggestion?</h3>
                             <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                This will remove your suggestion from the active list and return any active votes placed on it.
+                                This removes it from the active list and returns any active votes placed on it.
                             </p>
                         </div>
                         <button type="button" x-on:click="withdrawOpen = false" class="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200" aria-label="Cancel withdrawal">

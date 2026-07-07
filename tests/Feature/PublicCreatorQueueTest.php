@@ -790,6 +790,63 @@ class PublicCreatorQueueTest extends TestCase
         ]);
     }
 
+    public function test_original_guide_sees_withdraw_action_on_their_active_recommendation_only(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $submitter = User::factory()->create();
+        $otherGuide = User::factory()->create();
+        $guideRecommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $submitter->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            'title' => 'Guide owned request',
+            'status' => 'approved',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $submitter->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_CREATOR,
+            'title' => 'Creator added request',
+            'status' => 'approved',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $submitter->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            'title' => 'Finished guide request',
+            'status' => 'passed',
+        ]);
+
+        $response = $this->actingAs($submitter)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Guide owned request')
+            ->assertSee('Suggest alternative')
+            ->assertSee('aria-label="Withdraw this suggestion"', false)
+            ->assertSee('Withdraw this suggestion?')
+            ->assertSee('This removes it from the active list and returns any active votes placed on it.')
+            ->assertSee(route('recommendations.withdraw', [$creator, $guideRecommendation]), false)
+            ->assertSeeInOrder(['Suggest alternative', 'Withdraw suggestion']);
+
+        $this->assertSame(
+            1,
+            substr_count($response->getContent(), 'aria-label="Withdraw this suggestion"'),
+        );
+
+        $this->actingAs($otherGuide)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('aria-label="Withdraw this suggestion"', false)
+            ->assertDontSee('Withdraw this suggestion?');
+
+        auth()->logout();
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('aria-label="Withdraw this suggestion"', false)
+            ->assertDontSee('Withdraw this suggestion?');
+    }
+
     public function test_alternatives_are_private_to_creator_owners(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
