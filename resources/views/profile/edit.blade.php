@@ -9,6 +9,18 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="border border-gray-200 bg-white p-4 shadow dark:border-slate-800 dark:bg-slate-900 sm:rounded-lg sm:p-8">
                 <div class="max-w-xl">
+                    @include('profile.partials.public-identity-form', [
+                        'user' => $user,
+                        'action' => route('profile.public-identity.update'),
+                        'method' => 'patch',
+                        'submitLabel' => 'Save public identity',
+                        'showAccountContext' => true,
+                    ])
+                </div>
+            </div>
+
+            <div class="border border-gray-200 bg-white p-4 shadow dark:border-slate-800 dark:bg-slate-900 sm:rounded-lg sm:p-8">
+                <div class="max-w-xl">
                     @include('profile.partials.update-profile-information-form')
                 </div>
             </div>

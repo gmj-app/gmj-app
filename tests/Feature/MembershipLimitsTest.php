@@ -338,6 +338,8 @@ class MembershipLimitsTest extends TestCase
         $creator = Creator::factory()->create(['display_name' => 'JFragment']);
         $user = User::factory()->create([
             'name' => 'Example Member',
+            'public_display_name' => 'Example Member',
+            'public_handle' => 'examplemember',
             'plan_slug' => 'plus',
         ]);
 

@@ -89,6 +89,14 @@ class GoogleAuthController extends Controller
     {
         $intended = (string) $request->session()->pull('url.intended', '');
 
+        if (! $request->user()?->hasCompletedPublicProfile()) {
+            if ($this->isSafeRedirectUrl($request, $intended)) {
+                $request->session()->put('public_profile.intended', $this->relativeRedirectUrl($request, $intended));
+            }
+
+            return redirect()->route('profile.setup');
+        }
+
         if ($this->isSafeRedirectUrl($request, $intended)) {
             return redirect()->to($intended);
         }
@@ -189,5 +197,24 @@ class GoogleAuthController extends Controller
 
         return in_array($parts['scheme'] ?? '', ['http', 'https'], true)
             && ($parts['host'] ?? null) === $allowedHost;
+    }
+
+    private function relativeRedirectUrl(Request $request, string $url): string
+    {
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        $parts = parse_url($url);
+
+        if ($parts === false) {
+            return route('dashboard', absolute: false);
+        }
+
+        $path = $parts['path'] ?? route('dashboard', absolute: false);
+        $query = isset($parts['query']) ? '?'.$parts['query'] : '';
+        $fragment = isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
+
+        return $path.$query.$fragment;
     }
 }

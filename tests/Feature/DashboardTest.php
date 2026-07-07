@@ -17,7 +17,11 @@ class DashboardTest extends TestCase
 
     public function test_dashboard_shows_role_hub_for_a_guide_without_creator_pages(): void
     {
-        $user = User::factory()->create(['name' => 'Guide User']);
+        $user = User::factory()->create([
+            'name' => 'Guide User',
+            'public_display_name' => 'Guide User',
+            'public_handle' => 'guideuser',
+        ]);
 
         $this->actingAs($user)
             ->get(route('dashboard'))

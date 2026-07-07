@@ -277,6 +277,8 @@ class PublicCreatorQueueTest extends TestCase
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
         $requester = User::factory()->create([
             'name' => 'Original Fan',
+            'public_display_name' => 'Original Fan',
+            'public_handle' => 'originalfan',
             'email' => 'original@example.test',
             'avatar_url' => null,
         ]);
@@ -297,6 +299,8 @@ class PublicCreatorQueueTest extends TestCase
             ->count(23)
             ->sequence(fn ($sequence) => [
                 'name' => 'Voter '.str_pad((string) ($sequence->index + 1), 2, '0', STR_PAD_LEFT),
+                'public_display_name' => 'Voter '.str_pad((string) ($sequence->index + 1), 2, '0', STR_PAD_LEFT),
+                'public_handle' => 'voter'.str_pad((string) ($sequence->index + 1), 2, '0', STR_PAD_LEFT),
                 'avatar_url' => 'https://example.test/avatar-'.$sequence->index.'.jpg',
             ])
             ->create()
@@ -748,7 +752,11 @@ class PublicCreatorQueueTest extends TestCase
     public function test_cards_show_placeholder_reason_submitter_and_pick_copy(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
-        $submitter = User::factory()->create(['name' => 'Example Fan']);
+        $submitter = User::factory()->create([
+            'name' => 'Example Fan',
+            'public_display_name' => 'Example Fan',
+            'public_handle' => 'examplefan',
+        ]);
         $reason = str_repeat('A meaningful reason for this recommendation. ', 8);
         $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
@@ -894,7 +902,11 @@ class PublicCreatorQueueTest extends TestCase
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
         $owner = User::factory()->create(['name' => 'Creator Owner']);
-        $guide = User::factory()->create(['name' => 'Helpful Guide']);
+        $guide = User::factory()->create([
+            'name' => 'Helpful Guide',
+            'public_display_name' => 'Helpful Guide',
+            'public_handle' => 'helpfulguide',
+        ]);
         $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Request with private alternatives',

@@ -102,13 +102,13 @@ class RecommendationController extends Controller
                     ->where('creator_tags.creator_id', $creator->id)
                     ->where('creator_tags.slug', $filters['tag'])))
             ->with([
-                'submittedBy:id,name,avatar_url',
+                'submittedBy:id,name,public_display_name,public_handle,avatar_url,email',
                 'creatorTags:id,creator_id,name,slug',
-                'userPicks.user:id,name,avatar_url',
+                'userPicks.user:id,name,public_display_name,public_handle,avatar_url,email',
             ])
             ->when($ownsCreator, fn ($query) => $query->with([
                 'alternatives' => fn ($query) => $query
-                    ->with(['user:id,name,avatar_url'])
+                    ->with(['user:id,name,public_display_name,public_handle,avatar_url,email'])
                     ->latest(),
             ]))
             ->withSum('userPicks as user_picks_count', 'vote_count');
@@ -208,7 +208,7 @@ class RecommendationController extends Controller
                             }));
                 });
             })
-            ->with(['submittedBy:id,name', 'creatorTags:id,creator_id,name,slug'])
+            ->with(['submittedBy:id,name,public_display_name,public_handle,email', 'creatorTags:id,creator_id,name,slug'])
             ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('published_at')
             ->orderByDesc('updated_at')

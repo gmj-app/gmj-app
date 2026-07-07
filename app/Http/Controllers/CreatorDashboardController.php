@@ -51,7 +51,8 @@ class CreatorDashboardController extends Controller
         Gate::authorize('manage', $creator);
 
         $followers = $creator->favoritedBy()
-            ->orderBy('name')
+            ->orderBy('public_display_name')
+            ->orderBy('public_handle')
             ->paginate(25);
 
         return view('creators.followers', compact('creator', 'followers'));

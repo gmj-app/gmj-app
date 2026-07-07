@@ -136,7 +136,7 @@
             @if ($recommendation->isCreatorAdded())
                 <span>Added by creator</span>
             @elseif ($recommendation->submittedBy)
-                <span>Submitted by {{ $recommendation->submittedBy->name }}</span>
+                <span>Submitted by {{ $recommendation->submittedBy->publicName() }}</span>
             @endif
             <span>Submitted {{ $recommendation->created_at->format('M j, Y') }}</span>
         </div>
@@ -176,7 +176,7 @@
                                 :include-upvoters="false"
                                 size="md"
                             />
-                            <p class="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{{ $recommendation->submittedBy->name }}</p>
+                            <p class="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{{ $recommendation->submittedBy->publicName() }}</p>
                         </div>
                     @else
                         <p class="mt-2 text-sm font-normal text-slate-500 dark:text-slate-400">Original requester unavailable.</p>
@@ -220,7 +220,7 @@
                                     </a>
                                     <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700 dark:text-slate-200">{{ $alternative->reason }}</p>
                                     <p class="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                                        Suggested by {{ $alternative->user?->name ?? 'Unknown guide' }} on {{ $alternative->created_at->format('M j, Y') }}
+                                        Suggested by {{ $alternative->user?->publicName() ?? 'Unknown guide' }} on {{ $alternative->created_at->format('M j, Y') }}
                                     </p>
                                 </div>
 

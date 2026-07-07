@@ -383,7 +383,7 @@
                                     class="flex w-full min-w-0 items-start gap-3 px-4 py-4 text-left transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/60"
                                 >
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate font-semibold text-slate-950 dark:text-white">{{ auth()->user()->name }}</span>
+                                        <span class="block truncate font-semibold text-slate-950 dark:text-white">{{ auth()->user()->publicName() }}</span>
                                         <span class="mt-0.5 block truncate text-xs font-normal text-slate-500 dark:text-slate-400">{{ auth()->user()->email }}</span>
                                     </span>
 

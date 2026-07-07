@@ -155,7 +155,7 @@
                         @foreach ($adminFeedbackItems as $feedback)
                             @php
                                 $feedbackAvatarUrl = $feedback->user?->avatar_url;
-                                $feedbackName = $feedback->name ?: $feedback->user?->name ?: 'Guest tester';
+                                $feedbackName = $feedback->name ?: $feedback->user?->publicName() ?: 'Guest tester';
                                 $feedbackEmail = $feedback->email ?: $feedback->user?->email;
                                 $feedbackIsRead = filled($feedback->read_at);
                                 $feedbackExactDate = $feedback->created_at?->format('M j, Y g:i A');
@@ -242,7 +242,7 @@
         sending: false,
         errors: {},
         form: {
-            name: @js(auth()->user()?->name ?? ''),
+            name: @js(auth()->user()?->publicName() ?? ''),
             email: @js(auth()->user()?->email ?? ''),
             type: 'Bug',
             message: '',

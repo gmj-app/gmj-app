@@ -20,7 +20,7 @@
         $supporters->push([
             'user' => $requester,
             'isRequester' => true,
-            'title' => "Requested by {$requester->name}",
+            'title' => "Requested by {$requester->publicName()}",
         ]);
     }
 
@@ -36,7 +36,7 @@
         $supporters->push([
             'user' => $upvoter,
             'isRequester' => false,
-            'title' => "Supported by {$upvoter->name}",
+            'title' => "Supported by {$upvoter->publicName()}",
         ]);
     }
 
@@ -53,12 +53,7 @@
         @foreach ($visibleSupporters as $supporter)
             @php
                 $user = $supporter['user'];
-                $initials = collect(explode(' ', trim($user->name)))
-                    ->filter()
-                    ->take(2)
-                    ->map(fn (string $part) => Str::upper(Str::substr($part, 0, 1)))
-                    ->implode('');
-                $initials = $initials !== '' ? $initials : '?';
+                $initials = $user->initialsForAvatar();
             @endphp
 
             <span

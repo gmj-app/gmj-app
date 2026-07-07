@@ -75,7 +75,7 @@ class BetaFeedbackController extends Controller
         $validated['user_id'] = $user?->id;
         $validated['name'] = filled($validated['name'] ?? null)
             ? $validated['name']
-            : $user?->name;
+            : $user?->publicName();
         $validated['email'] = filled($validated['email'] ?? null)
             ? $validated['email']
             : $user?->email;

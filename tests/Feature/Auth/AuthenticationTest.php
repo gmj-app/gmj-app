@@ -101,7 +101,7 @@ class AuthenticationTest extends TestCase
         $this->mockGoogleUser('google-123', 'guide@example.com', 'New Guide', 'https://example.com/avatar.jpg');
 
         $this->get(route('auth.google.callback'))
-            ->assertRedirect(route('dashboard', absolute: false));
+            ->assertRedirect(route('profile.setup', absolute: false));
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [
@@ -110,6 +110,9 @@ class AuthenticationTest extends TestCase
             'google_id' => 'google-123',
             'avatar_url' => 'https://example.com/avatar.jpg',
             'auth_provider' => 'google',
+            'public_display_name' => null,
+            'public_handle' => null,
+            'public_profile_completed_at' => null,
         ]);
     }
 
@@ -223,7 +226,7 @@ class AuthenticationTest extends TestCase
         $this->mockGoogleUser('guide-google-id', 'guide@example.com', 'Guide');
 
         $this->get(route('auth.google.callback'))
-            ->assertRedirect(route('dashboard', absolute: false));
+            ->assertRedirect(route('profile.setup', absolute: false));
     }
 
     public function test_authenticated_dashboard_does_not_render_a_modal_backdrop(): void

@@ -24,6 +24,9 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'public_display_name',
+        'public_handle',
+        'public_profile_completed_at',
         'email',
         'google_id',
         'avatar_url',
@@ -53,9 +56,62 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'public_profile_completed_at' => 'datetime',
             'can_access_video_tools' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    public function publicName(): string
+    {
+        if (filled($this->public_display_name)) {
+            return (string) $this->public_display_name;
+        }
+
+        if (filled($this->public_handle)) {
+            return (string) $this->public_handle;
+        }
+
+        return 'Guide';
+    }
+
+    public function displayName(): string
+    {
+        return $this->publicName();
+    }
+
+    public function publicHandle(): ?string
+    {
+        return filled($this->public_handle) ? (string) $this->public_handle : null;
+    }
+
+    public function formattedPublicHandle(): ?string
+    {
+        return $this->publicHandle() ? '@'.$this->publicHandle() : null;
+    }
+
+    public function initialsForAvatar(): string
+    {
+        $source = filled($this->public_display_name)
+            ? (string) $this->public_display_name
+            : (filled($this->public_handle)
+                ? (string) $this->public_handle
+                : (string) str($this->email)->before('@'));
+
+        $initials = collect(preg_split('/[\s._-]+/', trim($source)) ?: [])
+            ->filter()
+            ->take(2)
+            ->map(fn (string $part): string => str($part)->substr(0, 1)->upper()->toString())
+            ->implode('');
+
+        return $initials !== '' ? $initials : 'G';
+    }
+
+    public function hasCompletedPublicProfile(): bool
+    {
+        return filled($this->public_display_name)
+            && filled($this->public_handle)
+            && $this->public_profile_completed_at !== null;
     }
 
     public function recommendationsSubmitted(): HasMany

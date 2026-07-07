@@ -17,7 +17,7 @@
                     @forelse ($followers as $follower)
                         <div class="flex items-center justify-between gap-4 p-6">
                             <div>
-                                <p class="font-semibold text-gray-900 dark:text-slate-50">{{ $follower->name }}</p>
+                                <p class="font-semibold text-gray-900 dark:text-slate-50">{{ $follower->publicName() }}</p>
                                 <p class="text-sm text-gray-500 dark:text-slate-400">{{ $follower->email }}</p>
                             </div>
                             <p class="text-sm text-gray-500 dark:text-slate-400">Followed {{ $follower->pivot->created_at->format('M j, Y') }}</p>

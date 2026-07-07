@@ -359,6 +359,7 @@ class BetaFeedbackTest extends TestCase
 
         $user = User::factory()->create([
             'name' => 'Logged In Tester',
+            'public_display_name' => 'Public Tester',
             'email' => 'logged-in@example.com',
         ]);
 
@@ -373,7 +374,7 @@ class BetaFeedbackTest extends TestCase
 
         $this->assertDatabaseHas('beta_feedback', [
             'user_id' => $user->id,
-            'name' => 'Logged In Tester',
+            'name' => 'Public Tester',
             'email' => 'logged-in@example.com',
             'type' => 'Bug',
             'message' => 'The submit page got stuck.',

@@ -67,7 +67,7 @@
             @if ($recommendation->isCreatorAdded())
                 <span>Added by creator</span>
             @elseif ($recommendation->submittedBy)
-                <span>Submitted by {{ $recommendation->submittedBy->name }}</span>
+                <span>Submitted by {{ $recommendation->submittedBy->publicName() }}</span>
             @endif
             <span>Submitted {{ $recommendation->created_at->format('M j, Y') }}</span>
             <span>Published {{ $publishedDate->format('M j, Y') }}</span>

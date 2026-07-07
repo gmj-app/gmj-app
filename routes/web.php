@@ -14,6 +14,7 @@ use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\ToolsAdminController;
 use App\Http\Controllers\YoutubeToolsController;
+use App\Http\Middleware\EnsurePublicProfileIsComplete;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -31,10 +32,19 @@ Route::post('/internal/beta-feedback/{feedback}/unread', [BetaFeedbackController
     ->name('internal.beta-feedback.mark-unread');
 
 Route::get('/dashboard', [DashboardController::class, '__invoke'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', EnsurePublicProfileIsComplete::class])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/profile/setup', [ProfileController::class, 'setup'])->name('profile.setup');
+    Route::post('/profile/setup', [ProfileController::class, 'completeSetup'])->name('profile.setup.store');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/public-identity', [ProfileController::class, 'updatePublicIdentity'])->name('profile.public-identity.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(function () {
     Route::get('/creator/create', [CreatorSetupController::class, 'create'])
         ->name('creators.create');
     Route::post('/creator', [CreatorSetupController::class, 'store'])
@@ -98,10 +108,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/{creator:slug}/recommendations/{recommendation}/alternatives/{alternative}/dismiss', [RecommendationAlternativeController::class, 'dismiss'])
         ->scopeBindings()
         ->name('recommendations.alternatives.dismiss');
-
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/internal/plan-testing', [InternalPlanTestingController::class, 'edit'])
         ->name('internal.plan-testing');

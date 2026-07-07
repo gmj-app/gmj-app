@@ -14,7 +14,7 @@
                 <div class="max-w-3xl">
                     <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Your launchpad</p>
                     <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
-                        Welcome back, {{ auth()->user()->name }}
+                        Welcome back, {{ auth()->user()->publicName() }}
                     </h1>
                     <p class="mt-4 text-lg font-bold leading-7 text-slate-800 dark:text-slate-100 sm:text-xl">
                         Fans suggest. Communities vote. Creators decide.

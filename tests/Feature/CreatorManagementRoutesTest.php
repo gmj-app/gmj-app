@@ -54,7 +54,11 @@ class CreatorManagementRoutesTest extends TestCase
             'creator_id' => $creator->id,
             'title' => 'Dashboard recommendation',
         ]);
-        $fan = User::factory()->create(['name' => 'Following Fan']);
+        $fan = User::factory()->create([
+            'name' => 'Following Fan',
+            'public_display_name' => 'Following Fan',
+            'public_handle' => 'followingfan',
+        ]);
         $favorite = CreatorFavorite::query()->create([
             'creator_id' => $creator->id,
             'user_id' => $fan->id,
