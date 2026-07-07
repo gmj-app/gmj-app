@@ -23,11 +23,12 @@
     $voteLimit = (int) ($usage['votes_limit'] ?? auth()->user()?->membershipLimits()['votes_per_reactor'] ?? 0);
     $votesRemaining = (int) ($usage['votes_remaining'] ?? 0);
     $canAddVote = ! auth()->check() || $votesRemaining > 0;
+    $canWithdraw = $recommendation->canBeWithdrawnBy(auth()->user());
 @endphp
 
 <article
     @if ($anchor) id="recommendation-{{ $recommendation->id }}" @endif
-    x-data="{ alternativeOpen: @js($alternativeErrorsOpen) }"
+    x-data="{ alternativeOpen: @js($alternativeErrorsOpen), withdrawOpen: false }"
     class="group min-w-0 scroll-mt-24 overflow-hidden rounded-3xl border bg-white shadow-sm transition duration-200 dark:bg-slate-900 md:hover:-translate-y-0.5 md:hover:shadow-xl {{ $hasRecommendationAction ? 'border-indigo-300 ring-1 ring-indigo-400/40 dark:border-indigo-700 dark:ring-indigo-500/40' : 'border-slate-200 dark:border-slate-800 md:hover:border-indigo-200 dark:md:hover:border-indigo-800' }}"
 >
     @if ($recommendation->youtubeThumbnailUrl())
@@ -141,13 +142,25 @@
         </div>
 
         @auth
-            <button
-                type="button"
-                x-on:click="alternativeOpen = true"
-                class="mt-3 text-sm font-semibold text-indigo-600 transition hover:text-indigo-500 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-            >
-                Suggest alternative
-            </button>
+            <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <button
+                    type="button"
+                    x-on:click="alternativeOpen = true"
+                    class="text-sm font-semibold text-indigo-600 transition hover:text-indigo-500 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
+                    Suggest alternative
+                </button>
+
+                @if ($canWithdraw)
+                    <button
+                        type="button"
+                        x-on:click="withdrawOpen = true"
+                        class="text-sm font-semibold text-slate-500 transition hover:text-red-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-red-500 dark:text-slate-400 dark:hover:text-red-300"
+                    >
+                        Withdraw suggestion
+                    </button>
+                @endif
+            </div>
         @endauth
 
         <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70">
@@ -384,6 +397,51 @@
     </div>
 
     @auth
+        @if ($canWithdraw)
+            <template x-teleport="body">
+            <div
+                x-show="withdrawOpen"
+                x-cloak
+                class="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="withdraw-title-{{ $recommendation->id }}"
+            >
+                <div x-show="withdrawOpen" x-transition.opacity class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" x-on:click="withdrawOpen = false"></div>
+
+                <div
+                    x-show="withdrawOpen"
+                    x-transition
+                    class="relative mx-auto mt-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+                >
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h3 id="withdraw-title-{{ $recommendation->id }}" class="text-lg font-extrabold text-slate-950 dark:text-white">Withdraw this suggestion?</h3>
+                            <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                This will remove your suggestion from the active list and return any active votes placed on it.
+                            </p>
+                        </div>
+                        <button type="button" x-on:click="withdrawOpen = false" class="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200" aria-label="Cancel withdrawal">
+                            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form method="POST" action="{{ route('recommendations.withdraw', [$creator, $recommendation]) }}" class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        @csrf
+                        <button type="button" x-on:click="withdrawOpen = false" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                            Cancel
+                        </button>
+                        <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-500">
+                            Withdraw suggestion
+                        </button>
+                    </form>
+                </div>
+            </div>
+            </template>
+        @endif
+
         <template x-teleport="body">
         <div
             x-show="alternativeOpen"

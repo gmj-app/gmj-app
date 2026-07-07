@@ -164,6 +164,7 @@ class User extends Authenticatable
         return $this->recommendationsSubmitted()
             ->where('creator_id', $creator->id)
             ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
+            ->whereIn('status', Recommendation::suggestionConsumingStatuses())
             ->count();
     }
 

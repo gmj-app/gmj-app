@@ -97,10 +97,14 @@ class CreatorRecommendationController extends Controller
         unset($validated['tags']);
 
         $publishedAttributes = $this->publishedAttributesFromRequest($validated, $recommendation, $request->exists('published_reaction_url'));
+        $originalUrlAttributes = $request->exists('youtube_url')
+            ? $this->originalUrlAttributesFromRequest($validated)
+            : [];
 
-        $releasedVotes = DB::transaction(function () use ($creator, $recommendation, $request, $shouldSyncTags, $tagInput, $validated, $publishedAttributes): int {
+        $releasedVotes = DB::transaction(function () use ($creator, $recommendation, $request, $shouldSyncTags, $tagInput, $validated, $publishedAttributes, $originalUrlAttributes): int {
             $releasedVotes = $this->updateRecommendation($recommendation, [
                 ...$validated,
+                ...$originalUrlAttributes,
                 ...$publishedAttributes,
                 'is_pinned' => $request->boolean('is_pinned'),
                 'published_at' => ($validated['status'] ?? $recommendation->status) === 'published'
@@ -244,6 +248,7 @@ class CreatorRecommendationController extends Controller
         if (! $urlWasSubmitted) {
             return [
                 'published_reaction_url' => $recommendation->published_reaction_url,
+                'published_normalized_url' => $recommendation->published_normalized_url,
             ];
         }
 
@@ -252,6 +257,7 @@ class CreatorRecommendationController extends Controller
         if (blank($url)) {
             return [
                 'published_reaction_url' => null,
+                'published_normalized_url' => null,
                 'published_title' => null,
                 'published_channel' => null,
                 'published_thumbnail_url' => null,
@@ -263,7 +269,9 @@ class CreatorRecommendationController extends Controller
         $attributes = [
             'published_reaction_url' => $url,
         ];
-        $videoId = $this->youtubeUrls->extractVideoId($url);
+        $normalized = $this->youtubeUrls->normalize($url);
+        $videoId = $normalized['youtube_video_id'];
+        $attributes['published_normalized_url'] = $normalized['canonical_url'];
 
         if (! $videoId) {
             return [
@@ -304,6 +312,29 @@ class CreatorRecommendationController extends Controller
             'published_title' => $metadata['title'] ?? null,
             'published_channel' => $metadata['author_name'] ?? null,
             'published_metadata' => $metadata,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function originalUrlAttributesFromRequest(array $validated): array
+    {
+        $url = $validated['youtube_url'] ?? null;
+
+        if (blank($url)) {
+            return [
+                'normalized_url' => null,
+                'youtube_video_id' => null,
+            ];
+        }
+
+        $normalized = $this->youtubeUrls->normalize($url);
+
+        return [
+            'normalized_url' => $normalized['canonical_url'],
+            'youtube_video_id' => $normalized['youtube_video_id'],
         ];
     }
 }

@@ -659,8 +659,10 @@ class MembershipLimitsTest extends TestCase
      */
     private function recommendationData(string $title): array
     {
+        $videoId = substr(md5($title), 0, 11);
+
         return [
-            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'youtube_url' => "https://www.youtube.com/watch?v={$videoId}",
             'title' => $title,
             'confirm_favorite' => '1',
         ];

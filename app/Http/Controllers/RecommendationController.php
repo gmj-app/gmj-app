@@ -246,6 +246,18 @@ class RecommendationController extends Controller
         $validated = $request->validated();
         unset($validated['confirm_favorite']);
 
+        $normalized = $validated['recommendation_type'] === 'youtube'
+            ? $this->youtubeUrls->normalize($validated['youtube_url'])
+            : ['canonical_url' => null, 'youtube_video_id' => null];
+        $duplicateRecommendation = $this->findDuplicateRecommendation($creator, $normalized);
+
+        if ($duplicateRecommendation) {
+            return redirect()
+                ->route('recommendations.create', $creator)
+                ->withInput()
+                ->with('duplicate_recommendation', $this->duplicateRecommendationMessage($creator, $duplicateRecommendation));
+        }
+
         DB::transaction(function () use ($creator, $request, $validated): void {
             /** @var User $user */
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
@@ -272,6 +284,9 @@ class RecommendationController extends Controller
                 'youtube_video_id' => $validated['recommendation_type'] === 'youtube'
                     ? $this->youtubeUrls->extractVideoId($validated['youtube_url'])
                     : null,
+                'normalized_url' => $validated['recommendation_type'] === 'youtube'
+                    ? $this->youtubeUrls->normalize($validated['youtube_url'])['canonical_url']
+                    : null,
                 'youtube_url' => $validated['recommendation_type'] === 'youtube'
                     ? $validated['youtube_url']
                     : null,
@@ -290,6 +305,42 @@ class RecommendationController extends Controller
                     ? 'Recommendation submitted and added to the journey.'
                     : 'Recommendation submitted and waiting for creator review.',
             );
+    }
+
+    public function withdraw(
+        Request $request,
+        Creator $creator,
+        Recommendation $recommendation,
+    ): RedirectResponse {
+        abort_unless((int) $recommendation->creator_id === (int) $creator->id, 404);
+
+        if (! $recommendation->canBeWithdrawnBy($request->user())) {
+            throw ValidationException::withMessages([
+                'withdraw' => 'This suggestion can no longer be withdrawn.',
+            ]);
+        }
+
+        DB::transaction(function () use ($request, $recommendation): void {
+            $lockedRecommendation = Recommendation::query()
+                ->lockForUpdate()
+                ->findOrFail($recommendation->id);
+
+            if (! $lockedRecommendation->canBeWithdrawnBy($request->user())) {
+                throw ValidationException::withMessages([
+                    'withdraw' => 'This suggestion can no longer be withdrawn.',
+                ]);
+            }
+
+            $lockedRecommendation->update([
+                'status' => 'withdrawn',
+                'withdrawn_at' => now(),
+                'withdrawn_by_user_id' => $request->user()->id,
+            ]);
+        });
+
+        return redirect()
+            ->route('creator.queue', $creator)
+            ->with('success', 'Your suggestion was withdrawn.');
     }
 
     public function youtubeMetadata(Request $request, Creator $creator): JsonResponse
@@ -480,6 +531,72 @@ class RecommendationController extends Controller
             'votes_remaining' => $user->votesRemainingFor($creator),
             'can_suggest' => $user->canSuggestTo($creator),
             'is_favorited' => $user->hasFavoritedCreator($creator),
+        ];
+    }
+
+    /**
+     * @param  array{canonical_url: string|null, youtube_video_id: string|null}  $normalized
+     */
+    private function findDuplicateRecommendation(Creator $creator, array $normalized): ?Recommendation
+    {
+        $canonicalUrl = $normalized['canonical_url'];
+        $videoId = $normalized['youtube_video_id'];
+
+        if (! $canonicalUrl && ! $videoId) {
+            return null;
+        }
+
+        return $creator->recommendations()
+            ->where('status', '!=', 'withdrawn')
+            ->where(function ($query) use ($canonicalUrl, $videoId): void {
+                if ($videoId) {
+                    $query
+                        ->where('youtube_video_id', $videoId)
+                        ->orWhere('published_video_id', $videoId);
+                }
+
+                if ($canonicalUrl) {
+                    $query
+                        ->orWhere('normalized_url', $canonicalUrl)
+                        ->orWhere('published_normalized_url', $canonicalUrl)
+                        ->orWhere('youtube_url', $canonicalUrl)
+                        ->orWhere('published_reaction_url', $canonicalUrl);
+                }
+            })
+            ->orderByRaw("case when status = 'published' or published_reaction_url is not null then 0 else 1 end")
+            ->latest()
+            ->first();
+    }
+
+    /**
+     * @return array{type: string, title: string, body: string, primary_label: string, primary_url: string, secondary_label: string|null, secondary_url: string|null}
+     */
+    private function duplicateRecommendationMessage(Creator $creator, Recommendation $recommendation): array
+    {
+        $isPublishedDuplicate = $recommendation->status === 'published'
+            || filled($recommendation->published_reaction_url)
+            || in_array($recommendation->status, ['already_seen', 'passed'], true);
+
+        if ($isPublishedDuplicate) {
+            return [
+                'type' => 'published',
+                'title' => 'Already published',
+                'body' => 'This creator has already published something for this recommendation.',
+                'primary_label' => 'View published recommendation',
+                'primary_url' => route('creators.published', $creator)."#recommendation-{$recommendation->id}",
+                'secondary_label' => filled($recommendation->published_reaction_url) ? 'Open published video' : null,
+                'secondary_url' => filled($recommendation->published_reaction_url) ? $recommendation->published_reaction_url : null,
+            ];
+        }
+
+        return [
+            'type' => 'active',
+            'title' => 'Already suggested',
+            'body' => 'This URL is already in the active recommendation list for this creator.',
+            'primary_label' => 'View recommendation',
+            'primary_url' => route('creator.queue', $creator)."#recommendation-{$recommendation->id}",
+            'secondary_label' => null,
+            'secondary_url' => null,
         ];
     }
 }

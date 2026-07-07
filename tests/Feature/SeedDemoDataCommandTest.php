@@ -39,7 +39,7 @@ class SeedDemoDataCommandTest extends TestCase
         ]);
         $this->assertSame(13, Creator::query()->count());
         $this->assertSame(21, User::query()->whereIn('email', $this->demoEmails())->count());
-        $this->assertSame(32, Recommendation::query()->where('title', 'like', 'Demo:%')->count());
+        $this->assertSame(33, Recommendation::query()->where('title', 'like', 'Demo:%')->count());
         $this->assertSame(
             0,
             Recommendation::query()
@@ -173,7 +173,7 @@ class SeedDemoDataCommandTest extends TestCase
         $this->assertDatabaseHas('creators', ['slug' => 'real-reactor']);
         $this->assertDatabaseHas('users', ['email' => 'real@example.com']);
         $this->assertDatabaseHas('recommendations', ['id' => $realRecommendation->id]);
-        $this->assertSame(32, Recommendation::query()->where('title', 'like', 'Demo:%')->count());
+        $this->assertSame(33, Recommendation::query()->where('title', 'like', 'Demo:%')->count());
         $this->assertSame(13, Creator::query()->whereIn('slug', [
             'jfragment',
             ...$this->demoCreatorSlugs(),

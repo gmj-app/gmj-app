@@ -74,6 +74,7 @@ class SeedDemoData extends Command
         ['title' => 'Demo: Deep dive into harmony in game soundtracks', 'artist' => 'Pixel Orchestra', 'category' => 'documentary', 'status' => 'coming_soon', 'video_id' => 'DEMO0000030'],
         ['title' => 'Demo: Premiere night for an international rock set', 'artist' => 'Borderless Stage', 'category' => 'music', 'status' => 'scheduled', 'video_id' => 'DEMO0000031'],
         ['title' => 'Demo: Unusual instruments in modern pop', 'artist' => 'Curious Frequencies', 'category' => 'other', 'status' => 'approved', 'video_id' => 'DEMO0000032'],
+        ['title' => 'Demo: Withdrawn duplicate request', 'artist' => 'Archive Signal', 'category' => 'other', 'status' => 'withdrawn', 'video_id' => 'DEMO0000033'],
     ];
 
     public function handle(): int
@@ -263,12 +264,40 @@ class SeedDemoData extends Command
             $values['description'] = "Demo topic for local testing: {$data['title']}.";
         }
 
+        if (Schema::hasColumn('recommendations', 'normalized_url')) {
+            $values['normalized_url'] = null;
+        }
+
+        if (Schema::hasColumn('recommendations', 'published_normalized_url')) {
+            $values['published_normalized_url'] = $data['status'] === 'published'
+                ? "https://www.youtube.com/watch?v={$data['video_id']}"
+                : null;
+        }
+
+        if (Schema::hasColumn('recommendations', 'published_video_id')) {
+            $values['published_video_id'] = $data['status'] === 'published'
+                ? $data['video_id']
+                : null;
+        }
+
+        if (Schema::hasColumn('recommendations', 'withdrawn_at')) {
+            $values['withdrawn_at'] = $data['status'] === 'withdrawn'
+                ? now()->subDays(2)
+                : null;
+        }
+
+        if (Schema::hasColumn('recommendations', 'withdrawn_by_user_id')) {
+            $values['withdrawn_by_user_id'] = $data['status'] === 'withdrawn'
+                ? $submitter->id
+                : null;
+        }
+
         return Recommendation::query()->updateOrCreate($attributes, $values);
     }
 
     private function seedVotes(Creator $creator, $recommendations, $voters): int
     {
-        $desiredVotes = [9, 7, 4, 4, 3, 0, 0, 0, 4, 3, 2, 0, 5, 3, 0, 3, 2, 1, 0, 4, 0, 3, 0, 2, 1, 0, 0, 4, 3, 2, 2, 1];
+        $desiredVotes = [9, 7, 4, 4, 3, 0, 0, 0, 4, 3, 2, 0, 5, 3, 0, 3, 2, 1, 0, 4, 0, 3, 0, 2, 1, 0, 0, 4, 3, 2, 2, 1, 0];
         $usageByUser = [];
         $created = 0;
 

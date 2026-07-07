@@ -86,6 +86,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/{creator:slug}/recommendations/{recommendation}/vote', [RecommendationController::class, 'toggleVote'])
         ->scopeBindings()
         ->name('recommendations.vote');
+    Route::post('/{creator:slug}/recommendations/{recommendation}/withdraw', [RecommendationController::class, 'withdraw'])
+        ->scopeBindings()
+        ->name('recommendations.withdraw');
     Route::post('/{creator:slug}/recommendations/{recommendation}/alternatives', [RecommendationAlternativeController::class, 'store'])
         ->scopeBindings()
         ->name('recommendations.alternatives.store');

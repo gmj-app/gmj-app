@@ -26,6 +26,7 @@ class RecommendationFactory extends Factory
             'submitted_by' => User::factory(),
             'recommendation_type' => 'youtube',
             'youtube_url' => "https://www.youtube.com/watch?v={$videoId}",
+            'normalized_url' => "https://www.youtube.com/watch?v={$videoId}",
             'youtube_video_id' => $videoId,
             'channel_title' => null,
             'title' => fake()->sentence(4),
@@ -35,6 +36,8 @@ class RecommendationFactory extends Factory
             'status' => 'pending',
             'is_pinned' => false,
             'published_reaction_url' => null,
+            'published_normalized_url' => null,
+            'published_video_id' => null,
         ];
     }
 }

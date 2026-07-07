@@ -7,6 +7,7 @@ use App\Models\CreatorFavorite;
 use App\Models\CreatorOwner;
 use App\Models\Recommendation;
 use App\Models\User;
+use App\Models\UserPick;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -457,6 +458,223 @@ class SubmitRecommendationTest extends TestCase
         $this->assertDatabaseHas('recommendations', [
             'youtube_video_id' => 'dQw4w9WgXcQ',
             'channel_title' => 'Example Channel',
+        ]);
+    }
+
+    public function test_original_suggester_can_withdraw_active_recommendation_and_resources_return(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'recommendation_approval_mode' => 'auto',
+        ]);
+        $suggester = User::factory()->create();
+        $voter = User::factory()->create();
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $suggester->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            'status' => 'approved',
+            'title' => 'Withdrawable suggestion',
+        ]);
+
+        UserPick::query()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $recommendation->id,
+            'user_id' => $voter->id,
+            'vote_count' => 2,
+        ]);
+
+        $this->assertSame(1, $suggester->suggestionsUsedFor($creator));
+        $this->assertSame(2, $voter->votesUsedFor($creator));
+
+        $this->actingAs($suggester)
+            ->post(route('recommendations.withdraw', [$creator, $recommendation]))
+            ->assertRedirect(route('creator.queue', $creator))
+            ->assertSessionHas('success', 'Your suggestion was withdrawn.');
+
+        $recommendation->refresh();
+
+        $this->assertSame('withdrawn', $recommendation->status);
+        $this->assertNotNull($recommendation->withdrawn_at);
+        $this->assertSame($suggester->id, $recommendation->withdrawn_by_user_id);
+        $this->assertSame(0, $suggester->fresh()->suggestionsUsedFor($creator));
+        $this->assertSame(0, $voter->fresh()->votesUsedFor($creator));
+        $this->assertSame(1, $recommendation->userPicks()->count());
+
+        $this->actingAs($suggester)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('Withdrawable suggestion');
+    }
+
+    public function test_non_suggester_guest_and_published_recommendations_cannot_be_withdrawn(): void
+    {
+        $creator = Creator::factory()->create();
+        $suggester = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $suggester->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            'status' => 'approved',
+        ]);
+
+        $this->post(route('recommendations.withdraw', [$creator, $recommendation]))
+            ->assertRedirect('/login');
+
+        $this->actingAs($otherUser)
+            ->post(route('recommendations.withdraw', [$creator, $recommendation]))
+            ->assertSessionHasErrors([
+                'withdraw' => 'This suggestion can no longer be withdrawn.',
+            ]);
+
+        $recommendation->update(['status' => 'published']);
+
+        $this->actingAs($suggester)
+            ->post(route('recommendations.withdraw', [$creator, $recommendation]))
+            ->assertSessionHasErrors([
+                'withdraw' => 'This suggestion can no longer be withdrawn.',
+            ]);
+
+        $this->assertSame('published', $recommendation->fresh()->status);
+    }
+
+    public function test_withdraw_action_only_appears_for_original_suggester_on_active_recommendations(): void
+    {
+        $creator = Creator::factory()->create(['recommendation_approval_mode' => 'auto']);
+        $suggester = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $suggester->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            'status' => 'approved',
+            'title' => 'Visible suggestion',
+        ]);
+
+        $this->actingAs($suggester)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Withdraw suggestion')
+            ->assertSee('Withdraw this suggestion?')
+            ->assertSee(route('recommendations.withdraw', [$creator, $recommendation]), false);
+
+        $this->actingAs($otherUser)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('Withdraw suggestion');
+
+        $recommendation->update(['status' => 'published']);
+
+        $this->actingAs($suggester)
+            ->get(route('creators.published', $creator))
+            ->assertOk()
+            ->assertDontSee('Withdraw suggestion');
+    }
+
+    public function test_duplicate_active_youtube_url_submission_is_blocked_with_helpful_link(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'recommendation_approval_mode' => 'auto',
+        ]);
+        $existing = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'normalized_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'youtube_video_id' => 'dQw4w9WgXcQ',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('recommendations.store', $creator), [
+                'recommendation_type' => 'youtube',
+                'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ?t=42&si=tracking',
+                'title' => 'Duplicate active URL',
+                'confirm_favorite' => '1',
+            ])
+            ->assertRedirect(route('recommendations.create', $creator))
+            ->assertSessionHas('duplicate_recommendation.title', 'Already suggested')
+            ->assertSessionHas('duplicate_recommendation.primary_url', route('creator.queue', $creator)."#recommendation-{$existing->id}");
+
+        $this->get(route('recommendations.create', $creator))
+            ->assertOk()
+            ->assertSee('Already suggested')
+            ->assertSee('This URL is already in the active recommendation list for this creator.')
+            ->assertSee('View recommendation');
+
+        $this->assertDatabaseMissing('recommendations', [
+            'title' => 'Duplicate active URL',
+        ]);
+    }
+
+    public function test_duplicate_published_url_submission_checks_published_video_fields(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'recommendation_approval_mode' => 'auto',
+        ]);
+        $existing = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'published',
+            'published_reaction_url' => 'https://www.youtube.com/watch?v=_BTsmCm8UPE',
+            'published_normalized_url' => 'https://www.youtube.com/watch?v=_BTsmCm8UPE',
+            'published_video_id' => '_BTsmCm8UPE',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('recommendations.store', $creator), [
+                'recommendation_type' => 'youtube',
+                'youtube_url' => 'https://www.youtube.com/shorts/_BTsmCm8UPE?feature=share',
+                'title' => 'Duplicate published URL',
+                'confirm_favorite' => '1',
+            ])
+            ->assertRedirect(route('recommendations.create', $creator))
+            ->assertSessionHas('duplicate_recommendation.title', 'Already published')
+            ->assertSessionHas('duplicate_recommendation.primary_url', route('creators.published', $creator)."#recommendation-{$existing->id}")
+            ->assertSessionHas('duplicate_recommendation.secondary_url', 'https://www.youtube.com/watch?v=_BTsmCm8UPE');
+
+        $this->get(route('recommendations.create', $creator))
+            ->assertOk()
+            ->assertSee('Already published')
+            ->assertSee('This creator has already published something for this recommendation.')
+            ->assertSee('View published recommendation')
+            ->assertSee('Open published video');
+
+        $this->assertDatabaseMissing('recommendations', [
+            'title' => 'Duplicate published URL',
+        ]);
+    }
+
+    public function test_withdrawn_duplicate_can_be_submitted_again_when_not_published(): void
+    {
+        $creator = Creator::factory()->create([
+            'slug' => 'jfragment',
+            'recommendation_approval_mode' => 'auto',
+        ]);
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'withdrawn',
+            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'normalized_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'youtube_video_id' => 'dQw4w9WgXcQ',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('recommendations.store', $creator), [
+                'recommendation_type' => 'youtube',
+                'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
+                'title' => 'Resubmitted after withdrawal',
+                'confirm_favorite' => '1',
+            ])
+            ->assertRedirect(route('creator.queue', $creator));
+
+        $this->assertDatabaseHas('recommendations', [
+            'title' => 'Resubmitted after withdrawal',
+            'youtube_video_id' => 'dQw4w9WgXcQ',
+            'normalized_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'status' => 'approved',
         ]);
     }
 }

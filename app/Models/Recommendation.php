@@ -24,6 +24,7 @@ class Recommendation extends Model
         'already_seen',
         'passed',
         'hidden',
+        'withdrawn',
     ];
 
     public const PUBLIC_STATUSES = [
@@ -79,6 +80,7 @@ class Recommendation extends Model
         'already_seen' => 'Already Seen',
         'passed' => 'Passed',
         'hidden' => 'Hidden',
+        'withdrawn' => 'Withdrawn',
         'planned' => 'Coming Soon',
         'declined' => 'Passed',
     ];
@@ -89,6 +91,7 @@ class Recommendation extends Model
         'submission_source',
         'recommendation_type',
         'youtube_url',
+        'normalized_url',
         'youtube_video_id',
         'channel_title',
         'title',
@@ -105,11 +108,15 @@ class Recommendation extends Model
         'moderated_by',
         'moderated_at',
         'published_reaction_url',
+        'published_normalized_url',
         'published_title',
         'published_channel',
         'published_thumbnail_url',
         'published_video_id',
         'published_metadata',
+        'withdrawn_at',
+        'withdrawn_by_user_id',
+        'withdrawal_reason',
     ];
 
     protected function casts(): array
@@ -120,6 +127,7 @@ class Recommendation extends Model
             'published_at' => 'datetime',
             'moderated_at' => 'datetime',
             'published_metadata' => 'array',
+            'withdrawn_at' => 'datetime',
         ];
     }
 
@@ -136,6 +144,11 @@ class Recommendation extends Model
     public function moderatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'moderated_by');
+    }
+
+    public function withdrawnBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'withdrawn_by_user_id');
     }
 
     public function userPicks(): HasMany
@@ -275,6 +288,25 @@ class Recommendation extends Model
         return self::ACTIVE_PUBLIC_STATUSES;
     }
 
+    public static function suggestionConsumingStatuses(): array
+    {
+        return [
+            'pending',
+            'approved',
+            'coming_soon',
+            'scheduled',
+            'recorded',
+        ];
+    }
+
+    public static function suggesterRemovableStatuses(): array
+    {
+        return [
+            'pending',
+            'approved',
+        ];
+    }
+
     public static function statusConsumesUpvotes(string $status): bool
     {
         return in_array($status, self::UPVOTE_CONSUMING_STATUSES, true);
@@ -288,6 +320,14 @@ class Recommendation extends Model
     public function isVotable(): bool
     {
         return $this->consumesUpvotes();
+    }
+
+    public function canBeWithdrawnBy(?User $user): bool
+    {
+        return $user !== null
+            && (int) $this->submitted_by === (int) $user->id
+            && $this->submission_source === self::SUBMISSION_SOURCE_FAN
+            && in_array($this->status, self::suggesterRemovableStatuses(), true);
     }
 
     public function isCreatorAdded(): bool

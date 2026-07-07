@@ -41,6 +41,24 @@
                     </div>
                 @enderror
 
+                @if (session('duplicate_recommendation'))
+                    @php($duplicateRecommendation = session('duplicate_recommendation'))
+                    <div class="mt-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900 dark:border-indigo-500/30 dark:bg-indigo-950/40 dark:text-indigo-100">
+                        <h2 class="text-base font-extrabold">{{ $duplicateRecommendation['title'] }}</h2>
+                        <p class="mt-1 leading-6">{{ $duplicateRecommendation['body'] }}</p>
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <a href="{{ $duplicateRecommendation['primary_url'] }}" class="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-500">
+                                {{ $duplicateRecommendation['primary_label'] }}
+                            </a>
+                            @if ($duplicateRecommendation['secondary_url'])
+                                <a href="{{ $duplicateRecommendation['secondary_url'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-500/30 dark:bg-slate-950 dark:text-indigo-200 dark:hover:bg-indigo-950/60">
+                                    {{ $duplicateRecommendation['secondary_label'] }}
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 @if ($errors->any())
                     <div class="mt-6 rounded-md bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-200 dark:ring-red-900">
                         <p class="font-bold">Please fix the highlighted fields and submit again.</p>
