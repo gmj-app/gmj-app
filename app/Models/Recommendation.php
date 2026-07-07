@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Recommendation extends Model
 {
@@ -214,13 +215,18 @@ class Recommendation extends Model
         return filled($this->youtube_url) ? (string) $this->youtube_url : null;
     }
 
+    public function displayPublishedDate(): ?Carbon
+    {
+        return $this->published_at ?? $this->updated_at ?? $this->created_at;
+    }
+
     public function hasPublishedUrl(): bool
     {
         return filled($this->published_reaction_url);
     }
 
     /**
-     * @return array{title: string, channel: string|null, thumbnail_url: string|null, url: string|null, has_published_url: bool}
+     * @return array{title: string, channel: string|null, thumbnail_url: string|null, url: string|null, has_published_url: bool, date: Carbon|null}
      */
     public function publishedDisplayData(): array
     {
@@ -230,6 +236,7 @@ class Recommendation extends Model
             'thumbnail_url' => $this->displayPublishedThumbnailUrl(),
             'url' => $this->displayPublishedUrl(),
             'has_published_url' => $this->hasPublishedUrl(),
+            'date' => $this->displayPublishedDate(),
         ];
     }
 

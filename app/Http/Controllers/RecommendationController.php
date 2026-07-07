@@ -145,10 +145,9 @@ class RecommendationController extends Controller
         $recentPublishedRecommendations = $creator->recommendations()
             ->where('status', 'published')
             ->withSum('userPicks as user_picks_count', 'vote_count')
-            ->orderByDesc('published_at')
-            ->orderByDesc('updated_at')
+            ->orderByRaw('COALESCE(published_at, updated_at, created_at) DESC')
             ->latest()
-            ->limit(5)
+            ->limit(4)
             ->get();
 
         $usage = $request->user()

@@ -509,18 +509,46 @@ class PublicCreatorQueueTest extends TestCase
             'title' => 'Active community request',
             'status' => 'approved',
         ]);
-        $published = Recommendation::factory()->create([
+        $newest = Recommendation::factory()->create([
             'creator_id' => $creator->id,
-            'title' => 'Published community request',
+            'title' => 'Original newest request title',
             'status' => 'published',
             'category' => 'music',
-            'published_at' => '2026-07-04 12:00:00',
+            'published_at' => '2026-07-06 12:00:00',
             'published_reaction_url' => 'https://www.youtube.com/watch?v=PUBLISHED01',
             'published_title' => 'Creator finished video',
             'published_channel' => 'Creator Finished Channel',
+            'published_thumbnail_url' => 'https://img.youtube.com/vi/PUBLISHED01/hqdefault.jpg',
+        ]);
+        $fallback = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Fallback original published title',
+            'status' => 'published',
+            'published_at' => '2026-07-05 12:00:00',
+            'youtube_url' => 'https://www.youtube.com/watch?v=FALLBACK001',
+            'youtube_video_id' => 'FALLBACK001',
+        ]);
+        $third = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Third published sidebar item',
+            'status' => 'published',
+            'published_at' => '2026-07-04 12:00:00',
+        ]);
+        $fourth = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Fourth published sidebar item',
+            'status' => 'published',
+            'published_at' => '2026-07-03 12:00:00',
+        ]);
+        $fifth = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Old published sidebar item',
+            'status' => 'published',
+            'published_at' => '2026-07-02 12:00:00',
         ]);
 
-        $this->addPicks($creator, $published, 2);
+        $this->addPicks($creator, $newest, 2);
+        $this->addPicks($creator, $fallback, 5);
 
         $response = $this->get(route('creator.queue', $creator));
 
@@ -528,15 +556,30 @@ class PublicCreatorQueueTest extends TestCase
             ->assertOk()
             ->assertSee('Recently Published')
             ->assertSee('View all published')
-            ->assertSee('Published Jul 4, 2026')
+            ->assertSeeInOrder([
+                'Creator finished video',
+                'Fallback original published title',
+                'Third published sidebar item',
+                'Fourth published sidebar item',
+            ])
+            ->assertSee('Published Jul 6, 2026')
             ->assertSee('Creator finished video')
-            ->assertSee('Creator Finished Channel')
-            ->assertSee(route('creators.published', $creator).'#recommendation-'.$published->id, false)
-            ->assertSee('2 votes');
+            ->assertSee('https://img.youtube.com/vi/PUBLISHED01/hqdefault.jpg', false)
+            ->assertSee('Fallback original published title')
+            ->assertSee('https://img.youtube.com/vi/FALLBACK001/hqdefault.jpg', false)
+            ->assertSee(route('creators.published', $creator).'#recommendation-'.$newest->id, false)
+            ->assertSee(route('creators.published', $creator).'#recommendation-'.$fallback->id, false)
+            ->assertSee('2 votes')
+            ->assertSee('5 votes')
+            ->assertDontSee('Creator Finished Channel')
+            ->assertDontSee('Old published sidebar item')
+            ->assertDontSee(route('creators.published', $creator).'#recommendation-'.$fifth->id, false);
 
         $this->assertStringContainsString('Active community request', $response->getContent());
-        $this->assertStringNotContainsString('Published community request', $response->getContent());
-        $this->assertStringNotContainsString('id="recommendation-'.$published->id.'"', $response->getContent());
+        $this->assertStringNotContainsString('Original newest request title', $response->getContent());
+        $this->assertStringNotContainsString('id="recommendation-'.$newest->id.'"', $response->getContent());
+        $this->assertStringNotContainsString('id="recommendation-'.$third->id.'"', $response->getContent());
+        $this->assertStringNotContainsString('id="recommendation-'.$fourth->id.'"', $response->getContent());
         $this->assertStringContainsString('id="recommendation-'.$active->id.'"', $response->getContent());
     }
 

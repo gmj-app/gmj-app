@@ -477,32 +477,47 @@
                             @if ($recentPublishedRecommendations->isEmpty())
                                 <p class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">No published recommendations yet.</p>
                             @else
-                                <div class="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
+                                <div class="mt-4 space-y-3">
                                     @foreach ($recentPublishedRecommendations as $publishedRecommendation)
                                         @php
-                                            $publishedDate = $publishedRecommendation->published_at ?? $publishedRecommendation->updated_at ?? $publishedRecommendation->created_at;
                                             $publishedDisplay = $publishedRecommendation->publishedDisplayData();
+                                            $publishedDate = $publishedDisplay['date'];
+                                            $publishedVotes = $publishedRecommendation->totalVotes();
                                         @endphp
                                         <a
                                             href="{{ route('creators.published', $creator) }}#recommendation-{{ $publishedRecommendation->id }}"
-                                            class="group flex min-w-0 items-start gap-3 py-3 first:pt-0 last:pb-0"
+                                            aria-label="View published recommendation: {{ $publishedDisplay['title'] }}"
+                                            class="group flex min-w-0 items-center gap-3 rounded-2xl p-1.5 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800/70"
                                         >
-                                            <span class="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300">
-                                                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" />
-                                                </svg>
+                                            <span class="relative flex aspect-video w-20 shrink-0 overflow-hidden rounded-lg bg-slate-950 ring-1 ring-slate-200 dark:ring-slate-800">
+                                                @if ($publishedDisplay['thumbnail_url'])
+                                                    <img
+                                                        src="{{ $publishedDisplay['thumbnail_url'] }}"
+                                                        alt=""
+                                                        loading="lazy"
+                                                        onerror="this.hidden = true"
+                                                        class="h-full w-full object-cover transition duration-200 group-hover:scale-105 group-hover:opacity-90"
+                                                    >
+                                                @else
+                                                    <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-slate-400">
+                                                        <svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                            <path d="M8 5v14l11-7z" />
+                                                        </svg>
+                                                    </span>
+                                                @endif
+
+                                                @if ($publishedDisplay['url'])
+                                                    <span class="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                                                        <span class="flex size-7 items-center justify-center rounded-full bg-red-600/95 text-white shadow-md transition group-hover:scale-105 group-hover:bg-red-500">
+                                                            <svg viewBox="0 0 24 24" aria-hidden="true" class="size-3.5 fill-current"><path d="M8 5v14l11-7z"/></svg>
+                                                        </span>
+                                                    </span>
+                                                @endif
                                             </span>
                                             <span class="min-w-0 flex-1">
-                                                <span class="block break-words text-sm font-medium leading-5 text-slate-800 group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-300">{{ $publishedDisplay['title'] }}</span>
-                                                <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-normal text-slate-500 dark:text-slate-400">
-                                                    <span>Published {{ $publishedDate->format('M j, Y') }}</span>
-                                                    @if ($publishedDisplay['channel'])
-                                                        <span class="min-w-0 max-w-full truncate">{{ $publishedDisplay['channel'] }}</span>
-                                                    @endif
-                                                    @if ($publishedRecommendation->category)
-                                                        <span class="capitalize">{{ $publishedRecommendation->category }}</span>
-                                                    @endif
-                                                    <span>{{ $publishedRecommendation->totalVotes() }} {{ Str::plural('vote', $publishedRecommendation->totalVotes()) }}</span>
+                                                <span class="line-clamp-2 break-words text-sm font-semibold leading-5 text-slate-800 transition group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-300">{{ $publishedDisplay['title'] }}</span>
+                                                <span class="mt-1 block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                                    Published {{ $publishedDate?->format('M j, Y') ?? 'recently' }} &middot; {{ $publishedVotes }} {{ Str::plural('vote', $publishedVotes) }}
                                                 </span>
                                             </span>
                                         </a>
