@@ -365,15 +365,15 @@
                     @endauth
                 </div>
             @elseif ($showVotingControls && $recommendation->isVotingClosed())
-                <div class="flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:w-auto sm:min-w-72 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="leading-tight sm:text-right">
+                <div class="grid w-full grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:w-auto sm:min-w-72 sm:grid-cols-[auto_minmax(8rem,1fr)] sm:items-center sm:gap-5">
+                    <div class="text-center leading-tight sm:text-left">
                         <p class="text-lg font-extrabold leading-none text-slate-950 dark:text-white">{{ $totalVotes }}</p>
                         <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $totalVotes) }} total</p>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2 sm:justify-end">
-                        <span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>
+                    <div class="flex min-w-0 flex-col items-center justify-center px-1 py-1 text-center">
                         <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Voting closed</span>
+                        <span class="mt-2 inline-flex max-w-full rounded-full px-2.5 py-1 text-xs font-bold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>
                     </div>
                 </div>
             @else
