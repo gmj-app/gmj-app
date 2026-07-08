@@ -1359,19 +1359,33 @@ class PublicCreatorQueueTest extends TestCase
     public function test_non_consuming_public_statuses_do_not_show_a_vote_action(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
-        $recommendation = Recommendation::factory()->create([
+        $recommendations = collect([
+            'already_seen' => 'Already Seen',
+            'coming_soon' => 'Coming Soon',
+            'scheduled' => 'Scheduled',
+            'recorded' => 'Recorded',
+            'passed' => 'Passed',
+        ])->map(fn (string $label, string $status) => Recommendation::factory()->create([
             'creator_id' => $creator->id,
-            'status' => 'already_seen',
-            'title' => 'Locked recommendation',
-        ]);
+            'status' => $status,
+            'title' => "{$label} locked recommendation",
+        ]));
+        $recommendation = $recommendations->first();
         $user = User::factory()->create();
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Locked recommendation')
-            ->assertSee('No longer accepting votes')
+            ->assertDontSee('No longer accepting votes')
             ->assertDontSee('aria-label="Add vote to this recommendation"', false);
+
+        foreach ($recommendations as $status => $lockedRecommendation) {
+            $response
+                ->assertSee($lockedRecommendation->title)
+                ->assertSee($lockedRecommendation->statusLabel(), false);
+        }
+
+        $response->assertSee('Voting closed');
 
         $this->post(route('recommendations.vote', [$creator, $recommendation]))
             ->assertSessionHasErrors([

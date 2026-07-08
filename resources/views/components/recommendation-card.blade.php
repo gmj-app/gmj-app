@@ -99,7 +99,7 @@
             @if ($recommendation->isCreatorAdded())
                 <span class="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-semibold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Added by creator</span>
             @endif
-            <span class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $recommendation->status === 'already_seen' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }}">{{ $recommendation->statusLabel() }}</span>
+            <span class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>
         </div>
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -364,16 +364,17 @@
                         </div>
                     @endauth
                 </div>
-            @elseif ($showVotingControls)
-                <div class="inline-flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
-                    <div class="text-right leading-tight">
+            @elseif ($showVotingControls && $recommendation->isVotingClosed())
+                <div class="flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:w-auto sm:min-w-72 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="leading-tight sm:text-right">
                         <p class="text-lg font-extrabold leading-none text-slate-950 dark:text-white">{{ $totalVotes }}</p>
-                        <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $totalVotes) }}</p>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $totalVotes) }} total</p>
                     </div>
 
-                    <span class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-                        No longer accepting votes
-                    </span>
+                    <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>
+                        <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Voting closed</span>
+                    </div>
                 </div>
             @else
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right leading-tight shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
