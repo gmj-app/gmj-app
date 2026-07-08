@@ -290,9 +290,9 @@
         <div class="mt-5 flex items-center justify-end">
             @if ($showVotingControls && $recommendation->isVotable())
                 <div class="flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:w-auto sm:min-w-80 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="leading-tight">
-                        <p class="text-lg font-extrabold leading-none text-slate-950 dark:text-white">{{ $totalVotes }}</p>
-                        <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $totalVotes) }} total</p>
+                    <div class="flex min-h-11 items-center justify-center leading-none sm:justify-start">
+                        <p aria-hidden="true" class="text-3xl font-extrabold leading-none text-slate-950 dark:text-white">{{ $totalVotes }}</p>
+                        <span class="sr-only">{{ $totalVotes }} total {{ Str::plural('vote', $totalVotes) }}</span>
                     </div>
 
                     @auth

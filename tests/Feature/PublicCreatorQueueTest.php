@@ -779,8 +779,8 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('mt-5 flex items-center justify-end', false)
             ->assertSee('flex w-full flex-col gap-3 rounded-2xl', false)
             ->assertSeeInOrder([
-                '>0</p>',
-                '>votes total</p>',
+                'aria-hidden="true" class="text-3xl font-extrabold',
+                '>0 total votes</span>',
                 '>0/3</p>',
                 'aria-label="Add vote to this recommendation"',
             ], false)
