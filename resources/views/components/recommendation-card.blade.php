@@ -289,7 +289,7 @@
 
         <div class="mt-5 flex items-center justify-end">
             @if ($showVotingControls && $recommendation->isVotable())
-                <div class="flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:w-auto sm:min-w-80 sm:flex-row sm:items-center sm:justify-between">
+                <div class="inline-flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:w-auto sm:flex-row sm:items-center sm:gap-5">
                     <div class="flex min-h-11 items-center justify-center leading-none sm:justify-start">
                         <p aria-hidden="true" class="text-3xl font-extrabold leading-none text-slate-950 dark:text-white">{{ $totalVotes }}</p>
                         <span class="sr-only">{{ $totalVotes }} total {{ Str::plural('vote', $totalVotes) }}</span>
@@ -366,9 +366,9 @@
                 </div>
             @elseif ($showVotingControls && $recommendation->isVotingClosed())
                 <div class="grid w-full grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:w-auto sm:min-w-72 sm:grid-cols-[auto_minmax(8rem,1fr)] sm:items-center sm:gap-5">
-                    <div class="text-center leading-tight sm:text-left">
-                        <p class="text-lg font-extrabold leading-none text-slate-950 dark:text-white">{{ $totalVotes }}</p>
-                        <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $totalVotes) }} total</p>
+                    <div class="flex min-h-11 items-center justify-center leading-none sm:justify-start">
+                        <p aria-hidden="true" class="text-3xl font-extrabold leading-none text-slate-950 dark:text-white">{{ $totalVotes }}</p>
+                        <span class="sr-only">{{ $totalVotes }} total {{ Str::plural('vote', $totalVotes) }}</span>
                     </div>
 
                     <div class="flex min-w-0 flex-col items-center justify-center px-1 py-1 text-center">

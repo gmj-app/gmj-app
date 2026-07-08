@@ -777,7 +777,8 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Submitted by Example Fan')
             ->assertSee('aria-label="Add vote to this recommendation"', false)
             ->assertSee('mt-5 flex items-center justify-end', false)
-            ->assertSee('flex w-full flex-col gap-3 rounded-2xl', false)
+            ->assertSee('inline-flex w-full flex-col gap-3 rounded-2xl', false)
+            ->assertDontSee('votes total')
             ->assertSeeInOrder([
                 'aria-hidden="true" class="text-3xl font-extrabold',
                 '>0 total votes</span>',
@@ -1376,6 +1377,7 @@ class PublicCreatorQueueTest extends TestCase
         $response = $this->actingAs($user)
             ->get(route('creator.queue', $creator))
             ->assertOk()
+            ->assertDontSee('votes total')
             ->assertDontSee('No longer accepting votes')
             ->assertDontSee('aria-label="Add vote to this recommendation"', false);
 
