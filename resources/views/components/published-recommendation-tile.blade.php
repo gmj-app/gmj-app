@@ -24,6 +24,7 @@
                 :thumbnail-url="$display['thumbnail_url']"
                 :title="$display['title']"
                 :url="$display['url']"
+                :show-play-overlay="false"
                 :aria-label="'Open published video: '.$display['title']"
                 x-on:click.stop
                 class="h-full w-full"
@@ -44,10 +45,6 @@
                 </span>
             </span>
         @endif
-
-        <span class="absolute left-3 top-3 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm">
-            {{ $display['has_published_url'] ? 'Published work' : 'Published' }}
-        </span>
     </span>
 
     <span class="flex min-w-0 flex-1 flex-col p-4">
