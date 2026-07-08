@@ -27,6 +27,7 @@ class User extends Authenticatable
         'public_display_name',
         'public_handle',
         'public_profile_completed_at',
+        'display_name_prompt_dismissed_at',
         'email',
         'google_id',
         'avatar_url',
@@ -57,6 +58,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'public_profile_completed_at' => 'datetime',
+            'display_name_prompt_dismissed_at' => 'datetime',
             'can_access_video_tools' => 'boolean',
             'password' => 'hashed',
         ];
@@ -112,6 +114,17 @@ class User extends Authenticatable
         return filled($this->public_display_name)
             && filled($this->public_handle)
             && $this->public_profile_completed_at !== null;
+    }
+
+    public function shouldSeeDisplayNamePrompt(): bool
+    {
+        if ($this->display_name_prompt_dismissed_at !== null) {
+            return false;
+        }
+
+        $displayName = trim((string) $this->public_display_name);
+
+        return $displayName === '' || strcasecmp($displayName, 'Guide') === 0;
     }
 
     public function recommendationsSubmitted(): HasMany

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Creator;
+use App\Models\Recommendation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,6 +62,200 @@ class ProfileTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('profile.setup'))
             ->assertRedirect(route('dashboard'));
+    }
+
+    public function test_default_public_display_name_prompt_appears_for_guide_names(): void
+    {
+        $user = User::factory()->create([
+            'public_display_name' => ' guide ',
+            'public_handle' => 'quietguide',
+            'public_profile_completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Choose your public display name')
+            ->assertSee('name="public_display_name"', false)
+            ->assertSee('Save display name')
+            ->assertSee("Don't show this again", false)
+            ->assertDontSee('name="public_handle"', false);
+    }
+
+    public function test_default_public_display_name_prompt_appears_for_missing_display_name_on_public_pages(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $user = User::factory()->create([
+            'public_display_name' => null,
+            'public_handle' => 'quietguide',
+            'public_profile_completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Choose your public display name');
+    }
+
+    public function test_default_public_display_name_prompt_is_hidden_for_custom_or_dismissed_names(): void
+    {
+        $customUser = User::factory()->create([
+            'public_display_name' => 'Cher Ree',
+            'public_handle' => 'cherree',
+            'public_profile_completed_at' => now(),
+        ]);
+
+        $this->actingAs($customUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Choose your public display name');
+
+        $guideMeUser = User::factory()->create([
+            'public_display_name' => 'GuideMe',
+            'public_handle' => 'guideme',
+            'public_profile_completed_at' => now(),
+        ]);
+
+        $this->actingAs($guideMeUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Choose your public display name');
+
+        $dismissedUser = User::factory()->create([
+            'public_display_name' => 'Guide',
+            'public_handle' => 'dismissedguide',
+            'public_profile_completed_at' => now(),
+            'display_name_prompt_dismissed_at' => now(),
+        ]);
+
+        $this->actingAs($dismissedUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Choose your public display name');
+    }
+
+    public function test_display_name_prompt_updates_only_the_display_name(): void
+    {
+        $user = User::factory()->create([
+            'public_display_name' => 'Guide',
+            'public_handle' => 'steadyguide',
+            'public_profile_completed_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->patch(route('profile.display-name.update'), [
+                'public_display_name' => '  Cher   Ree  ',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $user->refresh();
+
+        $this->assertSame('Cher Ree', $user->public_display_name);
+        $this->assertSame('steadyguide', $user->public_handle);
+        $this->assertNotNull($user->public_profile_completed_at);
+        $this->assertFalse($user->shouldSeeDisplayNamePrompt());
+    }
+
+    public function test_display_name_prompt_can_be_dismissed_permanently(): void
+    {
+        $user = User::factory()->create([
+            'public_display_name' => 'Guide',
+            'public_handle' => 'steadyguide',
+            'public_profile_completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('profile.display-name-prompt.dismiss'), [
+                'dont_show_again' => '1',
+            ])
+            ->assertRedirect();
+
+        $user->refresh();
+
+        $this->assertSame('Guide', $user->public_display_name);
+        $this->assertNotNull($user->display_name_prompt_dismissed_at);
+        $this->assertFalse($user->shouldSeeDisplayNamePrompt());
+    }
+
+    public function test_display_name_prompt_not_now_without_checkbox_is_not_persistent(): void
+    {
+        $user = User::factory()->create([
+            'public_display_name' => 'Guide',
+            'public_handle' => 'steadyguide',
+            'public_profile_completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('profile.display-name-prompt.dismiss'))
+            ->assertRedirect();
+
+        $user->refresh();
+
+        $this->assertNull($user->display_name_prompt_dismissed_at);
+        $this->assertTrue($user->shouldSeeDisplayNamePrompt());
+    }
+
+    public function test_display_name_prompt_rejects_default_html_links_and_long_names(): void
+    {
+        $user = User::factory()->create([
+            'public_display_name' => 'Guide',
+            'public_handle' => 'steadyguide',
+            'public_profile_completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->patch(route('profile.display-name.update'), [
+                'public_display_name' => 'GUIDE',
+            ])
+            ->assertSessionHasErrors(['public_display_name' => 'Please choose a display name other than "Guide".'], null, 'displayNamePrompt');
+
+        $this->actingAs($user)
+            ->patch(route('profile.display-name.update'), [
+                'public_display_name' => '<script>alert(1)</script>',
+            ])
+            ->assertSessionHasErrors(['public_display_name' => "Display name can't include links or HTML."], null, 'displayNamePrompt');
+
+        $this->actingAs($user)
+            ->patch(route('profile.display-name.update'), [
+                'public_display_name' => 'https://example.com',
+            ])
+            ->assertSessionHasErrors(['public_display_name' => "Display name can't include links or HTML."], null, 'displayNamePrompt');
+
+        $this->actingAs($user)
+            ->patch(route('profile.display-name.update'), [
+                'public_display_name' => str_repeat('A', 41),
+            ])
+            ->assertSessionHasErrors(['public_display_name' => 'Display name must be 40 characters or fewer.'], null, 'displayNamePrompt');
+    }
+
+    public function test_public_attribution_uses_display_name_updated_from_prompt(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $user = User::factory()->create([
+            'public_display_name' => 'Guide',
+            'public_handle' => 'steadyguide',
+            'public_profile_completed_at' => now(),
+        ]);
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $user->id,
+            'title' => 'Guide name attribution request',
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($user)
+            ->patch(route('profile.display-name.update'), [
+                'public_display_name' => 'Cher Ree',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Submitted by Cher Ree')
+            ->assertDontSee('Submitted by Guide');
     }
 
     public function test_public_profile_setup_rejects_private_or_reserved_identity_values(): void

@@ -41,6 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/public-identity', [ProfileController::class, 'updatePublicIdentity'])->name('profile.public-identity.update');
+    Route::patch('/profile/display-name', [ProfileController::class, 'updateDisplayNamePrompt'])->name('profile.display-name.update');
+    Route::post('/profile/display-name-prompt/dismiss', [ProfileController::class, 'dismissDisplayNamePrompt'])->name('profile.display-name-prompt.dismiss');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 

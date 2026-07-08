@@ -38,5 +38,7 @@
         @if (config('gmj.beta_feedback_enabled'))
             <x-beta-feedback />
         @endif
+
+        <x-display-name-prompt-host />
     </body>
 </html>
