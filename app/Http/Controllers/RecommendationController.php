@@ -53,8 +53,7 @@ class RecommendationController extends Controller
             ->whereIn('status', $activePublicStatuses)
             ->count();
         $publicVotesCount = (int) $creator->userPicks()
-            ->whereHas('recommendation', fn ($query) => $query
-                ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
+            ->whereHas('recommendation', fn ($query) => $query->votable())
             ->sum('vote_count');
         $ownsCreator = $request->user()
             ? $creator->creatorOwners()
@@ -64,7 +63,7 @@ class RecommendationController extends Controller
             : false;
         $topRequestedId = $creator->recommendations()
             ->whereIn('status', $activePublicStatuses)
-            ->whereIn('status', Recommendation::upvoteConsumingStatuses())
+            ->votable()
             ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('user_picks_count')
             ->orderByDesc('is_pinned')

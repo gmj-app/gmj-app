@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Creator;
-use App\Models\Recommendation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -29,8 +28,7 @@ class CreatorDashboardController extends Controller
             'recommendations' => $creator->recommendations()->count(),
             'pending' => $creator->recommendations()->where('status', 'pending')->count(),
             'votes' => $creator->userPicks()
-                ->whereHas('recommendation', fn ($query) => $query
-                    ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
+                ->whereHas('recommendation', fn ($query) => $query->votable())
                 ->sum('vote_count'),
             'followers' => $creator->creatorFavorites()->count(),
             'published' => $creator->recommendations()->where('status', 'published')->count(),

@@ -345,7 +345,7 @@ class Recommendation extends Model
 
     public static function statusConsumesUpvotes(string $status): bool
     {
-        return in_array($status, self::UPVOTE_CONSUMING_STATUSES, true);
+        return in_array($status, self::votableStatuses(), true);
     }
 
     public function consumesUpvotes(): bool

@@ -141,6 +141,87 @@ class MembershipLimitsTest extends TestCase
         $this->assertSame(3, $user->fresh()->votesUsedFor($creator));
     }
 
+    public function test_votes_on_published_recommendations_return_to_available_capacity(): void
+    {
+        $creator = Creator::factory()->create();
+        $user = User::factory()->create();
+        $publishedRecommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+        ]);
+        $newRecommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+        ]);
+
+        foreach (range(1, 3) as $vote) {
+            $this->actingAs($user)
+                ->post(route('recommendations.vote', [$creator, $publishedRecommendation]))
+                ->assertSessionHas('recommendation_action', [
+                    'recommendation_id' => $publishedRecommendation->id,
+                    'message' => 'Your vote was added.',
+                    'type' => 'added',
+                ]);
+        }
+
+        $this->assertSame(3, $user->fresh()->votesUsedFor($creator));
+        $this->assertSame(0, $user->fresh()->votesRemainingFor($creator));
+        $this->assertSame(3, $publishedRecommendation->fresh()->totalVotes());
+
+        $publishedRecommendation->update(['status' => 'published']);
+
+        $this->assertFalse($publishedRecommendation->fresh()->isVotable());
+        $this->assertSame(0, $user->fresh()->votesUsedFor($creator));
+        $this->assertSame(3, $user->fresh()->votesRemainingFor($creator));
+        $this->assertSame(3, $publishedRecommendation->fresh()->totalVotes());
+        $this->assertSame(1, $publishedRecommendation->fresh()->userPicks()->count());
+
+        $this->actingAs($user)
+            ->post(route('recommendations.vote', [$creator, $newRecommendation]))
+            ->assertSessionHas('recommendation_action', [
+                'recommendation_id' => $newRecommendation->id,
+                'message' => 'Your vote was added.',
+                'type' => 'added',
+            ]);
+
+        $this->assertSame(1, $user->fresh()->votesUsedFor($creator));
+        $this->assertSame(2, $user->fresh()->votesRemainingFor($creator));
+    }
+
+    public function test_only_votable_status_votes_count_against_vote_limit(): void
+    {
+        $creator = Creator::factory()->create();
+        $user = User::factory()->create();
+
+        foreach ([
+            'pending' => 1,
+            'approved' => 2,
+            'coming_soon' => 3,
+            'scheduled' => 4,
+            'recorded' => 5,
+            'published' => 6,
+            'already_seen' => 7,
+            'passed' => 8,
+            'hidden' => 9,
+            'withdrawn' => 10,
+        ] as $status => $voteCount) {
+            $recommendation = Recommendation::factory()->create([
+                'creator_id' => $creator->id,
+                'status' => $status,
+            ]);
+
+            $user->userPicks()->create([
+                'creator_id' => $creator->id,
+                'recommendation_id' => $recommendation->id,
+                'vote_count' => $voteCount,
+            ]);
+        }
+
+        $this->assertSame(['pending', 'approved'], Recommendation::votableStatuses());
+        $this->assertSame(3, $user->fresh()->votesUsedFor($creator));
+        $this->assertSame(0, $user->fresh()->votesRemainingFor($creator));
+    }
+
     public function test_submission_uses_a_suggestion_slot_without_consuming_an_upvote(): void
     {
         $creator = Creator::factory()->create([

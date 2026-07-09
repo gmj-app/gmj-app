@@ -336,8 +336,7 @@ class User extends Authenticatable
     {
         return (int) $this->userPicks()
             ->where('creator_id', $creator->id)
-            ->whereHas('recommendation', fn ($query) => $query
-                ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
+            ->whereHas('recommendation', fn ($query) => $query->votable())
             ->sum('vote_count');
     }
 

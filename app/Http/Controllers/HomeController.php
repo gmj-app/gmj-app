@@ -33,8 +33,7 @@ class HomeController extends Controller
             ])
             ->withSum([
                 'userPicks as total_votes_count' => fn ($query) => $query
-                    ->whereHas('recommendation', fn ($query) => $query
-                        ->whereIn('status', Recommendation::upvoteConsumingStatuses())),
+                    ->whereHas('recommendation', fn ($query) => $query->votable()),
             ], 'vote_count')
             ->orderByDesc('total_votes_count')
             ->orderByDesc('visible_recommendations_count')

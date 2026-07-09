@@ -25,8 +25,7 @@ class DashboardController extends Controller
             'creator_favorites_used' => $user->creatorFavoritesUsed(),
             'creator_favorites_limit' => $user->creatorFavoriteLimit(),
             'active_upvotes' => $user->userPicks()
-                ->whereHas('recommendation', fn ($query) => $query
-                    ->whereIn('status', Recommendation::upvoteConsumingStatuses()))
+                ->whereHas('recommendation', fn ($query) => $query->votable())
                 ->sum('vote_count'),
             'suggestions_submitted' => $user->recommendationsSubmitted()
                 ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
