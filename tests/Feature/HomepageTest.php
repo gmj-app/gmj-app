@@ -232,6 +232,51 @@ class HomepageTest extends TestCase
             ->assertDontSee('Hidden request must not appear');
     }
 
+    public function test_homepage_creator_cards_show_published_recommendation_counts(): void
+    {
+        $publishedCreator = Creator::factory()->create([
+            'display_name' => 'Published Stats Creator',
+            'slug' => 'published-stats-creator',
+        ]);
+        $unpublishedCreator = Creator::factory()->create([
+            'display_name' => 'No Published Creator',
+            'slug' => 'no-published-creator',
+        ]);
+
+        $votedRequest = Recommendation::factory()->create([
+            'creator_id' => $publishedCreator->id,
+            'title' => 'Voted active request',
+            'status' => 'approved',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $publishedCreator->id,
+            'title' => 'Published request',
+            'status' => 'published',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $publishedCreator->id,
+            'title' => 'Recorded request is not published',
+            'status' => 'recorded',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $unpublishedCreator->id,
+            'title' => 'Only active request',
+            'status' => 'approved',
+        ]);
+
+        $this->addVotes($votedRequest, 1);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Published Stats Creator')
+            ->assertSee('>1</strong> vote', false)
+            ->assertSee('>3</strong> requests', false)
+            ->assertSee('>1</strong> published', false)
+            ->assertSee('No Published Creator')
+            ->assertSee('>1</strong> request', false)
+            ->assertSee('>0</strong> published', false);
+    }
+
     public function test_homepage_shows_the_empty_top_requests_state(): void
     {
         Creator::factory()->create([

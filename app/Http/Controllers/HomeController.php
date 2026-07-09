@@ -28,6 +28,8 @@ class HomeController extends Controller
             ->withCount([
                 'recommendations as visible_recommendations_count' => fn ($query) => $query
                     ->whereIn('status', Recommendation::PUBLIC_STATUSES),
+                'recommendations as published_recommendations_count' => fn ($query) => $query
+                    ->where('status', 'published'),
             ])
             ->withSum([
                 'userPicks as total_votes_count' => fn ($query) => $query
