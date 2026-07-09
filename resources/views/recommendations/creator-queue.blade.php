@@ -710,7 +710,8 @@
                                     $nextTick(() => $el.scrollIntoView({ block: 'start' }));
                                 }
                             "
-                            class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition dark:border-slate-800 dark:bg-slate-900"
+                            class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:border-emerald-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700"
+                            x-bind:class="open ? 'border-emerald-400 ring-2 ring-emerald-300/70 dark:border-emerald-500 dark:ring-emerald-500/40' : ''"
                         >
                             <button
                                 type="button"
@@ -718,7 +719,7 @@
                                 aria-expanded="false"
                                 x-bind:aria-expanded="open.toString()"
                                 aria-controls="recommendation-details-{{ $recommendation->id }}"
-                                class="flex min-h-16 w-full min-w-0 cursor-pointer items-start gap-3 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/70 sm:min-h-20 sm:gap-4 sm:px-5"
+                                class="flex min-h-16 w-full min-w-0 cursor-pointer items-start gap-3 px-4 py-3 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:hover:bg-emerald-950/20 sm:min-h-20 sm:gap-4 sm:px-5"
                             >
                                 <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
                                     {{ $rankLabel }}
@@ -749,7 +750,7 @@
 
                                 <svg
                                     class="size-5 shrink-0 text-slate-400 transition-transform duration-200"
-                                    x-bind:class="{ 'rotate-180 text-indigo-500 dark:text-indigo-300': open }"
+                                    x-bind:class="{ 'rotate-180 text-emerald-600 dark:text-emerald-300': open }"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
