@@ -335,8 +335,9 @@ class User extends Authenticatable
     public function votesUsedFor(Creator $creator): int
     {
         return (int) $this->userPicks()
-            ->where('creator_id', $creator->id)
-            ->whereHas('recommendation', fn ($query) => $query->votable())
+            ->whereHas('recommendation', fn ($query) => $query
+                ->where('creator_id', $creator->id)
+                ->votable())
             ->sum('vote_count');
     }
 
