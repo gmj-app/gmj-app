@@ -1,0 +1,112 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\GuideAccolade;
+use App\Models\User;
+use App\Services\GuideAccoladeService;
+use App\Services\GuideNumberService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class GuideAccoladeTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_missing_guide_numbers_are_backfilled_by_created_at_then_id(): void
+    {
+        $users = User::withoutEvents(fn () => [
+            User::factory()->create(['created_at' => '2026-01-02 00:00:00']),
+            User::factory()->create(['created_at' => '2026-01-01 00:00:00']),
+            User::factory()->create(['created_at' => '2026-01-01 00:00:00']),
+        ]);
+
+        app(GuideNumberService::class)->backfillMissingGuideNumbers();
+
+        $this->assertSame(3, $users[0]->fresh()->guide_number);
+        $this->assertSame(1, $users[1]->fresh()->guide_number);
+        $this->assertSame(2, $users[2]->fresh()->guide_number);
+    }
+
+    public function test_new_user_gets_next_stable_guide_number(): void
+    {
+        $first = User::factory()->create();
+        $second = User::factory()->create();
+
+        app(GuideNumberService::class)->assignIfMissing($first->fresh());
+
+        $this->assertSame(1, $first->fresh()->guide_number);
+        $this->assertSame(2, $second->fresh()->guide_number);
+    }
+
+    public function test_early_guide_accolade_boundaries_are_synced(): void
+    {
+        $service = app(GuideAccoladeService::class);
+
+        $guideOne = User::factory()->create(['guide_number' => 1]);
+        $guideOneHundred = User::factory()->create(['guide_number' => 100]);
+        $guideOneHundredOne = User::factory()->create(['guide_number' => 101]);
+        $guideFiveHundred = User::factory()->create(['guide_number' => 500]);
+        $guideFiveHundredOne = User::factory()->create(['guide_number' => 501]);
+
+        foreach ([$guideOne, $guideOneHundred, $guideOneHundredOne, $guideFiveHundred, $guideFiveHundredOne] as $user) {
+            $service->syncEarlyGuideAccolades($user->fresh());
+        }
+
+        $this->assertSame('Founding Guide', $guideOne->fresh()->primaryGuideAccolade()?->label);
+        $this->assertSame('Founding Guide', $guideOneHundred->fresh()->primaryGuideAccolade()?->label);
+        $this->assertSame('OG Guide', $guideOneHundredOne->fresh()->primaryGuideAccolade()?->label);
+        $this->assertSame('OG Guide', $guideFiveHundred->fresh()->primaryGuideAccolade()?->label);
+        $this->assertNull($guideFiveHundredOne->fresh()->primaryGuideAccolade());
+
+        $this->assertFalse($guideOne->fresh()->guideAccolades()->where('code', 'og_guide')->exists());
+    }
+
+    public function test_primary_accolade_uses_highest_priority_active_non_expired_award(): void
+    {
+        $user = User::factory()->create(['guide_number' => 501]);
+        $manual = GuideAccolade::factory()->create([
+            'code' => 'beta_tester',
+            'label' => 'Beta Tester',
+            'ring_class' => 'ring-2 ring-blue-400',
+            'priority' => 150,
+            'is_active' => true,
+        ]);
+        $expired = GuideAccolade::factory()->create([
+            'code' => 'expired_legend',
+            'label' => 'Expired Legend',
+            'ring_class' => 'ring-2 ring-rose-400',
+            'priority' => 200,
+            'is_active' => true,
+        ]);
+        $inactive = GuideAccolade::factory()->create([
+            'code' => 'inactive_legend',
+            'label' => 'Inactive Legend',
+            'ring_class' => 'ring-2 ring-purple-400',
+            'priority' => 300,
+            'is_active' => false,
+        ]);
+
+        $user->guideAccolades()->attach($manual, ['source' => 'manual', 'awarded_at' => now()]);
+        $user->guideAccolades()->attach($expired, ['source' => 'manual', 'awarded_at' => now(), 'expires_at' => now()->subMinute()]);
+        $user->guideAccolades()->attach($inactive, ['source' => 'manual', 'awarded_at' => now()]);
+
+        $this->assertSame('Beta Tester', $user->fresh()->primaryGuideAccolade()?->label);
+        $this->assertSame('ring-2 ring-blue-400', $user->fresh()->guideAvatarRingClass());
+    }
+
+    public function test_accolade_tooltip_uses_template_and_public_display_name(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Google Full Name',
+            'public_display_name' => 'Public Mei',
+            'guide_number' => 34,
+        ]);
+
+        app(GuideAccoladeService::class)->syncEarlyGuideAccolades($user->fresh());
+
+        $this->assertSame(['Founding Guide (#34)'], $user->fresh()->guideAccoladeTooltipLines());
+        $this->assertSame('Founding Guide number 34', $user->fresh()->guideAccoladeAriaLine());
+        $this->assertSame('Public Mei', $user->fresh()->publicName());
+    }
+}

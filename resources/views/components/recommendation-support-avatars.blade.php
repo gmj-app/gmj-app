@@ -17,10 +17,20 @@
     $supporters = collect();
 
     if ($includeRequester && $requester) {
+        $contextLine = "Requested by {$requester->publicName()}";
+        $accoladeLines = $requester->guideAccoladeTooltipLines();
+        $ariaAccoladeLine = $requester->guideAccoladeAriaLine();
+
         $supporters->push([
             'user' => $requester,
             'isRequester' => true,
-            'title' => "Requested by {$requester->publicName()}",
+            'titleLines' => [
+                $contextLine,
+                ...$accoladeLines,
+            ],
+            'ariaLabel' => $ariaAccoladeLine
+                ? "{$contextLine}. {$ariaAccoladeLine}."
+                : $contextLine,
         ]);
     }
 
@@ -33,10 +43,20 @@
             continue;
         }
 
+        $contextLine = "Supported by {$upvoter->publicName()}";
+        $accoladeLines = $upvoter->guideAccoladeTooltipLines();
+        $ariaAccoladeLine = $upvoter->guideAccoladeAriaLine();
+
         $supporters->push([
             'user' => $upvoter,
             'isRequester' => false,
-            'title' => "Supported by {$upvoter->publicName()}",
+            'titleLines' => [
+                $contextLine,
+                ...$accoladeLines,
+            ],
+            'ariaLabel' => $ariaAccoladeLine
+                ? "{$contextLine}. {$ariaAccoladeLine}."
+                : $contextLine,
         ]);
     }
 
@@ -54,23 +74,25 @@
             @php
                 $user = $supporter['user'];
                 $initials = $user->initialsForAvatar();
+                $titleLines = $supporter['titleLines'];
+                $avatarRingClass = $user->guideAvatarRingClass();
             @endphp
 
             <span
                 class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 dark:ring-slate-900 {{ ! $loop->first ? $stackSpacing : '' }}"
-                title="{{ $supporter['title'] }}"
-                aria-label="{{ $supporter['title'] }}"
+                title="{!! collect($titleLines)->map(fn (string $line): string => e($line))->implode('&#10;') !!}"
+                aria-label="{{ $supporter['ariaLabel'] }}"
             >
                 @if (filled($user->avatar_url))
                     <img
                         src="{{ $user->avatar_url }}"
                         alt=""
                         loading="lazy"
-                        class="{{ $avatarSizeClasses }} rounded-full object-cover"
+                        class="{{ $avatarSizeClasses }} {{ $avatarRingClass }} rounded-full object-cover"
                         onerror="this.hidden = true"
                     >
                 @else
-                    <span class="{{ $avatarSizeClasses }} inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
+                    <span class="{{ $avatarSizeClasses }} {{ $avatarRingClass }} inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
                         {{ $initials }}
                     </span>
                 @endif

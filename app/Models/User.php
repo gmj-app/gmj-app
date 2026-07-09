@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\GuideAccoladeService;
+use App\Services\GuideNumberService;
 use App\Services\PlanEntitlementService;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +26,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'guide_number',
         'public_display_name',
         'public_handle',
         'public_profile_completed_at',
@@ -57,11 +60,20 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'guide_number' => 'integer',
             'public_profile_completed_at' => 'datetime',
             'display_name_prompt_dismissed_at' => 'datetime',
             'can_access_video_tools' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (User $user): void {
+            app(GuideNumberService::class)->assignIfMissing($user);
+            app(GuideAccoladeService::class)->awardEarlyGuideAccolades($user);
+        });
     }
 
     public function publicName(): string
@@ -151,6 +163,76 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Creator::class, 'creator_favorites')
             ->withTimestamps();
+    }
+
+    public function guideAccolades(): BelongsToMany
+    {
+        return $this->belongsToMany(GuideAccolade::class)
+            ->withPivot(['source', 'awarded_at', 'expires_at', 'metadata'])
+            ->withTimestamps();
+    }
+
+    public function activeGuideAccolades(): BelongsToMany
+    {
+        $now = now();
+
+        return $this->guideAccolades()
+            ->where('guide_accolades.is_active', true)
+            ->where(function ($query) use ($now): void {
+                $query->whereNull('guide_accolades.starts_at')
+                    ->orWhere('guide_accolades.starts_at', '<=', $now);
+            })
+            ->where(function ($query) use ($now): void {
+                $query->whereNull('guide_accolades.ends_at')
+                    ->orWhere('guide_accolades.ends_at', '>=', $now);
+            })
+            ->where(function ($query) use ($now): void {
+                $query->whereNull('guide_accolade_user.expires_at')
+                    ->orWhere('guide_accolade_user.expires_at', '>=', $now);
+            });
+    }
+
+    public function primaryGuideAccolade(): ?GuideAccolade
+    {
+        if ($this->relationLoaded('guideAccolades')) {
+            $now = now();
+
+            return $this->guideAccolades
+                ->filter(function (GuideAccolade $accolade) use ($now): bool {
+                    $expiresAt = $accolade->pivot?->expires_at;
+
+                    return $accolade->isCurrentlyActive()
+                        && ($expiresAt === null || $now->lte($expiresAt));
+                })
+                ->sort(function (GuideAccolade $first, GuideAccolade $second): int {
+                    return ($second->priority <=> $first->priority)
+                        ?: strcmp((string) ($second->pivot?->awarded_at ?? ''), (string) ($first->pivot?->awarded_at ?? ''))
+                        ?: ($first->id <=> $second->id);
+                })
+                ->first();
+        }
+
+        return app(GuideAccoladeService::class)->getPrimaryDisplayAccolade($this);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function guideAccoladeTooltipLines(): array
+    {
+        $primaryAccolade = $this->primaryGuideAccolade();
+
+        return $primaryAccolade ? [$primaryAccolade->tooltipLineFor($this)] : [];
+    }
+
+    public function guideAvatarRingClass(): string
+    {
+        return (string) ($this->primaryGuideAccolade()?->ring_class ?? '');
+    }
+
+    public function guideAccoladeAriaLine(): ?string
+    {
+        return $this->primaryGuideAccolade()?->ariaLineFor($this);
     }
 
     public function youtubeChannelToken(): HasOne

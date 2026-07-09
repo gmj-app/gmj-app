@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(GuideAccoladeSeeder::class);
         $this->call(CreatorSeeder::class);
 
         User::factory()->create([

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\GuideAccoladeService;
+use App\Services\GuideNumberService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -78,6 +80,9 @@ class GoogleAuthController extends Controller
                 'password' => Hash::make(Str::random(64)),
             ]);
         }
+
+        app(GuideNumberService::class)->assignIfMissing($user);
+        app(GuideAccoladeService::class)->awardEarlyGuideAccolades($user);
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();

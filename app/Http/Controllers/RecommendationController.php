@@ -102,9 +102,11 @@ class RecommendationController extends Controller
                     ->where('creator_tags.creator_id', $creator->id)
                     ->where('creator_tags.slug', $filters['tag'])))
             ->with([
-                'submittedBy:id,name,public_display_name,public_handle,avatar_url,email',
+                'submittedBy:id,name,guide_number,public_display_name,public_handle,avatar_url,email',
+                'submittedBy.guideAccolades',
                 'creatorTags:id,creator_id,name,slug',
-                'userPicks.user:id,name,public_display_name,public_handle,avatar_url,email',
+                'userPicks.user:id,name,guide_number,public_display_name,public_handle,avatar_url,email',
+                'userPicks.user.guideAccolades',
             ])
             ->when($ownsCreator, fn ($query) => $query->with([
                 'alternatives' => fn ($query) => $query
