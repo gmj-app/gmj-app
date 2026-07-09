@@ -28,6 +28,56 @@ class GuideAccoladeTest extends TestCase
         $this->assertSame(2, $users[2]->fresh()->guide_number);
     }
 
+    public function test_assign_numbers_command_is_ordered_and_idempotent(): void
+    {
+        $users = User::withoutEvents(fn () => [
+            User::factory()->create(['created_at' => '2026-01-03 00:00:00']),
+            User::factory()->create(['created_at' => '2026-01-01 00:00:00']),
+            User::factory()->create(['created_at' => '2026-01-02 00:00:00']),
+        ]);
+
+        $this->artisan('guides:assign-numbers')
+            ->expectsOutput("Assigned Guide #1 to user ID {$users[1]->id}")
+            ->expectsOutput("Assigned Guide #2 to user ID {$users[2]->id}")
+            ->expectsOutput("Assigned Guide #3 to user ID {$users[0]->id}")
+            ->expectsOutput('Assigned guide numbers to 3 users.')
+            ->assertSuccessful();
+
+        $assignedNumbers = collect($users)
+            ->map(fn (User $user): int => $user->fresh()->guide_number)
+            ->all();
+
+        $this->assertSame([3, 1, 2], $assignedNumbers);
+        $this->assertCount(3, array_unique($assignedNumbers));
+
+        $this->artisan('guides:assign-numbers')
+            ->expectsOutput('Assigned guide numbers to 0 users.')
+            ->assertSuccessful();
+
+        $this->assertSame([3, 1, 2], collect($users)
+            ->map(fn (User $user): int => $user->fresh()->guide_number)
+            ->all());
+    }
+
+    public function test_assign_numbers_command_does_not_overwrite_existing_guide_numbers(): void
+    {
+        $existing = User::factory()->create(['guide_number' => 10]);
+        $missingUsers = User::withoutEvents(fn () => [
+            User::factory()->create(['created_at' => '2026-01-01 00:00:00']),
+            User::factory()->create(['created_at' => '2026-01-02 00:00:00']),
+        ]);
+
+        $this->artisan('guides:assign-numbers')
+            ->expectsOutput("Assigned Guide #11 to user ID {$missingUsers[0]->id}")
+            ->expectsOutput("Assigned Guide #12 to user ID {$missingUsers[1]->id}")
+            ->expectsOutput('Assigned guide numbers to 2 users.')
+            ->assertSuccessful();
+
+        $this->assertSame(10, $existing->fresh()->guide_number);
+        $this->assertSame(11, $missingUsers[0]->fresh()->guide_number);
+        $this->assertSame(12, $missingUsers[1]->fresh()->guide_number);
+    }
+
     public function test_new_user_gets_next_stable_guide_number(): void
     {
         $first = User::factory()->create();
@@ -37,6 +87,7 @@ class GuideAccoladeTest extends TestCase
 
         $this->assertSame(1, $first->fresh()->guide_number);
         $this->assertSame(2, $second->fresh()->guide_number);
+        $this->assertSame('#1', $first->fresh()->guideNumberLabel());
     }
 
     public function test_early_guide_accolade_boundaries_are_synced(): void

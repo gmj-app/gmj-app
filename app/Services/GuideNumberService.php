@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class GuideNumberService
 {
-    public function assignIfMissing(User $user): void
+    public function assignIfMissing(User $user): User
     {
         if (! $user->exists || $user->guide_number !== null) {
-            return;
+            return $user;
         }
 
         $attempts = 0;
@@ -49,9 +49,21 @@ class GuideNumberService
 
             throw $exception;
         }
+
+        return $user;
     }
 
-    public function backfillMissingGuideNumbers(): int
+    public function nextGuideNumber(): int
+    {
+        return ((int) User::query()
+            ->whereNotNull('guide_number')
+            ->max('guide_number')) + 1;
+    }
+
+    /**
+     * @param  null|callable(User): void  $onAssigned
+     */
+    public function backfillMissingGuideNumbers(?callable $onAssigned = null): int
     {
         $assigned = 0;
 
@@ -59,9 +71,18 @@ class GuideNumberService
             ->whereNull('guide_number')
             ->orderBy('created_at')
             ->orderBy('id')
-            ->each(function (User $user) use (&$assigned): void {
+            ->each(function (User $user) use (&$assigned, $onAssigned): void {
+                $previousGuideNumber = $user->guide_number;
                 $this->assignIfMissing($user);
-                $assigned++;
+                $user->refresh();
+
+                if ($previousGuideNumber === null && $user->guide_number !== null) {
+                    $assigned++;
+
+                    if ($onAssigned !== null) {
+                        $onAssigned($user);
+                    }
+                }
             });
 
         return $assigned;

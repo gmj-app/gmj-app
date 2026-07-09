@@ -98,6 +98,8 @@ class AuthenticationTest extends TestCase
 
     public function test_google_callback_creates_a_new_guide_user(): void
     {
+        User::factory()->create();
+
         $this->mockGoogleUser('google-123', 'guide@example.com', 'New Guide', 'https://example.com/avatar.jpg');
 
         $this->get(route('auth.google.callback'))
@@ -113,6 +115,7 @@ class AuthenticationTest extends TestCase
             'public_display_name' => null,
             'public_handle' => null,
             'public_profile_completed_at' => null,
+            'guide_number' => 2,
         ]);
     }
 
@@ -255,6 +258,24 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame('existing@example.com', $user->fresh()->email);
+        $this->assertSame(1, $user->fresh()->guide_number);
+    }
+
+    public function test_google_callback_does_not_renumber_existing_user(): void
+    {
+        $user = User::factory()->create([
+            'google_id' => 'existing-guide-number-google-id',
+            'email' => 'numbered@example.com',
+            'guide_number' => 42,
+        ]);
+
+        $this->mockGoogleUser('existing-guide-number-google-id', 'numbered@example.com', 'Changed Name');
+
+        $this->get(route('auth.google.callback'))
+            ->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame(42, $user->fresh()->guide_number);
     }
 
     public function test_google_callback_links_existing_user_by_email_without_overwriting_password(): void

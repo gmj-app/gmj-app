@@ -94,6 +94,11 @@ class User extends Authenticatable
         return $this->publicName();
     }
 
+    public function guideNumberLabel(): ?string
+    {
+        return $this->guide_number ? '#'.$this->guide_number : null;
+    }
+
     public function publicHandle(): ?string
     {
         return filled($this->public_handle) ? (string) $this->public_handle : null;
