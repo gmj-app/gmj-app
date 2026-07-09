@@ -276,6 +276,86 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
     }
 
+    public function test_logged_in_guides_see_their_vote_and_submission_indicators(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $guide = User::factory()->create();
+        $otherGuide = User::factory()->create();
+
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $otherGuide->id,
+            'title' => 'Unmarked request',
+            'status' => 'approved',
+        ]);
+        $submitted = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $guide->id,
+            'title' => 'Submitted by current guide',
+            'status' => 'approved',
+        ]);
+        $voted = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $otherGuide->id,
+            'title' => 'Voted by current guide',
+            'status' => 'approved',
+        ]);
+        $submittedAndVoted = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $guide->id,
+            'title' => 'Submitted and voted by current guide',
+            'status' => 'approved',
+        ]);
+
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $voted->id,
+            'user_id' => $guide->id,
+            'vote_count' => 2,
+        ]);
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $submittedAndVoted->id,
+            'user_id' => $guide->id,
+            'vote_count' => 1,
+        ]);
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $submitted->id,
+            'user_id' => $otherGuide->id,
+            'vote_count' => 3,
+        ]);
+
+        $response = $this->actingAs($guide)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('Unmarked request')
+            ->assertSee('Submitted by current guide')
+            ->assertSee('Voted by current guide')
+            ->assertSee('Submitted and voted by current guide')
+            ->assertSee('title="You voted here with 2 votes"', false)
+            ->assertSee('title="You voted here with 1 vote"', false)
+            ->assertSee('title="You submitted this recommendation"', false)
+            ->assertSee('text-emerald-700', false)
+            ->assertSee('text-amber-700', false);
+
+        $this->assertSame(4, substr_count($response->getContent(), '<span>You voted</span>'));
+        $this->assertSame(4, substr_count($response->getContent(), '<span>You submitted</span>'));
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('You voted')
+            ->assertDontSee('You submitted');
+
+        auth()->logout();
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertDontSee('You voted')
+            ->assertDontSee('You submitted');
+    }
+
     public function test_recommendation_rows_show_requester_and_upvoter_avatar_stacks(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);

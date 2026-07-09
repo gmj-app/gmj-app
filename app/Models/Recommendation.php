@@ -295,6 +295,18 @@ class Recommendation extends Model
             ->sum('vote_count');
     }
 
+    public function votedBy(?User $user): bool
+    {
+        return $this->currentUserVoteCount($user) > 0;
+    }
+
+    public function submittedByCurrentUser(?User $user): bool
+    {
+        return $user !== null
+            && $this->submitted_by !== null
+            && (int) $this->submitted_by === (int) $user->id;
+    }
+
     public static function upvoteConsumingStatuses(): array
     {
         return self::UPVOTE_CONSUMING_STATUSES;

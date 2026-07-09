@@ -126,6 +126,11 @@
 
         <h3 class="mt-5 break-words text-xl font-semibold leading-7 text-slate-950 dark:text-white sm:text-2xl">{{ $recommendation->title }}</h3>
 
+        <x-recommendation-user-indicators
+            :recommendation="$recommendation"
+            class="mt-2"
+        />
+
         @if ($recommendation->channel_title)
             <p class="mt-2 text-base font-medium text-slate-600 dark:text-slate-300">from {{ $recommendation->channel_title }}</p>
         @elseif ($recommendation->artist)

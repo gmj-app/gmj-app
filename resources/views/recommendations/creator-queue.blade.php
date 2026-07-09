@@ -729,6 +729,10 @@
                                     <span class="block break-words text-sm font-semibold leading-snug text-slate-950 dark:text-white sm:text-base">
                                         {{ $recommendation->title }}
                                     </span>
+                                    <x-recommendation-user-indicators
+                                        :recommendation="$recommendation"
+                                        class="mt-1.5"
+                                    />
                                     <span class="pointer-events-none mt-2 block min-h-6">
                                         <x-recommendation-support-avatars
                                             :recommendation="$recommendation"
