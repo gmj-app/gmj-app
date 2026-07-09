@@ -20,16 +20,34 @@
 >
     <span class="relative block aspect-video overflow-hidden bg-slate-100 dark:bg-slate-950">
         @if ($display['thumbnail_url'])
-            <x-youtube-thumbnail
-                :thumbnail-url="$display['thumbnail_url']"
-                :title="$display['title']"
-                :url="$display['url']"
-                :show-play-overlay="false"
-                :aria-label="'Open published video: '.$display['title']"
-                x-on:click.stop
-                class="h-full w-full"
-                image-class="group-hover:scale-105"
-            />
+            @if ($display['url'])
+                <a
+                    href="{{ $display['url'] }}"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow ugc"
+                    aria-label="Open published video: {{ $display['title'] }}"
+                    x-on:click.stop
+                    class="relative block h-full w-full overflow-hidden bg-slate-950"
+                >
+                    <img
+                        src="{{ $display['thumbnail_url'] }}"
+                        alt="Thumbnail for {{ $display['title'] }}"
+                        loading="lazy"
+                        onerror="this.hidden = true"
+                        class="relative h-full w-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-90"
+                    >
+                </a>
+            @else
+                <div class="relative block h-full w-full overflow-hidden bg-slate-950">
+                    <img
+                        src="{{ $display['thumbnail_url'] }}"
+                        alt="Thumbnail for {{ $display['title'] }}"
+                        loading="lazy"
+                        onerror="this.hidden = true"
+                        class="relative h-full w-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-90"
+                    >
+                </div>
+            @endif
             <span class="absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/10"></span>
         @else
             <span class="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-950">

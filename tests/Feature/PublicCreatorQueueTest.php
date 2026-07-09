@@ -690,6 +690,13 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('Upvote')
             ->assertDontSee('No longer accepting votes');
 
+        $catalogMarkup = Str::of($response->getContent())
+            ->after('grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3')
+            ->before('No published recommendations yet.');
+
+        $this->assertStringNotContainsString('bg-red-600/95', (string) $catalogMarkup);
+        $this->assertStringNotContainsString('Published work', (string) $catalogMarkup);
+
         $this->get(route('creators.published', ['creator' => $creator, 'q' => 'Creator reaction']))
             ->assertOk()
             ->assertSee('Creator reaction release')
