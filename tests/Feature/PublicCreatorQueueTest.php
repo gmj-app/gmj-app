@@ -710,8 +710,26 @@ class PublicCreatorQueueTest extends TestCase
             'name' => 'Deep Dive',
             'slug' => 'deep-dive',
         ]);
+        $requester = User::factory()->create([
+            'name' => 'Google Requester Name',
+            'public_display_name' => 'Public Requester',
+            'public_handle' => 'publicrequester',
+            'avatar_url' => null,
+        ]);
+        $supporter = User::factory()->create([
+            'name' => 'Google Supporter Name',
+            'public_display_name' => 'Public Supporter',
+            'public_handle' => 'publicsupporter',
+            'avatar_url' => 'https://example.test/supporter.jpg',
+        ]);
+        $secondSupporter = User::factory()->create([
+            'name' => 'Second Google Supporter',
+            'public_display_name' => 'Second Supporter',
+            'public_handle' => 'secondsupporter',
+        ]);
         $newer = Recommendation::factory()->create([
             'creator_id' => $creator->id,
+            'submitted_by' => $requester->id,
             'title' => 'Newer published request',
             'status' => 'published',
             'channel_title' => 'Published Channel',
@@ -740,6 +758,18 @@ class PublicCreatorQueueTest extends TestCase
             'status' => 'approved',
         ]);
         $newer->creatorTags()->attach($tag);
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $newer->id,
+            'user_id' => $supporter->id,
+            'vote_count' => 3,
+        ]);
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $newer->id,
+            'user_id' => $secondSupporter->id,
+            'vote_count' => 1,
+        ]);
 
         $response = $this->get(route('creators.published', $creator));
 
@@ -764,6 +794,17 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('bg-red-600/95', false)
             ->assertSee('https://img.youtube.com/vi/REACTION001/hqdefault.jpg', false)
             ->assertSee('Creator Channel')
+            ->assertSee('Requested by')
+            ->assertSee('Community support')
+            ->assertSee('Public Requester')
+            ->assertSee('title="Requested by Public Requester', false)
+            ->assertSee('title="Supported by Public Supporter', false)
+            ->assertSee('title="Supported by Second Supporter', false)
+            ->assertSee('src="https://example.test/supporter.jpg"', false)
+            ->assertSee('4 votes when published')
+            ->assertSee('No votes yet.')
+            ->assertDontSee('Google Requester Name')
+            ->assertDontSee('Google Supporter Name')
             ->assertSee('Original suggestion')
             ->assertSee('Why this was suggested')
             ->assertSee('Published context should stay plain: https://example.com &lt;script&gt;alert(1)&lt;/script&gt;', false)
@@ -781,6 +822,7 @@ class PublicCreatorQueueTest extends TestCase
 
         $this->assertStringNotContainsString('bg-red-600/95', (string) $catalogMarkup);
         $this->assertStringNotContainsString('Published work', (string) $catalogMarkup);
+        $this->assertStringNotContainsString('Community support', (string) $catalogMarkup);
 
         $this->get(route('creators.published', ['creator' => $creator, 'q' => 'Creator reaction']))
             ->assertOk()

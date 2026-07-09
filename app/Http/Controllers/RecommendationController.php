@@ -209,7 +209,13 @@ class RecommendationController extends Controller
                             }));
                 });
             })
-            ->with(['submittedBy:id,name,public_display_name,public_handle,email', 'creatorTags:id,creator_id,name,slug'])
+            ->with([
+                'submittedBy:id,name,guide_number,public_display_name,public_handle,avatar_url,email',
+                'submittedBy.guideAccolades',
+                'creatorTags:id,creator_id,name,slug',
+                'userPicks.user:id,name,guide_number,public_display_name,public_handle,avatar_url,email',
+                'userPicks.user.guideAccolades',
+            ])
             ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('published_at')
             ->orderByDesc('updated_at')

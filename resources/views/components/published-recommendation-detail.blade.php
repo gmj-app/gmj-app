@@ -74,6 +74,11 @@
             <span>{{ $recommendation->totalVotes() }} {{ Str::plural('vote', $recommendation->totalVotes()) }} when published</span>
         </div>
 
+        <x-recommendation-community-support
+            :recommendation="$recommendation"
+            class="mt-5"
+        />
+
         @if ($recommendation->recommendation_type === 'topic' && $recommendation->description)
             <x-plain-expandable-text :text="$recommendation->description" label="Topic description" />
         @endif
