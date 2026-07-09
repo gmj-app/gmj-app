@@ -170,6 +170,8 @@ class HomepageTest extends TestCase
             ->assertDontSee('&rarr;', false)
             ->assertDontSee('inline-flex min-h-12 w-full items-center justify-center rounded-full', false)
             ->assertDontSee('Hidden request with many votes')
+            ->assertDontSee('Second creator request')
+            ->assertDontSee('Passed public request')
             ->assertSeeInOrder([
                 'Popular Creator',
                 'Second Creator',
@@ -198,7 +200,7 @@ class HomepageTest extends TestCase
         $thirdRequest = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Third highest public request',
-            'status' => 'scheduled',
+            'status' => 'approved',
             'created_at' => now()->subDays(2),
         ]);
         $fourthRequest = Recommendation::factory()->create([
@@ -230,6 +232,56 @@ class HomepageTest extends TestCase
             ->assertSee('line-clamp-2 min-w-0 text-sm font-medium leading-5', false)
             ->assertDontSee('Fourth public request')
             ->assertDontSee('Hidden request must not appear');
+    }
+
+    public function test_homepage_top_requests_only_show_votable_recommendations(): void
+    {
+        $creator = Creator::factory()->create([
+            'display_name' => 'Votable Request Creator',
+            'slug' => 'votable-request-creator',
+        ]);
+
+        $approvedRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Open approved request',
+            'status' => 'approved',
+        ]);
+        $publishedRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Published finished request',
+            'status' => 'published',
+        ]);
+        $recordedRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Recorded finished request',
+            'status' => 'recorded',
+        ]);
+        $scheduledRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Scheduled finished request',
+            'status' => 'scheduled',
+        ]);
+        $passedRequest = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Passed finished request',
+            'status' => 'passed',
+        ]);
+
+        $this->addVotes($approvedRequest, 1);
+        $this->addVotes($publishedRequest, 5);
+        $this->addVotes($recordedRequest, 4);
+        $this->addVotes($scheduledRequest, 3);
+        $this->addVotes($passedRequest, 2);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Open approved request')
+            ->assertDontSee('Published finished request')
+            ->assertDontSee('Recorded finished request')
+            ->assertDontSee('Scheduled finished request')
+            ->assertDontSee('Passed finished request')
+            ->assertSee('>5</strong> requests', false)
+            ->assertSee('>1</strong> published', false);
     }
 
     public function test_homepage_creator_cards_show_published_recommendation_counts(): void
@@ -287,7 +339,7 @@ class HomepageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Top requests')
-            ->assertSee('No public requests yet');
+            ->assertSee('No open requests yet');
     }
 
     public function test_homepage_creator_cards_show_description_previews_with_fallbacks(): void

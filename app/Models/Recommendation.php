@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\RecommendationFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -297,6 +298,20 @@ class Recommendation extends Model
     public static function upvoteConsumingStatuses(): array
     {
         return self::UPVOTE_CONSUMING_STATUSES;
+    }
+
+    public static function votableStatuses(): array
+    {
+        return self::upvoteConsumingStatuses();
+    }
+
+    /**
+     * @param  Builder<Recommendation>  $query
+     * @return Builder<Recommendation>
+     */
+    public function scopeVotable(Builder $query): Builder
+    {
+        return $query->whereIn('status', self::votableStatuses());
     }
 
     public static function unfavoriteRemovableStatuses(): array

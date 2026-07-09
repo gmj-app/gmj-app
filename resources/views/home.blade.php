@@ -117,7 +117,7 @@
 
                                     @if ($creatorTopRequests->isEmpty())
                                         <p class="mt-3 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-300">
-                                            No public requests yet
+                                            No open requests yet
                                         </p>
                                     @else
                                         <ol class="mt-3 space-y-2.5">

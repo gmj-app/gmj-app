@@ -45,7 +45,7 @@ class HomeController extends Controller
         $topRequests = Recommendation::query()
             ->select(['id', 'creator_id', 'title', 'is_pinned', 'created_at'])
             ->whereIn('creator_id', $creators->pluck('id'))
-            ->whereIn('status', Recommendation::PUBLIC_STATUSES)
+            ->votable()
             ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('user_picks_count')
             ->orderByDesc('is_pinned')
