@@ -564,19 +564,35 @@ class PublicCreatorQueueTest extends TestCase
             'youtube_video_id' => null,
             'channel_title' => null,
             'title' => 'The history of the Amen break',
+            'category' => 'music',
             'description' => 'Trace one drum break across decades of music.',
             'status' => 'approved',
         ]);
 
-        $this->get('/jfragment')
+        $response = $this->get('/jfragment');
+
+        $response
             ->assertOk()
             ->assertSee('Topic')
             ->assertSee('The history of the Amen break')
             ->assertSee('Trace one drum break across decades of music.')
             ->assertSee('Topic suggestion')
+            ->assertSee('border-l-2 border-cyan-500/60', false)
+            ->assertSee('text-cyan-800 dark:text-cyan-200', false)
+            ->assertSee('aria-hidden="true"', false)
             ->assertDontSee('Community topic')
             ->assertDontSee('aria-label="Open original link for The history of the Amen break"', false)
             ->assertDontSee('Watch on YouTube');
+
+        $response->assertSeeInOrder([
+            'The history of the Amen break',
+            'Approved',
+            'Topic',
+            'music',
+            'Submitted',
+            'Requested by',
+            'Topic description',
+        ]);
     }
 
     public function test_published_topic_can_show_real_published_media_without_an_original_placeholder(): void
@@ -920,7 +936,9 @@ class PublicCreatorQueueTest extends TestCase
             ->assertOk()
             ->assertSee('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', false)
             ->assertSee('onerror="this.hidden = true"', false)
-            ->assertSee('Thumbnail for Never Gonna Give You Up');
+            ->assertSee('Thumbnail for Never Gonna Give You Up')
+            ->assertDontSee('border-cyan-500/60', false)
+            ->assertDontSee('text-cyan-800 dark:text-cyan-200', false);
     }
 
     public function test_invalid_or_missing_youtube_video_ids_use_the_placeholder(): void

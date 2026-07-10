@@ -91,7 +91,18 @@
     @endif
 
     <div class="p-5 sm:p-6">
-        <div class="flex flex-wrap items-center gap-2">
+        @if ($recommendation->isTopicOnly())
+            <div class="border-l-2 border-cyan-500/60 pl-3 sm:pl-4">
+                <div class="flex min-w-0 items-start gap-2.5">
+                    <svg class="mt-0.5 size-6 shrink-0 text-cyan-700 dark:text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 18.25 4 20v-4.5A8 8 0 1 1 7.5 18.25Z" />
+                    </svg>
+                    <h3 class="min-w-0 break-words text-2xl font-semibold leading-tight text-cyan-800 dark:text-cyan-200 sm:text-[1.65rem]">{{ $recommendation->title }}</h3>
+                </div>
+            </div>
+        @endif
+
+        <div class="flex flex-wrap items-center gap-2 {{ $recommendation->isTopicOnly() ? 'mt-3' : '' }}">
             @if ($topRequested)
                 <span class="rounded-full bg-fuchsia-100 px-3 py-1.5 text-sm font-semibold text-fuchsia-800 dark:bg-fuchsia-950 dark:text-fuchsia-300">Top requested</span>
             @endif
@@ -126,7 +137,9 @@
             </div>
         @endif
 
-        <h3 class="mt-5 break-words text-xl font-semibold leading-7 text-slate-950 dark:text-white sm:text-2xl">{{ $recommendation->title }}</h3>
+        @unless ($recommendation->isTopicOnly())
+            <h3 class="mt-5 break-words text-xl font-semibold leading-7 text-slate-950 dark:text-white sm:text-2xl">{{ $recommendation->title }}</h3>
+        @endunless
 
         <x-recommendation-user-indicators
             :recommendation="$recommendation"
