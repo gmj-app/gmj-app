@@ -399,10 +399,11 @@ class PublicCreatorQueueTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('Avatar-backed request')
-            ->assertSee('title="Requested by Original Fan&#10;Founding Guide (#1)"', false)
-            ->assertSee('aria-label="Requested by Original Fan. Founding Guide number 1."', false)
+            ->assertSee('title="Suggested by Original Fan&#10;Founding Guide (#1)"', false)
+            ->assertSee('aria-label="Suggested by Original Fan. Founding Guide number 1."', false)
             ->assertSee('ring-[3px] ring-yellow-400', false)
             ->assertSee('#1')
+            ->assertDontSee('bg-amber-400 text-amber-950 ring-1 ring-white', false)
             ->assertSee('src="https://example.test/avatar-0.jpg"', false)
             ->assertSee('title="Supported by Voter 01&#10;Founding Guide (#2)"', false)
             ->assertSee('ring-[3px] ring-yellow-400', false)
@@ -590,7 +591,7 @@ class PublicCreatorQueueTest extends TestCase
             'Topic',
             'music',
             'Submitted',
-            'Requested by',
+            'Suggested by',
             'Topic description',
         ]);
     }
@@ -880,10 +881,10 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('bg-red-600/95', false)
             ->assertSee('https://img.youtube.com/vi/REACTION001/hqdefault.jpg', false)
             ->assertSee('Creator Channel')
-            ->assertSee('Requested by')
+            ->assertSee('Suggested by')
             ->assertSee('Community support')
             ->assertSee('Public Requester')
-            ->assertSee('title="Requested by Public Requester', false)
+            ->assertSee('title="Suggested by Public Requester', false)
             ->assertSee('title="Supported by Public Supporter', false)
             ->assertSee('title="Supported by Second Supporter', false)
             ->assertSee('src="https://example.test/supporter.jpg"', false)

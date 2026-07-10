@@ -5,7 +5,7 @@
 <div {{ $attributes->merge(['class' => 'rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70']) }}>
     <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <div class="min-w-0">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Requested by</p>
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Suggested by</p>
             @if ($recommendation->submittedBy)
                 <div class="mt-2 flex min-w-0 items-center gap-3">
                     <x-recommendation-support-avatars

@@ -19,13 +19,12 @@
     $supporters = collect();
 
     if ($includeRequester && $requester) {
-        $contextLine = "Requested by {$requester->publicName()}";
+        $contextLine = "Suggested by {$requester->publicName()}";
         $accoladeLines = $requester->guideAccoladeTooltipLines();
         $ariaAccoladeLine = $requester->guideAccoladeAriaLine();
 
         $supporters->push([
             'user' => $requester,
-            'isRequester' => true,
             'titleLines' => [
                 $contextLine,
                 ...$accoladeLines,
@@ -51,7 +50,6 @@
 
         $supporters->push([
             'user' => $upvoter,
-            'isRequester' => false,
             'titleLines' => [
                 $contextLine,
                 ...$accoladeLines,
@@ -75,9 +73,6 @@
         $isCompactDetailLayout, $size === 'md' => 'size-8 text-xs',
         default => 'size-6 text-[10px]',
     };
-    $starSizeClasses = $isDetailLayout && ! $isCompactDetailLayout
-        ? 'size-4 -bottom-0.5 -right-0.5'
-        : ($size === 'md' ? 'size-3.5 -bottom-0.5 -right-0.5' : 'size-3 -bottom-0.5 -right-0.5');
     $stackSpacing = $size === 'md' || $isCompactDetailLayout ? '-ml-2' : '-ml-1.5';
     $morePillClasses = $isDetailLayout
         ? 'h-8 px-2 text-xs'
@@ -118,14 +113,6 @@
                 @else
                     <span class="{{ $avatarSizeClasses }} {{ $avatarRingClass }} inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
                         {{ $initials }}
-                    </span>
-                @endif
-
-                @if ($supporter['isRequester'])
-                    <span class="absolute inline-flex items-center justify-center rounded-full bg-amber-400 text-amber-950 ring-1 ring-white dark:ring-slate-900 {{ $starSizeClasses }}" aria-hidden="true">
-                        <svg class="size-2" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="m12 2.75 2.78 5.63 6.22.9-4.5 4.39 1.06 6.19L12 16.93l-5.56 2.93 1.06-6.19L3 9.28l6.22-.9L12 2.75Z" />
-                        </svg>
                     </span>
                 @endif
 
