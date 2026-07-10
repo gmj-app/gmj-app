@@ -32,7 +32,29 @@
     class="group min-w-0 scroll-mt-24 overflow-hidden rounded-3xl border bg-white shadow-sm transition duration-200 dark:bg-slate-900 md:hover:-translate-y-0.5 md:hover:shadow-xl {{ $hasRecommendationAction ? 'border-indigo-300 ring-1 ring-indigo-400/40 dark:border-indigo-700 dark:ring-indigo-500/40' : 'border-slate-200 dark:border-slate-800 md:hover:border-indigo-200 dark:md:hover:border-indigo-800' }}"
 >
     @if ($recommendation->hasMediaPreview())
-    @if ($recommendation->youtubeThumbnailUrl())
+    @if ($recommendation->isYouTubePlaylist())
+        <a
+            href="{{ $recommendation->canonicalMediaUrl() }}"
+            target="_blank"
+            rel="noopener noreferrer nofollow ugc"
+            class="relative block aspect-video overflow-hidden bg-gradient-to-br from-slate-950 via-violet-950 to-indigo-900"
+            aria-label="Open playlist: {{ $recommendation->displaySourceTitle() }}"
+        >
+            @if ($recommendation->displayThumbnailUrl())
+                <img src="{{ $recommendation->displayThumbnailUrl() }}" alt="Thumbnail for {{ $recommendation->displaySourceTitle() }}" loading="lazy" decoding="async" width="1280" height="720" onerror="this.hidden = true" class="h-full w-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-90">
+                <span class="absolute inset-0 bg-slate-950/20"></span>
+            @endif
+            <span class="absolute inset-0 flex items-center justify-center">
+                <span class="inline-flex items-center gap-2 rounded-xl bg-slate-950/80 px-4 py-3 text-sm font-bold text-white shadow-xl backdrop-blur-sm">
+                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M9 7h11M9 12h11M9 17h11M4 7h.01M4 12h.01M4 17h.01" /></svg>
+                    YouTube Playlist
+                    @if ($recommendation->displayItemCount() !== null)
+                        · {{ $recommendation->displayItemCount() }} {{ Str::plural('video', $recommendation->displayItemCount()) }}
+                    @endif
+                </span>
+            </span>
+        </a>
+    @elseif ($recommendation->youtubeThumbnailUrl())
         <a
             href="{{ $recommendation->youtube_url }}"
             target="_blank"
@@ -108,6 +130,9 @@
             @endif
             @if ($recommendation->is_pinned)
                 <span class="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">Pinned</span>
+            @endif
+            @if ($recommendation->isYouTubePlaylist())
+                <span class="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-semibold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Playlist</span>
             @endif
             @if ($recommendation->isCreatorAdded())
                 <span class="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-semibold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Added by creator</span>

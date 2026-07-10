@@ -18,7 +18,7 @@
             :thumbnail-url="$display['thumbnail_url']"
             :title="$display['title']"
             :url="$display['url'] ?: $recommendation->youtube_url"
-            :aria-label="'Open published video: '.$display['title']"
+            :aria-label="($recommendation->isPublishedYouTubePlaylist() ? 'Open published playlist: ' : 'Open published video: ').$display['title']"
             class="relative block aspect-video overflow-hidden bg-slate-950"
             image-class="hover:scale-105 hover:opacity-90"
         />
@@ -31,7 +31,7 @@
                     </svg>
                 </span>
                 <p class="mt-3 text-sm font-bold text-slate-500 dark:text-slate-400">
-                    {{ $recommendation->recommendation_type === 'topic' ? 'Community topic' : 'Video preview unavailable' }}
+                    {{ $recommendation->isPublishedYouTubePlaylist() ? 'YouTube Playlist' : ($recommendation->recommendation_type === 'topic' ? 'Community topic' : 'Video preview unavailable') }}
                 </p>
             </div>
         </div>
@@ -44,6 +44,9 @@
             <span class="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                 {{ $recommendation->recommendation_type === 'topic' ? 'Topic' : 'YouTube' }}
             </span>
+            @if ($recommendation->isPublishedYouTubePlaylist())
+                <span class="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Playlist</span>
+            @endif
             @if ($recommendation->category)
                 <span class="max-w-full break-words rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold capitalize text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ $recommendation->category }}</span>
             @endif
@@ -63,6 +66,9 @@
 
         @if ($display['channel'])
             <p class="mt-2 text-base font-semibold text-slate-600 dark:text-slate-300">from {{ $display['channel'] }}</p>
+        @endif
+        @if ($display['item_count'] !== null)
+            <p class="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">{{ $display['item_count'] }} {{ Str::plural('video', $display['item_count']) }}</p>
         @endif
 
         <div class="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
@@ -92,7 +98,7 @@
         <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5 text-base dark:border-slate-800">
             @if ($display['url'])
                 <a href="{{ $display['url'] }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-                    Watch published content
+                    {{ $recommendation->isPublishedYouTubePlaylist() ? 'View playlist' : 'Watch published content' }}
                 </a>
             @endif
 

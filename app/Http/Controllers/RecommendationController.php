@@ -8,6 +8,7 @@ use App\Models\Recommendation;
 use App\Models\User;
 use App\Services\CreatorParticipationService;
 use App\Services\UnfavoriteCreatorAction;
+use App\Services\YouTubePlaylistMetadataService;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +25,7 @@ class RecommendationController extends Controller
         private readonly CreatorParticipationService $participation,
         private readonly UnfavoriteCreatorAction $unfavoriteCreator,
         private readonly YouTubeUrlService $youtubeUrls,
+        private readonly YouTubePlaylistMetadataService $playlistMetadata,
     ) {}
 
     public function showCreatorQueue(Request $request, Creator $creator): View
@@ -254,7 +256,7 @@ class RecommendationController extends Controller
 
         $normalized = $validated['recommendation_type'] === 'youtube'
             ? $this->youtubeUrls->normalize($validated['youtube_url'])
-            : ['canonical_url' => null, 'youtube_video_id' => null];
+            : ['canonical_url' => null, 'youtube_video_id' => null, 'youtube_playlist_id' => null, 'media_type' => 'topic'];
         $duplicateRecommendation = $this->findDuplicateRecommendation($creator, $normalized);
 
         if ($duplicateRecommendation) {
@@ -264,7 +266,11 @@ class RecommendationController extends Controller
                 ->with('duplicate_recommendation', $this->duplicateRecommendationMessage($creator, $duplicateRecommendation));
         }
 
-        DB::transaction(function () use ($creator, $request, $validated): void {
+        $playlistMetadata = $normalized['media_type'] === 'playlist'
+            ? $this->playlistMetadata->fetch($normalized['youtube_playlist_id'])
+            : null;
+
+        DB::transaction(function () use ($creator, $request, $validated, $normalized, $playlistMetadata): void {
             /** @var User $user */
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
 
@@ -287,18 +293,22 @@ class RecommendationController extends Controller
                 ...$validated,
                 'submitted_by' => $user->id,
                 'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
-                'youtube_video_id' => $validated['recommendation_type'] === 'youtube'
-                    ? $this->youtubeUrls->extractVideoId($validated['youtube_url'])
-                    : null,
-                'normalized_url' => $validated['recommendation_type'] === 'youtube'
-                    ? $this->youtubeUrls->normalize($validated['youtube_url'])['canonical_url']
-                    : null,
+                'media_type' => $validated['recommendation_type'] === 'youtube' ? $normalized['media_type'] : 'topic',
+                'youtube_video_id' => $validated['recommendation_type'] === 'youtube' ? $normalized['youtube_video_id'] : null,
+                'youtube_playlist_id' => $validated['recommendation_type'] === 'youtube' ? $normalized['youtube_playlist_id'] : null,
+                'normalized_url' => $validated['recommendation_type'] === 'youtube' ? $normalized['canonical_url'] : null,
                 'youtube_url' => $validated['recommendation_type'] === 'youtube'
-                    ? $validated['youtube_url']
+                    ? $normalized['canonical_url']
                     : null,
                 'channel_title' => $validated['recommendation_type'] === 'youtube'
-                    ? ($validated['channel_title'] ?? null)
+                    ? ($playlistMetadata['channel_title'] ?? $validated['channel_title'] ?? null)
                     : null,
+                'thumbnail_url' => $playlistMetadata['thumbnail_url'] ?? null,
+                'source_title' => $playlistMetadata['title'] ?? null,
+                'source_channel' => $playlistMetadata['channel_title'] ?? null,
+                'source_item_count' => $playlistMetadata['item_count'] ?? null,
+                'source_metadata' => $playlistMetadata,
+                'title' => filled($playlistMetadata['title'] ?? null) ? $playlistMetadata['title'] : $validated['title'],
                 'status' => $creator->defaultRecommendationStatus(),
             ]);
         });
@@ -360,11 +370,30 @@ class RecommendationController extends Controller
         ]);
 
         $youtubeUrl = $validated['youtube_url'];
-        $videoId = $this->youtubeUrls->extractVideoId($youtubeUrl);
+        $normalized = $this->youtubeUrls->normalize($youtubeUrl);
+        $videoId = $normalized['youtube_video_id'];
+
+        if ($normalized['media_type'] === 'playlist') {
+            $metadata = $this->playlistMetadata->fetch($normalized['youtube_playlist_id']);
+
+            return response()->json([
+                'media_type' => 'playlist',
+                'playlist_id' => $normalized['youtube_playlist_id'],
+                'canonical_url' => $normalized['canonical_url'],
+                'title' => $metadata['title'] ?? '',
+                'channel_title' => $metadata['channel_title'] ?? '',
+                'thumbnail_url' => $metadata['thumbnail_url'] ?? null,
+                'item_count' => $metadata['item_count'] ?? null,
+                'message' => ($metadata['available'] ?? false)
+                    ? null
+                    : 'We found the playlist URL, but couldn’t load its details. You can still submit it.',
+                'metadata_unavailable' => ! ($metadata['available'] ?? false),
+            ]);
+        }
 
         if (! $videoId) {
             return response()->json([
-                'message' => 'Enter a valid YouTube video URL.',
+                'message' => 'Enter a valid YouTube video or playlist URL.',
             ], 422);
         }
 
@@ -389,6 +418,7 @@ class RecommendationController extends Controller
 
         return response()->json([
             'video_id' => $videoId,
+            'media_type' => 'video',
             'title' => $response['title'] ?? '',
             'channel_title' => $response['author_name'] ?? '',
         ]);
@@ -541,20 +571,27 @@ class RecommendationController extends Controller
     }
 
     /**
-     * @param  array{canonical_url: string|null, youtube_video_id: string|null}  $normalized
+     * @param  array{canonical_url: string|null, youtube_video_id: string|null, youtube_playlist_id: string|null, media_type: string|null}  $normalized
      */
     private function findDuplicateRecommendation(Creator $creator, array $normalized): ?Recommendation
     {
         $canonicalUrl = $normalized['canonical_url'];
         $videoId = $normalized['youtube_video_id'];
+        $playlistId = $normalized['youtube_playlist_id'];
 
-        if (! $canonicalUrl && ! $videoId) {
+        if (! $canonicalUrl && ! $videoId && ! $playlistId) {
             return null;
         }
 
         return $creator->recommendations()
             ->where('status', '!=', 'withdrawn')
-            ->where(function ($query) use ($canonicalUrl, $videoId): void {
+            ->where(function ($query) use ($canonicalUrl, $videoId, $playlistId, $normalized): void {
+                if ($normalized['media_type'] === 'playlist' && $playlistId) {
+                    $query
+                        ->where('youtube_playlist_id', $playlistId)
+                        ->orWhere('published_playlist_id', $playlistId);
+                }
+
                 if ($videoId) {
                     $query
                         ->where('youtube_video_id', $videoId)
@@ -584,13 +621,15 @@ class RecommendationController extends Controller
             || in_array($recommendation->status, ['already_seen', 'passed'], true);
 
         if ($isPublishedDuplicate) {
+            $isPlaylist = $recommendation->isYouTubePlaylist() || $recommendation->isPublishedYouTubePlaylist();
+
             return [
                 'type' => 'published',
                 'title' => 'Already published',
-                'body' => 'This creator has already published something for this recommendation.',
+                'body' => $isPlaylist ? 'This playlist has already been published.' : 'This creator has already published something for this recommendation.',
                 'primary_label' => 'View published recommendation',
                 'primary_url' => route('creators.published', $creator)."#recommendation-{$recommendation->id}",
-                'secondary_label' => filled($recommendation->published_reaction_url) ? 'Open published video' : null,
+                'secondary_label' => filled($recommendation->published_reaction_url) ? ($isPlaylist ? 'Open published playlist' : 'Open published video') : null,
                 'secondary_url' => filled($recommendation->published_reaction_url) ? $recommendation->published_reaction_url : null,
             ];
         }
@@ -598,7 +637,9 @@ class RecommendationController extends Controller
         return [
             'type' => 'active',
             'title' => 'Already suggested',
-            'body' => 'This URL is already in the active recommendation list for this creator.',
+            'body' => $recommendation->isYouTubePlaylist()
+                ? 'This playlist has already been suggested.'
+                : 'This URL is already in the active recommendation list for this creator.',
             'primary_label' => 'View recommendation',
             'primary_url' => route('creator.queue', $creator)."#recommendation-{$recommendation->id}",
             'secondary_label' => null,

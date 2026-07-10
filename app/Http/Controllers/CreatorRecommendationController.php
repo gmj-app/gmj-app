@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Creator;
 use App\Models\Recommendation;
 use App\Services\CreatorTagService;
+use App\Services\YouTubePlaylistMetadataService;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class CreatorRecommendationController extends Controller
     public function __construct(
         private readonly CreatorTagService $tags,
         private readonly YouTubeUrlService $youtubeUrls,
+        private readonly YouTubePlaylistMetadataService $playlistMetadata,
     ) {}
 
     public function index(Request $request, Creator $creator): View
@@ -262,6 +264,9 @@ class CreatorRecommendationController extends Controller
                 'published_channel' => null,
                 'published_thumbnail_url' => null,
                 'published_video_id' => null,
+                'published_media_type' => null,
+                'published_playlist_id' => null,
+                'published_item_count' => null,
                 'published_metadata' => null,
             ];
         }
@@ -271,7 +276,27 @@ class CreatorRecommendationController extends Controller
         ];
         $normalized = $this->youtubeUrls->normalize($url);
         $videoId = $normalized['youtube_video_id'];
+        $playlistId = $normalized['youtube_playlist_id'];
         $attributes['published_normalized_url'] = $normalized['canonical_url'];
+        $attributes['published_media_type'] = $normalized['media_type'];
+        $attributes['published_playlist_id'] = null;
+        $attributes['published_item_count'] = null;
+
+        if ($normalized['media_type'] === 'playlist' && $playlistId) {
+            $metadata = $this->playlistMetadata->fetch($playlistId);
+
+            return [
+                ...$attributes,
+                'published_reaction_url' => $normalized['canonical_url'],
+                'published_video_id' => null,
+                'published_playlist_id' => $playlistId,
+                'published_title' => $metadata['title'] ?? null,
+                'published_channel' => $metadata['channel_title'] ?? null,
+                'published_thumbnail_url' => $metadata['thumbnail_url'] ?? null,
+                'published_item_count' => $metadata['item_count'] ?? null,
+                'published_metadata' => $metadata,
+            ];
+        }
 
         if (! $videoId) {
             return [
@@ -280,6 +305,8 @@ class CreatorRecommendationController extends Controller
                 'published_channel' => null,
                 'published_thumbnail_url' => null,
                 'published_video_id' => null,
+                'published_playlist_id' => null,
+                'published_item_count' => null,
                 'published_metadata' => null,
             ];
         }
@@ -327,6 +354,8 @@ class CreatorRecommendationController extends Controller
             return [
                 'normalized_url' => null,
                 'youtube_video_id' => null,
+                'youtube_playlist_id' => null,
+                'media_type' => $validated['recommendation_type'] === 'topic' ? 'topic' : null,
             ];
         }
 
@@ -335,6 +364,8 @@ class CreatorRecommendationController extends Controller
         return [
             'normalized_url' => $normalized['canonical_url'],
             'youtube_video_id' => $normalized['youtube_video_id'],
+            'youtube_playlist_id' => $normalized['youtube_playlist_id'],
+            'media_type' => $normalized['media_type'],
         ];
     }
 }

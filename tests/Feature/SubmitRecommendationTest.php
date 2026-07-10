@@ -677,4 +677,80 @@ class SubmitRecommendationTest extends TestCase
             'status' => 'approved',
         ]);
     }
+
+    public function test_playlist_metadata_lookup_and_submission_store_first_class_playlist_fields(): void
+    {
+        config(['services.youtube.api_key' => 'test-key']);
+        Http::fake([
+            '*youtube/v3/playlists*' => Http::response(['items' => [[
+                'snippet' => [
+                    'title' => 'Essential Performances',
+                    'channelTitle' => 'Music Guide',
+                    'thumbnails' => ['high' => ['url' => 'https://i.ytimg.com/vi/example/hqdefault.jpg']],
+                ],
+                'contentDetails' => ['itemCount' => 18],
+            ]]]),
+        ]);
+
+        $creator = Creator::factory()->create(['slug' => 'playlist-guide']);
+        $user = User::factory()->create();
+        $url = 'https://m.youtube.com/playlist?list=PL1234567890&si=tracking';
+
+        $this->actingAs($user)
+            ->getJson(route('recommendations.youtube-metadata', [$creator, 'youtube_url' => $url]))
+            ->assertOk()
+            ->assertJsonPath('media_type', 'playlist')
+            ->assertJsonPath('item_count', 18)
+            ->assertJsonPath('canonical_url', 'https://www.youtube.com/playlist?list=PL1234567890');
+
+        $this->actingAs($user)->post(route('recommendations.store', $creator), [
+            'recommendation_type' => 'youtube',
+            'youtube_url' => $url,
+            'title' => 'Manual fallback title',
+            'confirm_favorite' => '1',
+        ])->assertRedirect(route('creator.queue', $creator));
+
+        $this->assertDatabaseHas('recommendations', [
+            'media_type' => 'playlist',
+            'youtube_playlist_id' => 'PL1234567890',
+            'youtube_video_id' => null,
+            'normalized_url' => 'https://www.youtube.com/playlist?list=PL1234567890',
+            'title' => 'Essential Performances',
+            'source_channel' => 'Music Guide',
+            'source_item_count' => 18,
+        ]);
+    }
+
+    public function test_same_playlist_variant_is_blocked_but_a_video_inside_it_is_not(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'playlist-duplicates']);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'media_type' => 'playlist',
+            'youtube_url' => 'https://www.youtube.com/playlist?list=PL1234567890',
+            'normalized_url' => 'https://www.youtube.com/playlist?list=PL1234567890',
+            'youtube_video_id' => null,
+            'youtube_playlist_id' => 'PL1234567890',
+            'status' => 'approved',
+        ]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('recommendations.store', $creator), [
+            'recommendation_type' => 'youtube',
+            'youtube_url' => 'https://m.youtube.com/playlist?list=PL1234567890&index=2',
+            'title' => 'Duplicate list',
+        ])->assertSessionHas('duplicate_recommendation.body', 'This playlist has already been suggested.');
+
+        $this->actingAs($user)->post(route('recommendations.store', $creator), [
+            'recommendation_type' => 'youtube',
+            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PL1234567890',
+            'title' => 'A video within the list',
+            'confirm_favorite' => '1',
+        ])->assertRedirect(route('creator.queue', $creator));
+
+        $this->assertDatabaseHas('recommendations', [
+            'media_type' => 'video',
+            'youtube_video_id' => 'dQw4w9WgXcQ',
+        ]);
+    }
 }

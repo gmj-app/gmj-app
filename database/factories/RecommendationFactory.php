@@ -25,6 +25,7 @@ class RecommendationFactory extends Factory
             'creator_id' => Creator::factory(),
             'submitted_by' => User::factory(),
             'recommendation_type' => 'youtube',
+            'media_type' => 'video',
             'youtube_url' => "https://www.youtube.com/watch?v={$videoId}",
             'normalized_url' => "https://www.youtube.com/watch?v={$videoId}",
             'youtube_video_id' => $videoId,

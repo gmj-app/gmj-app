@@ -25,7 +25,7 @@
                     href="{{ $display['url'] }}"
                     target="_blank"
                     rel="noopener noreferrer nofollow ugc"
-                    aria-label="Open published video: {{ $display['title'] }}"
+                    aria-label="{{ $recommendation->isPublishedYouTubePlaylist() ? 'Open published playlist: ' : 'Open published video: ' }}{{ $display['title'] }}"
                     x-on:click.stop
                     class="relative block h-full w-full overflow-hidden bg-slate-950"
                 >
@@ -58,7 +58,7 @@
                         </svg>
                     </span>
                     <span class="mt-2 block text-xs font-bold text-slate-500 dark:text-slate-400">
-                        {{ $recommendation->recommendation_type === 'topic' ? 'Community topic' : 'Preview unavailable' }}
+                        {{ $recommendation->isPublishedYouTubePlaylist() ? 'YouTube Playlist' : ($recommendation->recommendation_type === 'topic' ? 'Community topic' : 'Preview unavailable') }}
                     </span>
                 </span>
             </span>
@@ -76,6 +76,10 @@
             @if ($display['channel'])
                 <span aria-hidden="true">&middot;</span>
                 <span class="min-w-0 max-w-full truncate">{{ $display['channel'] }}</span>
+            @endif
+            @if ($display['item_count'] !== null)
+                <span aria-hidden="true">&middot;</span>
+                <span>{{ $display['item_count'] }} {{ Str::plural('video', $display['item_count']) }}</span>
             @endif
         </span>
 

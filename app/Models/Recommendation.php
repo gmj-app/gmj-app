@@ -92,10 +92,17 @@ class Recommendation extends Model
         'submitted_by',
         'submission_source',
         'recommendation_type',
+        'media_type',
         'youtube_url',
         'normalized_url',
         'youtube_video_id',
+        'youtube_playlist_id',
         'channel_title',
+        'thumbnail_url',
+        'source_title',
+        'source_channel',
+        'source_item_count',
+        'source_metadata',
         'title',
         'artist',
         'category',
@@ -111,10 +118,13 @@ class Recommendation extends Model
         'moderated_at',
         'published_reaction_url',
         'published_normalized_url',
+        'published_media_type',
         'published_title',
         'published_channel',
         'published_thumbnail_url',
         'published_video_id',
+        'published_playlist_id',
+        'published_item_count',
         'published_metadata',
         'withdrawn_at',
         'withdrawn_by_user_id',
@@ -129,6 +139,7 @@ class Recommendation extends Model
             'published_at' => 'datetime',
             'moderated_at' => 'datetime',
             'published_metadata' => 'array',
+            'source_metadata' => 'array',
             'withdrawn_at' => 'datetime',
         ];
     }
@@ -182,7 +193,57 @@ class Recommendation extends Model
 
     public function displayThumbnailUrl(): ?string
     {
-        return $this->youtubeThumbnailUrl();
+        return filled($this->thumbnail_url)
+            ? (string) $this->thumbnail_url
+            : $this->youtubeThumbnailUrl();
+    }
+
+    public function isYouTubePlaylist(): bool
+    {
+        return $this->media_type === 'playlist' && filled($this->youtube_playlist_id);
+    }
+
+    public function isYouTubeVideo(): bool
+    {
+        return ! $this->isYouTubePlaylist() && filled($this->youtube_video_id);
+    }
+
+    public function canonicalMediaUrl(): ?string
+    {
+        return filled($this->normalized_url) ? (string) $this->normalized_url : $this->youtube_url;
+    }
+
+    public function displaySourceTitle(): string
+    {
+        return filled($this->source_title) ? (string) $this->source_title : (string) $this->title;
+    }
+
+    public function displaySourceChannel(): ?string
+    {
+        return filled($this->source_channel)
+            ? (string) $this->source_channel
+            : (filled($this->channel_title) ? (string) $this->channel_title : null);
+    }
+
+    public function displayItemCount(): ?int
+    {
+        return $this->source_item_count === null ? null : (int) $this->source_item_count;
+    }
+
+    public function mediaTypeLabel(): string
+    {
+        return match (true) {
+            $this->isYouTubePlaylist() => 'Playlist',
+            $this->recommendation_type === 'topic' => 'Topic',
+            $this->isYouTubeVideo() => 'YouTube',
+            default => 'Link',
+        };
+    }
+
+    public function isPublishedYouTubePlaylist(): bool
+    {
+        return ($this->published_media_type === 'playlist' && filled($this->published_playlist_id))
+            || (blank($this->published_reaction_url) && $this->isYouTubePlaylist());
     }
 
     public function isTopicOnly(): bool
@@ -194,7 +255,7 @@ class Recommendation extends Model
 
     public function hasMediaPreview(): bool
     {
-        return ! $this->isTopicOnly();
+        return $this->isYouTubePlaylist() || ! $this->isTopicOnly();
     }
 
     public function hasPublishedMediaPreview(): bool
@@ -207,13 +268,17 @@ class Recommendation extends Model
     {
         return filled($this->published_title)
             ? (string) $this->published_title
-            : (string) $this->title;
+            : $this->displaySourceTitle();
     }
 
     public function displayPublishedChannel(): ?string
     {
         if (filled($this->published_channel)) {
             return (string) $this->published_channel;
+        }
+
+        if (filled($this->source_channel)) {
+            return (string) $this->source_channel;
         }
 
         if (filled($this->channel_title)) {
@@ -225,9 +290,13 @@ class Recommendation extends Model
 
     public function displayPublishedThumbnailUrl(): ?string
     {
+        if ($this->isPublishedYouTubePlaylist()) {
+            return filled($this->published_thumbnail_url) ? (string) $this->published_thumbnail_url : null;
+        }
+
         return filled($this->published_thumbnail_url)
             ? (string) $this->published_thumbnail_url
-            : $this->youtubeThumbnailUrl();
+            : $this->displayThumbnailUrl();
     }
 
     public function displayPublishedUrl(): ?string
@@ -261,6 +330,8 @@ class Recommendation extends Model
             'url' => $this->displayPublishedUrl(),
             'has_published_url' => $this->hasPublishedUrl(),
             'date' => $this->displayPublishedDate(),
+            'media_type' => $this->published_media_type ?: ($this->media_type ?: 'video'),
+            'item_count' => $this->published_item_count ?? $this->source_item_count,
         ];
     }
 

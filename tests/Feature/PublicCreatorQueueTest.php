@@ -1842,6 +1842,60 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('Settings');
     }
 
+    public function test_playlist_rows_render_compact_and_expanded_playlist_treatment(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'playlist-creator']);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'media_type' => 'playlist',
+            'youtube_url' => 'https://www.youtube.com/playlist?list=PL1234567890',
+            'normalized_url' => 'https://www.youtube.com/playlist?list=PL1234567890',
+            'youtube_video_id' => null,
+            'youtube_playlist_id' => 'PL1234567890',
+            'thumbnail_url' => 'https://i.ytimg.com/vi/example/hqdefault.jpg',
+            'source_title' => 'Essential Performances',
+            'source_channel' => 'Music Guide',
+            'source_item_count' => 18,
+            'title' => 'Essential Performances',
+            'status' => 'approved',
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('YouTube Playlist')
+            ->assertSee('18 videos')
+            ->assertSee('Open playlist: Essential Performances', false)
+            ->assertSee('https://i.ytimg.com/vi/example/hqdefault.jpg', false)
+            ->assertDontSee('Video preview unavailable');
+    }
+
+    public function test_published_playlist_uses_playlist_metadata_and_link_treatment(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'published-playlist']);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'published',
+            'published_reaction_url' => 'https://www.youtube.com/playlist?list=PLPUBLISHED01',
+            'published_normalized_url' => 'https://www.youtube.com/playlist?list=PLPUBLISHED01',
+            'published_media_type' => 'playlist',
+            'published_video_id' => null,
+            'published_playlist_id' => 'PLPUBLISHED01',
+            'published_title' => 'Published Playlist',
+            'published_channel' => 'Creator Channel',
+            'published_thumbnail_url' => 'https://i.ytimg.com/vi/published/hqdefault.jpg',
+            'published_item_count' => 7,
+        ]);
+
+        $this->get(route('creators.published', $creator))
+            ->assertOk()
+            ->assertSee('Published Playlist')
+            ->assertSee('Playlist')
+            ->assertSee('7 videos')
+            ->assertSee('View playlist')
+            ->assertSee('Open published playlist: Published Playlist', false)
+            ->assertDontSee('Video preview unavailable');
+    }
+
     private function addPicks(Creator $creator, Recommendation $recommendation, int $count): void
     {
         User::factory()

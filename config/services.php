@@ -49,6 +49,7 @@ return [
 
     'youtube' => [
         'enabled' => (bool) env('YOUTUBE_API_ENABLED', false),
+        'api_key' => env('YOUTUBE_API_KEY'),
         'redirect' => env('YOUTUBE_REDIRECT_URI', rtrim((string) env('APP_URL'), '/').'/tools/admin/youtube/callback'),
     ],
 

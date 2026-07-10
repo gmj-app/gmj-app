@@ -95,11 +95,14 @@
                         lookupInFlightUrl: '',
                         lookupCompletedUrl: '',
                         lookupFailedUrl: '',
+                        lookupMediaType: '',
+                        lookupThumbnail: '',
+                        lookupItemCount: null,
                         normalizedYouTubeUrl() {
                             return this.youtubeUrl.trim();
                         },
                         hasValidLookingYouTubeUrl(url) {
-                            return /^(https?:\/\/)?((www|m)\.)?(youtube\.com\/watch\?[^ ]*\bv=[A-Za-z0-9_-]{11}\b|youtube\.com\/(shorts|embed|live)\/[A-Za-z0-9_-]{11}\b|youtu\.be\/[A-Za-z0-9_-]{11}\b)/i.test(url);
+                            return /^(https?:\/\/)?((www|m)\.)?(youtube\.com\/(playlist\?[^ ]*\blist=[A-Za-z0-9_-]{10,100}\b|watch\?[^ ]*\bv=[A-Za-z0-9_-]{11}\b)|youtube\.com\/(shorts|embed|live)\/[A-Za-z0-9_-]{11}\b|youtu\.be\/[A-Za-z0-9_-]{11}\b)/i.test(url);
                         },
                         scheduleYouTubeDetailsLookup() {
                             clearTimeout(this.lookupTimer);
@@ -117,7 +120,7 @@
                             }
 
                             if (! this.hasValidLookingYouTubeUrl(requestedUrl)) {
-                                this.lookupStatus = 'Enter a valid YouTube video URL.';
+                                this.lookupStatus = 'Enter a valid YouTube video or playlist URL.';
                                 return;
                             }
 
@@ -135,7 +138,7 @@
 
                             this.lookupController = new AbortController();
                             this.lookupInFlightUrl = requestedUrl;
-                            this.lookupStatus = 'Loading video details...';
+                            this.lookupStatus = 'Loading YouTube details...';
 
                             try {
                                 const url = new URL(@js(route('recommendations.youtube-metadata', $creator)));
@@ -154,6 +157,9 @@
 
                                 this.lookupCompletedUrl = requestedUrl;
                                 this.lookupFailedUrl = '';
+                                this.lookupMediaType = data.media_type || 'video';
+                                this.lookupThumbnail = data.thumbnail_url || '';
+                                this.lookupItemCount = data.item_count ?? null;
 
                                 if (data.title) {
                                     this.title = data.title;
@@ -163,9 +169,9 @@
                                     this.channelTitle = data.channel_title;
                                 }
 
-                                this.lookupStatus = data.title || data.channel_title
-                                    ? 'Video details loaded.'
-                                    : (data.message || 'We could not load video details. You can still submit manually.');
+                                this.lookupStatus = data.message || (data.media_type === 'playlist'
+                                    ? 'Playlist details loaded.'
+                                    : 'Video details loaded.');
                             } catch (error) {
                                 if (error.name !== 'AbortError') {
                                     this.lookupFailedUrl = requestedUrl;
@@ -233,6 +239,15 @@
                                 class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             <p x-show="lookupStatus" x-text="lookupStatus" class="mt-2 text-sm text-gray-500 dark:text-slate-400"></p>
+                            <div x-show="lookupMediaType === 'playlist'" class="mt-3 flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3 dark:border-indigo-500/30 dark:bg-indigo-950/30">
+                                <template x-if="lookupThumbnail">
+                                    <img :src="lookupThumbnail" alt="" class="h-12 w-[85px] rounded-md object-cover" width="85" height="48">
+                                </template>
+                                <div class="min-w-0">
+                                    <span class="inline-flex rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Playlist</span>
+                                    <p x-show="lookupItemCount !== null" class="mt-1 text-xs font-semibold text-indigo-700 dark:text-indigo-200"><span x-text="lookupItemCount"></span> <span x-text="lookupItemCount === 1 ? 'video' : 'videos'"></span></p>
+                                </div>
+                            </div>
                             @error('youtube_url')
                                 <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
