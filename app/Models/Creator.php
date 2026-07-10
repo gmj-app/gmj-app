@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -15,6 +16,8 @@ class Creator extends Model
 {
     /** @use HasFactory<CreatorFactory> */
     use HasFactory;
+
+    use SoftDeletes;
 
     public const APPROVAL_MODE_MANUAL = 'manual';
 
@@ -58,6 +61,7 @@ class Creator extends Model
             'verified_at' => 'datetime',
             'submissions_open' => 'boolean',
             'deactivated_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 

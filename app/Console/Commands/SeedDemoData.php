@@ -190,10 +190,16 @@ class SeedDemoData extends Command
      */
     private function updateOrCreateCreator(array $data): Creator
     {
-        return Creator::query()->updateOrCreate(
+        $creator = Creator::withTrashed()->updateOrCreate(
             ['slug' => $data['slug']],
             collect($data)->only($this->creatorColumns())->all(),
         );
+
+        if ($creator->trashed()) {
+            $creator->restore();
+        }
+
+        return $creator;
     }
 
     private function updateOrCreateUser(string $email, string $name, string $membershipTier): User

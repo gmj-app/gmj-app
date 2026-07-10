@@ -150,6 +150,9 @@ class HomepageTest extends TestCase
             ->assertDontSee('Community-powered creator journeys')
             ->assertDontSee('Favorite creators, suggest ideas or links, and vote for what you want to see next.')
             ->assertSee('Popular creators')
+            ->assertSee('Add Creator Account')
+            ->assertSee(route('creators.create'), false)
+            ->assertSee('aria-label="Add Creator Account"', false)
             ->assertSee('Verified')
             ->assertSee('Top requests')
             ->assertSee('Visible top request')
@@ -445,6 +448,47 @@ class HomepageTest extends TestCase
             ->assertOk()
             ->assertSee('No creators found.')
             ->assertDontSee('Inactive Creator');
+    }
+
+    public function test_soft_deleted_creators_are_excluded_from_public_discovery_and_routes(): void
+    {
+        $activeCreator = Creator::factory()->create([
+            'display_name' => 'Active Creator',
+            'slug' => 'active-creator',
+        ]);
+        $softDeletedCreator = Creator::factory()->create([
+            'display_name' => 'Vitamin B Reacts',
+            'slug' => 'vitamin-b-reacts',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $softDeletedCreator->id,
+            'title' => 'Preserved request',
+            'status' => 'approved',
+        ]);
+        $softDeletedCreator->delete();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('>1</div>', false)
+            ->assertSee('Active Creator')
+            ->assertDontSee('Vitamin B Reacts')
+            ->assertSee('Add Creator Account');
+
+        $this->get('/?q=Vitamin+B')
+            ->assertOk()
+            ->assertSee('No creators found.')
+            ->assertDontSee('Vitamin B Reacts')
+            ->assertDontSee('Add Creator Account');
+
+        $this->get(route('creator.queue', $softDeletedCreator->slug))
+            ->assertNotFound();
+        $this->get(route('creators.published', $softDeletedCreator->slug))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('recommendations', [
+            'creator_id' => $softDeletedCreator->id,
+            'title' => 'Preserved request',
+        ]);
     }
 
     private function addVotes(Recommendation $recommendation, int $count): void
