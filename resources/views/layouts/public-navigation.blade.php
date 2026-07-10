@@ -21,7 +21,8 @@
             : 'flex min-h-11 items-center rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900';
     @endphp
 
-    <div class="mx-auto grid h-16 max-w-7xl min-w-0 grid-cols-[1fr_auto] items-center gap-2 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
+    <div class="px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto grid h-16 w-full max-w-5xl min-w-0 grid-cols-[1fr_auto] items-center gap-2 md:grid-cols-[1fr_auto_1fr]">
         <div class="flex min-w-0 justify-start">
             <a href="{{ route('home') }}" class="min-w-0" aria-label="Guide My Journey home">
                 <x-application-logo size="sm" />
@@ -112,6 +113,7 @@
                 </svg>
             </button>
         </div>
+    </div>
     </div>
 
     <div x-show="open" x-cloak class="border-t border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950 md:hidden">
