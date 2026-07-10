@@ -29,6 +29,7 @@
                 :include-requester="false"
                 :skip-requester-upvote="true"
                 :show-empty="true"
+                :show-names="true"
                 layout="detail"
                 class="mt-2"
             />

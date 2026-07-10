@@ -7,6 +7,7 @@
     'skipRequesterUpvote' => false,
     'showEmpty' => false,
     'layout' => 'stack',
+    'showNames' => false,
 ])
 
 @php
@@ -65,6 +66,7 @@
     $hiddenSupportersCount = max(0, $supporters->count() - $visibleSupporters->count());
     $isDetailLayout = $layout === 'detail';
     $isCompactDetailLayout = $isDetailLayout && $supporters->count() > 20;
+    $showsSeparatedNames = $showNames && $isDetailLayout && ! $isCompactDetailLayout;
     $hasVisibleFoundingGuide = $visibleSupporters->contains(
         fn (array $supporter): bool => $supporter['user']->isFoundingGuide()
     );
@@ -86,9 +88,9 @@
 @endphp
 
 @if ($visibleSupporters->isNotEmpty())
-    <span {{ $attributes->merge(['class' => 'flex min-w-0 items-center overflow-visible'.($isDetailLayout ? ' flex-wrap gap-x-2 gap-y-3' : '').($hasVisibleFoundingGuide ? ' pb-1' : '')]) }}>
+    <span {{ $attributes->merge(['class' => 'min-w-0 overflow-visible'.($showsSeparatedNames ? ' grid w-full grid-cols-4 gap-x-3 gap-y-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8' : ' flex items-center').($isDetailLayout && ! $showsSeparatedNames ? ' flex-wrap gap-x-2 gap-y-3' : '').($hasVisibleFoundingGuide ? ' pb-1' : '')]) }}>
         @foreach ($supporterRows as $supporterRow)
-            <span class="inline-flex items-center overflow-visible {{ $isCompactDetailLayout ? 'pb-1' : ($isDetailLayout ? 'flex-wrap gap-2 pb-1' : '') }}">
+            <span class="{{ $showsSeparatedNames ? 'contents' : 'inline-flex' }} items-center overflow-visible {{ $isCompactDetailLayout ? 'pb-1' : ($isDetailLayout && ! $showsSeparatedNames ? 'flex-wrap gap-2 pb-1' : '') }}">
             @foreach ($supporterRow as $supporter)
             @php
                 $user = $supporter['user'];
@@ -98,6 +100,7 @@
                 $foundingGuideNumberLabel = $user->foundingGuideNumberLabel();
             @endphp
 
+            <span class="{{ $showsSeparatedNames ? 'inline-flex min-w-0 flex-col items-center' : 'contents' }}">
             <span
                 class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 hover:z-20 focus-within:z-20 dark:ring-slate-900 {{ ! $loop->first && ! ($isDetailLayout && ! $isCompactDetailLayout) ? $stackSpacing : '' }}"
                 tabindex="0"
@@ -131,6 +134,12 @@
                         {{ $foundingGuideNumberLabel }}
                     </span>
                 @endif
+            </span>
+            @if ($showsSeparatedNames)
+                <span data-supporter-name class="mt-3 block w-full max-w-[88px] truncate text-center text-xs font-medium text-slate-600 dark:text-slate-300">
+                    {{ $user->publicName() }}
+                </span>
+            @endif
             </span>
             @endforeach
             </span>

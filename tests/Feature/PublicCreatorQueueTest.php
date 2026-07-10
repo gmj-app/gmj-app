@@ -413,6 +413,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('aria-label="13 additional supporters"', false)
             ->assertSee('src="https://example.test/avatar-49.jpg"', false)
             ->assertDontSee('src="https://example.test/avatar-50.jpg"', false)
+            ->assertDontSee('data-supporter-name', false)
             ->assertDontSee('this.nextElementSibling.hidden', false)
             ->assertDontSee('original@example.test');
     }
@@ -427,7 +428,13 @@ class PublicCreatorQueueTest extends TestCase
             'status' => 'approved',
         ]);
 
-        User::factory()->count(10)->create()->each(fn (User $user) => UserPick::factory()->create([
+        $longNameSupporter = User::factory()->create([
+            'name' => 'Private Google Profile Name',
+            'public_display_name' => 'Samantha with a very long public name 🌟',
+            'email' => 'private-google@example.test',
+        ]);
+
+        User::factory()->count(9)->create()->push($longNameSupporter)->each(fn (User $user) => UserPick::factory()->create([
             'creator_id' => $creator->id,
             'recommendation_id' => $recommendation->id,
             'user_id' => $user->id,
@@ -436,7 +443,12 @@ class PublicCreatorQueueTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSee('size-9 text-sm sm:size-10', false)
-            ->assertSee('flex-wrap gap-2 pb-1', false)
+            ->assertSee('grid w-full grid-cols-4 gap-x-3 gap-y-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8', false)
+            ->assertSee('data-supporter-name', false)
+            ->assertSee('Samantha with a very long public name 🌟')
+            ->assertSee('max-w-[88px] truncate', false)
+            ->assertDontSee('Private Google Profile Name')
+            ->assertDontSee('private-google@example.test')
             ->assertDontSee('additional supporters');
     }
 
