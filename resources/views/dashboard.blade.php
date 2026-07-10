@@ -2,14 +2,15 @@
     <x-slot name="title">My Hub</x-slot>
 
     <x-slot name="header">
-        <div>
+        <div class="mx-auto min-w-0 max-w-5xl">
             <p class="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">Guide My Journey</p>
             <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-slate-50">My Hub</h2>
         </div>
     </x-slot>
 
     <div class="py-10 sm:py-12">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto min-w-0 max-w-5xl">
             <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">
                 <div class="max-w-3xl">
                     <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Your launchpad</p>
@@ -157,6 +158,7 @@
                 </article>
             </section>
 
+        </div>
         </div>
     </div>
 </x-app-layout>

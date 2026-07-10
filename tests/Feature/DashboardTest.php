@@ -47,6 +47,22 @@ class DashboardTest extends TestCase
             ->assertDontSee("You're logged in!");
     }
 
+    public function test_dashboard_uses_the_canonical_creator_page_content_width(): void
+    {
+        $response = $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $response->assertSee('class="px-4 sm:px-6 lg:px-8"', false)
+            ->assertSee('class="mx-auto min-w-0 max-w-5xl"', false)
+            ->assertDontSee('mx-auto max-w-7xl px-4 sm:px-6 lg:px-8', false);
+
+        $this->assertGreaterThanOrEqual(2, substr_count(
+            $response->getContent(),
+            'mx-auto min-w-0 max-w-5xl',
+        ));
+    }
+
     public function test_dashboard_links_a_single_owned_creator_directly_to_its_dashboard(): void
     {
         $user = User::factory()->create();
