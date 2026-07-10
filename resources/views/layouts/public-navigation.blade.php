@@ -21,18 +21,20 @@
             : 'flex min-h-11 items-center rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900';
     @endphp
 
-    <div class="mx-auto flex h-16 max-w-7xl min-w-0 items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
-        <a href="{{ route('home') }}" class="min-w-0" aria-label="Guide My Journey home">
-            <x-application-logo size="sm" />
-        </a>
+    <div class="mx-auto grid h-16 max-w-7xl min-w-0 grid-cols-[1fr_auto] items-center gap-2 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
+        <div class="flex min-w-0 justify-start">
+            <a href="{{ route('home') }}" class="min-w-0" aria-label="Guide My Journey home">
+                <x-application-logo size="sm" />
+            </a>
+        </div>
 
-        <div class="hidden items-center gap-6 text-sm font-semibold text-slate-600 dark:text-slate-200 md:flex">
+        <div class="hidden items-center justify-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-200 md:flex">
             <a href="{{ route('dashboard') }}" class="{{ $navLinkClass(request()->routeIs('dashboard')) }}">My Hub</a>
             <a href="{{ route('about') }}" class="{{ $navLinkClass(request()->routeIs('about')) }}">How it Works</a>
             <a href="{{ route('faq') }}" class="{{ $navLinkClass(request()->routeIs('faq')) }}">FAQ</a>
         </div>
 
-        <div class="flex shrink-0 items-center gap-2">
+        <div class="flex shrink-0 items-center justify-end gap-2">
             @auth
                 @php($accountUser = auth()->user())
                 <div class="relative" @click.outside="accountOpen = false">
