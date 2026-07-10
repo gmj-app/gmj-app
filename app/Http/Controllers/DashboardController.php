@@ -17,9 +17,42 @@ class DashboardController extends Controller
             ->get();
         $favoriteCreators = $user->favoriteCreators()
             ->active()
-            ->orderBy('display_name')
-            ->limit(6)
+            ->orderByPivot('created_at', 'desc')
             ->get();
+        $favoriteCreatorIds = $favoriteCreators->pluck('id');
+
+        $activeVotesByCreator = $user->userPicks()
+            ->whereIn('creator_id', $favoriteCreatorIds)
+            ->whereHas('recommendation', fn ($query) => $query->votable())
+            ->with(['recommendation' => fn ($query) => $query->select([
+                'id',
+                'creator_id',
+                'title',
+                'status',
+                'recommendation_type',
+                'media_type',
+            ])])
+            ->orderByDesc('vote_count')
+            ->latest()
+            ->get()
+            ->groupBy('creator_id');
+
+        $suggestionsByCreator = $user->recommendationsSubmitted()
+            ->whereIn('creator_id', $favoriteCreatorIds)
+            ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
+            ->where('status', '!=', 'hidden')
+            ->select([
+                'id',
+                'creator_id',
+                'title',
+                'status',
+                'recommendation_type',
+                'media_type',
+                'created_at',
+            ])
+            ->latest()
+            ->get()
+            ->groupBy('creator_id');
 
         $resources = [
             'creator_favorites_used' => $user->creatorFavoritesUsed(),
@@ -32,6 +65,12 @@ class DashboardController extends Controller
                 ->count(),
         ];
 
-        return view('dashboard', compact('favoriteCreators', 'ownedCreators', 'resources'));
+        return view('dashboard', compact(
+            'activeVotesByCreator',
+            'favoriteCreators',
+            'ownedCreators',
+            'resources',
+            'suggestionsByCreator',
+        ));
     }
 }

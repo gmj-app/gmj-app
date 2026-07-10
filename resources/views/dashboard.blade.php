@@ -43,6 +43,37 @@
                 </dl>
             </section>
 
+            <section class="mt-6 rounded-3xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 sm:p-8">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">My Guide Activity</p>
+                        <h2 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Your creators and activity</h2>
+                        <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">See what you’ve suggested and where your votes are currently allocated.</p>
+                    </div>
+                    @if ($favoriteCreators->isNotEmpty())
+                        <a href="{{ route('home') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">Find more creators</a>
+                    @endif
+                </div>
+
+                @if ($favoriteCreators->isEmpty())
+                    <div class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center dark:border-slate-700 dark:bg-slate-900">
+                        <h3 class="font-bold text-slate-950 dark:text-white">No favorite creators yet.</h3>
+                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Favorite a creator to track your suggestions and votes here.</p>
+                        <a href="{{ route('home') }}" class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500">Find creators</a>
+                    </div>
+                @else
+                    <div class="mt-6 space-y-3">
+                        @foreach ($favoriteCreators as $creator)
+                            <x-dashboard.guide-activity-creator
+                                :creator="$creator"
+                                :active-votes="$activeVotesByCreator->get($creator->id, collect())"
+                                :suggestions="$suggestionsByCreator->get($creator->id, collect())"
+                            />
+                        @endforeach
+                    </div>
+                @endif
+            </section>
+
             <section class="mt-6 grid gap-6 lg:grid-cols-2">
                 <article class="flex min-w-0 flex-col rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm dark:border-indigo-900 dark:from-indigo-950/60 dark:to-slate-900 sm:p-8">
                     <span class="flex size-12 items-center justify-center rounded-2xl border border-indigo-200 bg-white text-indigo-600 shadow-sm dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
@@ -126,29 +157,6 @@
                 </article>
             </section>
 
-            @if ($favoriteCreators->isNotEmpty())
-                <section class="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                            <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">Guide activity</p>
-                            <h2 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">My favorite creators</h2>
-                        </div>
-                        <a href="{{ route('home') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">Explore more creators</a>
-                    </div>
-
-                    <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        @foreach ($favoriteCreators as $creator)
-                            <a href="{{ route('creator.queue', $creator) }}" class="group flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-indigo-300 hover:bg-indigo-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:hover:border-indigo-600 dark:hover:bg-indigo-950/30">
-                                <x-creator-avatar :creator="$creator" />
-                                <span class="min-w-0">
-                                    <span class="block truncate font-bold text-slate-950 group-hover:text-indigo-700 dark:text-white dark:group-hover:text-indigo-300">{{ $creator->display_name }}</span>
-                                    <span class="mt-1 block text-sm text-slate-500 dark:text-slate-400">Open journey</span>
-                                </span>
-                            </a>
-                        @endforeach
-                    </div>
-                </section>
-            @endif
         </div>
     </div>
 </x-app-layout>
