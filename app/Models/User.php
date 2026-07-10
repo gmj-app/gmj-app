@@ -99,6 +99,30 @@ class User extends Authenticatable
         return $this->guide_number ? '#'.$this->guide_number : null;
     }
 
+    public function isFoundingGuide(): bool
+    {
+        return $this->guide_number !== null
+            && $this->guide_number >= 1
+            && $this->guide_number <= 100;
+    }
+
+    public function foundingGuideNumberLabel(): ?string
+    {
+        return $this->isFoundingGuide() ? '#'.$this->guide_number : null;
+    }
+
+    public function guideAccoladeLabel(): ?string
+    {
+        return $this->isFoundingGuide() ? 'Founding Guide' : null;
+    }
+
+    public function guideAccoladeTooltipLine(): ?string
+    {
+        return $this->isFoundingGuide()
+            ? "Founding Guide (#{$this->guide_number})"
+            : null;
+    }
+
     public function publicHandle(): ?string
     {
         return filled($this->public_handle) ? (string) $this->public_handle : null;
@@ -232,6 +256,10 @@ class User extends Authenticatable
 
     public function guideAvatarRingClass(): string
     {
+        if ($this->isFoundingGuide()) {
+            return 'ring-[3px] ring-yellow-400';
+        }
+
         return (string) ($this->primaryGuideAccolade()?->ring_class ?? '');
     }
 

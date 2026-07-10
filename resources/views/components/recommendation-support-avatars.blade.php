@@ -62,6 +62,9 @@
 
     $visibleSupporters = $supporters->take($limit);
     $hiddenSupportersCount = max(0, $supporters->count() - $visibleSupporters->count());
+    $hasVisibleFoundingGuide = $visibleSupporters->contains(
+        fn (array $supporter): bool => $supporter['user']->isFoundingGuide()
+    );
     $avatarSizeClasses = $size === 'md' ? 'size-8 text-xs' : 'size-6 text-[10px]';
     $starSizeClasses = $size === 'md' ? 'size-3.5 -bottom-0.5 -right-0.5' : 'size-3 -bottom-0.5 -right-0.5';
     $stackSpacing = $size === 'md' ? '-ml-2' : '-ml-1.5';
@@ -69,13 +72,14 @@
 @endphp
 
 @if ($visibleSupporters->isNotEmpty())
-    <span {{ $attributes->merge(['class' => 'flex min-w-0 items-center']) }}>
+    <span {{ $attributes->merge(['class' => 'flex min-w-0 items-center overflow-visible'.($hasVisibleFoundingGuide ? ' pb-1' : '')]) }}>
         @foreach ($visibleSupporters as $supporter)
             @php
                 $user = $supporter['user'];
                 $initials = $user->initialsForAvatar();
                 $titleLines = $supporter['titleLines'];
                 $avatarRingClass = $user->guideAvatarRingClass();
+                $foundingGuideNumberLabel = $user->foundingGuideNumberLabel();
             @endphp
 
             <span
@@ -102,6 +106,12 @@
                         <svg class="size-2" viewBox="0 0 24 24" fill="currentColor">
                             <path d="m12 2.75 2.78 5.63 6.22.9-4.5 4.39 1.06 6.19L12 16.93l-5.56 2.93 1.06-6.19L3 9.28l6.22-.9L12 2.75Z" />
                         </svg>
+                    </span>
+                @endif
+
+                @if ($foundingGuideNumberLabel)
+                    <span class="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/3 rounded-md border border-yellow-400/70 bg-slate-950/95 px-1 py-0.5 text-[8px] font-bold leading-none text-yellow-300 shadow-sm" aria-hidden="true">
+                        {{ $foundingGuideNumberLabel }}
                     </span>
                 @endif
             </span>

@@ -113,6 +113,26 @@ class GuideAccoladeTest extends TestCase
         $this->assertFalse($guideOne->fresh()->guideAccolades()->where('code', 'og_guide')->exists());
     }
 
+    public function test_founding_guide_avatar_helpers_use_the_first_one_hundred_boundary(): void
+    {
+        $foundingGuide = User::factory()->make(['guide_number' => 45]);
+        $guideOneHundredOne = User::factory()->make(['guide_number' => 101]);
+        $unnumberedGuide = User::factory()->make(['guide_number' => null]);
+
+        $this->assertTrue($foundingGuide->isFoundingGuide());
+        $this->assertSame('#45', $foundingGuide->foundingGuideNumberLabel());
+        $this->assertSame('Founding Guide', $foundingGuide->guideAccoladeLabel());
+        $this->assertSame('Founding Guide (#45)', $foundingGuide->guideAccoladeTooltipLine());
+        $this->assertSame('ring-[3px] ring-yellow-400', $foundingGuide->guideAvatarRingClass());
+
+        foreach ([$guideOneHundredOne, $unnumberedGuide] as $guide) {
+            $this->assertFalse($guide->isFoundingGuide());
+            $this->assertNull($guide->foundingGuideNumberLabel());
+            $this->assertNull($guide->guideAccoladeLabel());
+            $this->assertNull($guide->guideAccoladeTooltipLine());
+        }
+    }
+
     public function test_primary_accolade_uses_highest_priority_active_non_expired_award(): void
     {
         $user = User::factory()->create(['guide_number' => 501]);
