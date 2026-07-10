@@ -180,6 +180,11 @@ class Recommendation extends Model
         return "https://img.youtube.com/vi/{$videoId}/hqdefault.jpg";
     }
 
+    public function displayThumbnailUrl(): ?string
+    {
+        return $this->youtubeThumbnailUrl();
+    }
+
     public function isTopicOnly(): bool
     {
         return $this->recommendation_type === 'topic'

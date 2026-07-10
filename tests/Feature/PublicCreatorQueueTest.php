@@ -935,7 +935,7 @@ class PublicCreatorQueueTest extends TestCase
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
 
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'youtube_video_id' => 'dQw4w9WgXcQ',
             'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
@@ -943,13 +943,48 @@ class PublicCreatorQueueTest extends TestCase
             'status' => 'approved',
         ]);
 
-        $this->get('/jfragment')
+        $response = $this->get('/jfragment')
             ->assertOk()
             ->assertSee('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', false)
             ->assertSee('onerror="this.hidden = true"', false)
             ->assertSee('Thumbnail for Never Gonna Give You Up')
             ->assertDontSee('border-cyan-500/60', false)
             ->assertDontSee('text-cyan-800 dark:text-cyan-200', false);
+
+        $collapsedHeader = Str::of($response->getContent())
+            ->after('aria-controls="recommendation-details-'.$recommendation->id.'"')
+            ->before('</button>');
+
+        $this->assertStringContainsString('width="88"', (string) $collapsedHeader);
+        $this->assertStringContainsString('height="50"', (string) $collapsedHeader);
+        $this->assertStringContainsString('loading="lazy"', (string) $collapsedHeader);
+        $this->assertStringContainsString('decoding="async"', (string) $collapsedHeader);
+        $this->assertStringContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
+        $this->assertStringContainsString('dark:text-slate-100', (string) $collapsedHeader);
+        $this->assertStringNotContainsString('fill-current', (string) $collapsedHeader);
+    }
+
+    public function test_compact_topic_rows_omit_the_thumbnail(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'topic-creator']);
+
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_type' => 'topic',
+            'youtube_url' => null,
+            'youtube_video_id' => null,
+            'title' => 'A compact community topic',
+            'status' => 'approved',
+        ]);
+
+        $response = $this->get(route('creator.queue', $creator))->assertOk();
+        $collapsedHeader = Str::of($response->getContent())
+            ->after('aria-controls="recommendation-details-'.$recommendation->id.'"')
+            ->before('</button>');
+
+        $this->assertStringContainsString('A compact community topic', (string) $collapsedHeader);
+        $this->assertStringNotContainsString('<img', (string) $collapsedHeader);
+        $this->assertStringNotContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
     }
 
     public function test_invalid_or_missing_youtube_video_ids_use_the_placeholder(): void

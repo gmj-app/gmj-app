@@ -676,6 +676,7 @@
                                     default => 'th',
                                 };
                             $rankLabel = "{$rank}{$rankSuffix}";
+                            $thumbnailUrl = $recommendation->displayThumbnailUrl();
                             $rankClasses = match ($rank) {
                                 1 => 'border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-200',
                                 2 => 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-500/60 dark:bg-slate-500/15 dark:text-slate-200',
@@ -713,14 +714,30 @@
                                 aria-expanded="false"
                                 x-bind:aria-expanded="open.toString()"
                                 aria-controls="recommendation-details-{{ $recommendation->id }}"
-                                class="flex min-h-16 w-full min-w-0 cursor-pointer items-start gap-3 px-4 py-3 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:hover:bg-emerald-950/20 sm:min-h-20 sm:gap-4 sm:px-5"
+                                class="group flex min-h-16 w-full min-w-0 cursor-pointer items-start gap-2.5 px-3 py-3 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:hover:bg-emerald-950/20 sm:min-h-20 sm:gap-4 sm:px-5"
                             >
                                 <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
                                     {{ $rankLabel }}
                                 </span>
 
+                                @if ($thumbnailUrl)
+                                    <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-800 sm:h-[50px] sm:w-[88px] dark:border-slate-700">
+                                        <img
+                                            src="{{ $thumbnailUrl }}"
+                                            alt=""
+                                            aria-hidden="true"
+                                            loading="lazy"
+                                            decoding="async"
+                                            width="88"
+                                            height="50"
+                                            onerror="this.parentElement.hidden = true"
+                                            class="h-full w-full object-cover transition group-hover:brightness-105"
+                                        >
+                                    </span>
+                                @endif
+
                                 <span class="min-w-0 flex-1 pt-0.5">
-                                    <span class="block break-words text-sm font-semibold leading-snug text-slate-950 dark:text-white sm:text-base">
+                                    <span class="block break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
                                         {{ $recommendation->title }}
                                     </span>
                                     <x-recommendation-user-indicators
