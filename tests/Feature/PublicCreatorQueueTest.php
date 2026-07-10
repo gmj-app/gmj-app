@@ -724,13 +724,20 @@ class PublicCreatorQueueTest extends TestCase
             ->assertOk()
             ->assertSee('Recently Published')
             ->assertSee('View all published')
+            ->assertSee('divide-y divide-slate-200/80 dark:divide-slate-700/50', false)
+            ->assertSee('w-[84px]', false)
+            ->assertSee('hover:bg-emerald-50/70', false)
+            ->assertSee('focus-visible:ring-emerald-500', false)
+            ->assertSee('mt-4 flex justify-end', false)
+            ->assertDontSee('bg-emerald-100 px-2.5 py-1 text-[11px]', false)
+            ->assertDontSee('bg-red-600/95 text-white shadow-md', false)
             ->assertSeeInOrder([
                 'Creator finished video',
                 'Fallback original published title',
                 'Third published sidebar item',
                 'Fourth published sidebar item',
             ])
-            ->assertSee('Published Jul 6, 2026')
+            ->assertSee('Jul 6, 2026 &middot; 2 votes', false)
             ->assertSee('Creator finished video')
             ->assertSee('https://img.youtube.com/vi/PUBLISHED01/hqdefault.jpg', false)
             ->assertSee('Fallback original published title')

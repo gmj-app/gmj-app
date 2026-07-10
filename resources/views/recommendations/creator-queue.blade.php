@@ -466,15 +466,12 @@
                         </div>
 
                         <section class="w-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="recently-published-title">
-                            <div class="flex items-center justify-between gap-3">
-                                <h2 id="recently-published-title" class="text-sm font-semibold text-slate-950 dark:text-white">Recently Published</h2>
-                                <span class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Published</span>
-                            </div>
+                            <h2 id="recently-published-title" class="text-sm font-semibold text-slate-950 dark:text-white">Recently Published</h2>
 
                             @if ($recentPublishedRecommendations->isEmpty())
                                 <p class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">No published recommendations yet.</p>
                             @else
-                                <div class="mt-4 space-y-3">
+                                <div class="mt-3 divide-y divide-slate-200/80 dark:divide-slate-700/50">
                                     @foreach ($recentPublishedRecommendations as $publishedRecommendation)
                                         @php
                                             $publishedDisplay = $publishedRecommendation->publishedDisplayData();
@@ -484,9 +481,9 @@
                                         <a
                                             href="{{ route('creators.published', $creator) }}#recommendation-{{ $publishedRecommendation->id }}"
                                             aria-label="View published recommendation: {{ $publishedDisplay['title'] }}"
-                                            class="group flex min-w-0 items-center gap-3 rounded-2xl p-1.5 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800/70"
+                                            class="group flex min-w-0 items-start gap-3 rounded-xl px-1 py-4 transition hover:bg-emerald-50/70 focus:outline-none focus-visible:bg-emerald-50/70 focus-visible:ring-2 focus-visible:ring-emerald-500 dark:hover:bg-emerald-950/20 dark:focus-visible:bg-emerald-950/20"
                                         >
-                                            <span class="relative flex aspect-video w-20 shrink-0 overflow-hidden rounded-lg bg-slate-950 ring-1 ring-slate-200 dark:ring-slate-800">
+                                            <span class="relative flex aspect-video w-[84px] shrink-0 overflow-hidden rounded-lg bg-slate-950 ring-1 ring-slate-200 dark:ring-slate-800">
                                                 @if ($publishedDisplay['thumbnail_url'])
                                                     <img
                                                         src="{{ $publishedDisplay['thumbnail_url'] }}"
@@ -497,33 +494,30 @@
                                                     >
                                                 @else
                                                     <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-slate-400">
-                                                        <svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                            <path d="M8 5v14l11-7z" />
+                                                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V6.75A2.75 2.75 0 0 1 6.75 4h10.5A2.75 2.75 0 0 1 20 6.75V19.5l-4.5-2.25L12 19.5l-3.5-2.25L4 19.5Z" />
                                                         </svg>
-                                                    </span>
-                                                @endif
-
-                                                @if ($publishedDisplay['url'])
-                                                    <span class="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                                                        <span class="flex size-7 items-center justify-center rounded-full bg-red-600/95 text-white shadow-md transition group-hover:scale-105 group-hover:bg-red-500">
-                                                            <svg viewBox="0 0 24 24" aria-hidden="true" class="size-3.5 fill-current"><path d="M8 5v14l11-7z"/></svg>
-                                                        </span>
                                                     </span>
                                                 @endif
                                             </span>
                                             <span class="min-w-0 flex-1">
-                                                <span class="line-clamp-2 break-words text-sm font-semibold leading-5 text-slate-800 transition group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-300">{{ $publishedDisplay['title'] }}</span>
+                                                <span class="line-clamp-2 break-words text-sm font-semibold leading-5 text-slate-800 transition group-hover:text-emerald-700 group-focus-visible:text-emerald-700 dark:text-slate-100 dark:group-hover:text-emerald-300 dark:group-focus-visible:text-emerald-300">{{ $publishedDisplay['title'] }}</span>
                                                 <span class="mt-1 block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                                                    Published {{ $publishedDate?->format('M j, Y') ?? 'recently' }} &middot; {{ $publishedVotes }} {{ Str::plural('vote', $publishedVotes) }}
+                                                    {{ $publishedDate?->format('M j, Y') ?? 'Recently' }} &middot; {{ $publishedVotes }} {{ Str::plural('vote', $publishedVotes) }}
                                                 </span>
                                             </span>
                                         </a>
                                     @endforeach
                                 </div>
 
-                                <a href="{{ route('creators.published', $creator) }}" class="mt-4 inline-flex text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-                                    View all published
-                                </a>
+                                <div class="mt-4 flex justify-end">
+                                    <a href="{{ route('creators.published', $creator) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 transition hover:text-emerald-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-300 dark:hover:text-emerald-200">
+                                        View all published
+                                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
+                                        </svg>
+                                    </a>
+                                </div>
                             @endif
                         </section>
                     </div>
