@@ -964,7 +964,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringNotContainsString('fill-current', (string) $collapsedHeader);
     }
 
-    public function test_compact_topic_rows_omit_the_thumbnail(): void
+    public function test_compact_topic_rows_show_a_topic_tile_without_an_image(): void
     {
         $creator = Creator::factory()->create(['slug' => 'topic-creator']);
 
@@ -984,7 +984,11 @@ class PublicCreatorQueueTest extends TestCase
 
         $this->assertStringContainsString('A compact community topic', (string) $collapsedHeader);
         $this->assertStringNotContainsString('<img', (string) $collapsedHeader);
-        $this->assertStringNotContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
+        $this->assertStringContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
+        $this->assertStringContainsString('bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-800', (string) $collapsedHeader);
+        $this->assertStringContainsString('tracking-[0.18em]', (string) $collapsedHeader);
+        $this->assertStringContainsString('Topic</span>', (string) $collapsedHeader);
+        $this->assertStringNotContainsString('fill-current', (string) $collapsedHeader);
     }
 
     public function test_invalid_or_missing_youtube_video_ids_use_the_placeholder(): void
