@@ -12,7 +12,7 @@
                         :recommendation="$recommendation"
                         :limit="1"
                         :include-upvoters="false"
-                        size="md"
+                        layout="detail"
                     />
                     <p class="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{{ $recommendation->submittedBy->publicName() }}</p>
                 </div>
@@ -25,12 +25,12 @@
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Community support</p>
             <x-recommendation-support-avatars
                 :recommendation="$recommendation"
-                :limit="20"
+                :limit="50"
                 :include-requester="false"
                 :skip-requester-upvote="true"
                 :show-empty="true"
-                size="md"
-                class="mt-2 flex-wrap gap-y-2"
+                layout="detail"
+                class="mt-2"
             />
         </div>
     </div>

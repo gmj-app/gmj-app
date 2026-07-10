@@ -6,6 +6,7 @@
     'includeUpvoters' => true,
     'skipRequesterUpvote' => false,
     'showEmpty' => false,
+    'layout' => 'stack',
 ])
 
 @php
@@ -62,18 +63,33 @@
 
     $visibleSupporters = $supporters->take($limit);
     $hiddenSupportersCount = max(0, $supporters->count() - $visibleSupporters->count());
+    $isDetailLayout = $layout === 'detail';
+    $isCompactDetailLayout = $isDetailLayout && $supporters->count() > 20;
     $hasVisibleFoundingGuide = $visibleSupporters->contains(
         fn (array $supporter): bool => $supporter['user']->isFoundingGuide()
     );
-    $avatarSizeClasses = $size === 'md' ? 'size-8 text-xs' : 'size-6 text-[10px]';
-    $starSizeClasses = $size === 'md' ? 'size-3.5 -bottom-0.5 -right-0.5' : 'size-3 -bottom-0.5 -right-0.5';
-    $stackSpacing = $size === 'md' ? '-ml-2' : '-ml-1.5';
-    $morePillClasses = $size === 'md' ? 'h-8 px-2 text-xs' : 'h-6 px-1.5 text-[10px]';
+    $avatarSizeClasses = match (true) {
+        $isDetailLayout && ! $isCompactDetailLayout => 'size-9 text-sm sm:size-10',
+        $isCompactDetailLayout, $size === 'md' => 'size-8 text-xs',
+        default => 'size-6 text-[10px]',
+    };
+    $starSizeClasses = $isDetailLayout && ! $isCompactDetailLayout
+        ? 'size-4 -bottom-0.5 -right-0.5'
+        : ($size === 'md' ? 'size-3.5 -bottom-0.5 -right-0.5' : 'size-3 -bottom-0.5 -right-0.5');
+    $stackSpacing = $size === 'md' || $isCompactDetailLayout ? '-ml-2' : '-ml-1.5';
+    $morePillClasses = $isDetailLayout
+        ? 'h-8 px-2 text-xs'
+        : ($size === 'md' ? 'h-8 px-2 text-xs' : 'h-6 px-1.5 text-[10px]');
+    $supporterRows = $isCompactDetailLayout
+        ? $visibleSupporters->chunk(10)
+        : collect([$visibleSupporters]);
 @endphp
 
 @if ($visibleSupporters->isNotEmpty())
-    <span {{ $attributes->merge(['class' => 'flex min-w-0 items-center overflow-visible'.($hasVisibleFoundingGuide ? ' pb-1' : '')]) }}>
-        @foreach ($visibleSupporters as $supporter)
+    <span {{ $attributes->merge(['class' => 'flex min-w-0 items-center overflow-visible'.($isDetailLayout ? ' flex-wrap gap-x-2 gap-y-3' : '').($hasVisibleFoundingGuide ? ' pb-1' : '')]) }}>
+        @foreach ($supporterRows as $supporterRow)
+            <span class="inline-flex items-center overflow-visible {{ $isCompactDetailLayout ? 'pb-1' : ($isDetailLayout ? 'flex-wrap gap-2 pb-1' : '') }}">
+            @foreach ($supporterRow as $supporter)
             @php
                 $user = $supporter['user'];
                 $initials = $user->initialsForAvatar();
@@ -83,7 +99,8 @@
             @endphp
 
             <span
-                class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 dark:ring-slate-900 {{ ! $loop->first ? $stackSpacing : '' }}"
+                class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 hover:z-20 focus-within:z-20 dark:ring-slate-900 {{ ! $loop->first && ! ($isDetailLayout && ! $isCompactDetailLayout) ? $stackSpacing : '' }}"
+                tabindex="0"
                 title="{!! collect($titleLines)->map(fn (string $line): string => e($line))->implode('&#10;') !!}"
                 aria-label="{{ $supporter['ariaLabel'] }}"
             >
@@ -115,13 +132,15 @@
                     </span>
                 @endif
             </span>
+            @endforeach
+            </span>
         @endforeach
 
         @if ($hiddenSupportersCount > 0)
             <span
-                class="{{ $morePillClasses }} {{ $stackSpacing }} inline-flex shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 font-semibold text-slate-600 ring-2 ring-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-900"
-                title="{{ $hiddenSupportersCount }} more supporters"
-                aria-label="{{ $hiddenSupportersCount }} more supporters"
+                class="{{ $morePillClasses }} {{ ! $isDetailLayout ? $stackSpacing : '' }} inline-flex shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 font-semibold text-slate-600 ring-2 ring-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-900"
+                title="{{ $hiddenSupportersCount }} {{ $isDetailLayout ? 'additional' : 'more' }} supporters"
+                aria-label="{{ $hiddenSupportersCount }} {{ $isDetailLayout ? 'additional' : 'more' }} supporters"
             >
                 +{{ $hiddenSupportersCount }}
             </span>

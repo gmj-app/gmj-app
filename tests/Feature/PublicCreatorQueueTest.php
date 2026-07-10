@@ -380,7 +380,7 @@ class PublicCreatorQueueTest extends TestCase
         ]);
 
         User::factory()
-            ->count(23)
+            ->count(63)
             ->sequence(fn ($sequence) => [
                 'name' => 'Voter '.str_pad((string) ($sequence->index + 1), 2, '0', STR_PAD_LEFT),
                 'public_display_name' => 'Voter '.str_pad((string) ($sequence->index + 1), 2, '0', STR_PAD_LEFT),
@@ -407,11 +407,37 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('title="Supported by Voter 01&#10;Founding Guide (#2)"', false)
             ->assertSee('ring-[3px] ring-yellow-400', false)
             ->assertSee('Community support')
-            ->assertSee('title="14 more supporters"', false)
-            ->assertSee('title="19 more supporters"', false)
-            ->assertSee('title="3 more supporters"', false)
+            ->assertSee('title="54 more supporters"', false)
+            ->assertSee('title="59 more supporters"', false)
+            ->assertSee('title="13 additional supporters"', false)
+            ->assertSee('aria-label="13 additional supporters"', false)
+            ->assertSee('src="https://example.test/avatar-49.jpg"', false)
+            ->assertDontSee('src="https://example.test/avatar-50.jpg"', false)
             ->assertDontSee('this.nextElementSibling.hidden', false)
             ->assertDontSee('original@example.test');
+    }
+
+    public function test_full_community_support_separates_up_to_twenty_larger_avatars(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'support-layout']);
+        $requester = User::factory()->create(['public_display_name' => 'Layout Requester']);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $requester->id,
+            'status' => 'approved',
+        ]);
+
+        User::factory()->count(10)->create()->each(fn (User $user) => UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $recommendation->id,
+            'user_id' => $user->id,
+        ]));
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('size-9 text-sm sm:size-10', false)
+            ->assertSee('flex-wrap gap-2 pb-1', false)
+            ->assertDontSee('additional supporters');
     }
 
     public function test_public_queue_can_search_filter_and_sort_recommendations(): void
