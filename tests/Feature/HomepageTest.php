@@ -166,7 +166,7 @@ class HomepageTest extends TestCase
             ->assertSee('Guide My Journey')
             ->assertSeeInOrder(['Fans ', '>SUGGEST</span>.', 'Communities ', '>VOTE</span>.', 'Creators ', '>DECIDE</span>.'], false)
             ->assertSee('from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent', false)
-            ->assertSee('placeholder="Search for a creator..."', false)
+            ->assertSee('placeholder="Search creators, artists, songs, or topics..."', false)
             ->assertDontSee('Community-powered creator journeys')
             ->assertDontSee('Favorite creators, suggest ideas or links, and vote for what you want to see next.')
             ->assertSee('Popular creators')
@@ -423,6 +423,122 @@ class HomepageTest extends TestCase
             ->assertSee('Search results')
             ->assertSee('No creators found.')
             ->assertDontSee('Existing Creator');
+    }
+
+    public function test_homepage_search_uses_the_global_creator_and_recommendation_search(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('action="'.route('search.index').'"', false)
+            ->assertSee('Search creators, artists, songs, or topics...', false)
+            ->assertSee('minlength="2"', false);
+    }
+
+    public function test_global_search_groups_active_topic_and_published_matches_by_creator(): void
+    {
+        $firstCreator = Creator::factory()->create(['display_name' => 'First Journey', 'slug' => 'first-journey']);
+        $secondCreator = Creator::factory()->create(['display_name' => 'Second Journey', 'slug' => 'second-journey']);
+
+        $active = Recommendation::factory()->create([
+            'creator_id' => $firstCreator->id,
+            'title' => 'Determinado live performance',
+            'artist' => 'Kat Determinado',
+            'status' => 'approved',
+        ]);
+        $topic = Recommendation::factory()->create([
+            'creator_id' => $firstCreator->id,
+            'recommendation_type' => 'topic',
+            'youtube_url' => null,
+            'youtube_video_id' => null,
+            'title' => 'The story behind Determinado',
+            'description' => 'Explore the song and its cultural context.',
+            'status' => 'recorded',
+        ]);
+        $published = Recommendation::factory()->create([
+            'creator_id' => $secondCreator->id,
+            'title' => 'Original request title',
+            'published_title' => 'Determinado reaction and analysis',
+            'status' => 'published',
+        ]);
+
+        $response = $this->get(route('search.index', ['q' => 'Determinado']));
+
+        $response
+            ->assertOk()
+            ->assertSee('Results for “Determinado”')
+            ->assertSee('First Journey')
+            ->assertSee('Second Journey')
+            ->assertSee('2 matching recommendations')
+            ->assertSee('Determinado live performance')
+            ->assertSee('The story behind Determinado')
+            ->assertSee('Recorded')
+            ->assertSee('Topic')
+            ->assertSee('Determinado reaction and analysis')
+            ->assertSee('Published')
+            ->assertSee(route('creator.queue', ['creator' => $firstCreator, 'q' => 'Determinado']).'#recommendation-'.$active->id, false)
+            ->assertSee(route('creators.published', $secondCreator).'#recommendation-'.$published->id, false);
+
+        $this->assertLessThan(
+            strpos($response->getContent(), 'The story behind Determinado'),
+            strpos($response->getContent(), 'Determinado live performance'),
+        );
+        $this->assertNotNull($topic);
+    }
+
+    public function test_global_search_supports_creator_only_matches_and_excludes_private_content(): void
+    {
+        $creatorMatch = Creator::factory()->create([
+            'display_name' => 'Culture Explorer',
+            'slug' => 'culture-explorer',
+            'bio' => 'Deep dives into maritime history.',
+        ]);
+        $privateCreator = Creator::factory()->create(['display_name' => 'Private Journey', 'status' => 'inactive']);
+
+        foreach (['pending', 'hidden', 'withdrawn'] as $status) {
+            Recommendation::factory()->create([
+                'creator_id' => $creatorMatch->id,
+                'title' => 'Secret Maritime Match '.$status,
+                'status' => $status,
+            ]);
+        }
+        Recommendation::factory()->create([
+            'creator_id' => $privateCreator->id,
+            'title' => 'Maritime private creator match',
+            'status' => 'approved',
+        ]);
+
+        $this->get(route('search.index', ['q' => 'maritime']))
+            ->assertOk()
+            ->assertSee('Culture Explorer')
+            ->assertSee('Creator match')
+            ->assertDontSee('Secret Maritime Match')
+            ->assertDontSee('Private Journey');
+
+        $this->get(route('search.index', ['q' => 'x']))
+            ->assertOk()
+            ->assertSee('Enter at least 2 characters.');
+    }
+
+    public function test_global_search_paginates_creator_groups_twelve_at_a_time(): void
+    {
+        foreach (range(1, 13) as $number) {
+            Creator::factory()->create([
+                'display_name' => sprintf('Needle Creator %02d', $number),
+                'slug' => sprintf('needle-creator-%02d', $number),
+            ]);
+        }
+
+        $this->get(route('search.index', ['q' => 'Needle']))
+            ->assertOk()
+            ->assertSee('Needle Creator 01')
+            ->assertSee('Needle Creator 12')
+            ->assertDontSee('Needle Creator 13');
+
+        $this->get(route('search.index', ['q' => 'Needle', 'page' => 2]))
+            ->assertOk()
+            ->assertSee('Needle Creator 13')
+            ->assertDontSee('Needle Creator 01')
+            ->assertSee('q=Needle', false);
     }
 
     public function test_homepage_paginates_twelve_creators_per_page(): void

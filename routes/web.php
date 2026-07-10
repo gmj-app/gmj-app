@@ -12,12 +12,14 @@ use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ToolsAdminController;
 use App\Http\Controllers\YoutubeToolsController;
 use App\Http\Middleware\EnsurePublicProfileIsComplete;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/search', SearchController::class)->name('search.index');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/faq', 'pages.faq')->name('faq');
 Route::view('/contact', 'pages.contact')->name('contact');

@@ -10,8 +10,8 @@
                 <x-brand-tagline />
             </p>
 
-            <form method="GET" action="{{ route('home') }}" class="mx-auto mt-8 max-w-2xl">
-                <label for="creator-search" class="sr-only">Search for a creator</label>
+            <form method="GET" action="{{ route('search.index') }}" class="mx-auto mt-8 max-w-2xl">
+                <label for="creator-search" class="sr-only">Search creators, artists, songs, or topics</label>
                 <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-900/10 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 dark:focus-within:ring-indigo-950 sm:flex-row sm:items-center">
                     <div class="flex min-w-0 flex-1 items-center">
                         <svg viewBox="0 0 24 24" aria-hidden="true" class="ml-3 h-6 w-6 shrink-0 fill-none stroke-slate-400" stroke-width="2">
@@ -23,7 +23,8 @@
                             name="q"
                             type="search"
                             value="{{ $search }}"
-                            placeholder="Search for a creator..."
+                            placeholder="Search creators, artists, songs, or topics..."
+                            minlength="2"
                             class="min-w-0 flex-1 border-0 bg-transparent px-3 py-3 text-base text-slate-950 placeholder:text-slate-400 focus:ring-0 dark:text-white sm:px-4 sm:text-lg"
                         >
                     </div>
