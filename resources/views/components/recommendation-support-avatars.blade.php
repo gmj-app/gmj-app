@@ -91,40 +91,26 @@
                 $user = $supporter['user'];
                 $initials = $user->initialsForAvatar();
                 $titleLines = $supporter['titleLines'];
-                $avatarRingClass = $user->guideAvatarRingClass();
-                $foundingGuideNumberLabel = $user->foundingGuideNumberLabel();
+                $profileUrl = $user->publicGuideProfileUrl();
             @endphp
 
             <span class="{{ $showsSeparatedNames ? 'inline-flex min-w-0 flex-col items-center' : 'contents' }}">
-            <span
+            <{{ $profileUrl ? 'a' : 'span' }}
+                @if ($profileUrl) href="{{ $profileUrl }}" @endif
                 class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 hover:z-20 focus-within:z-20 dark:ring-slate-900 {{ ! $loop->first && ! ($isDetailLayout && ! $isCompactDetailLayout) ? $stackSpacing : '' }}"
-                tabindex="0"
+                @if (! $profileUrl) tabindex="0" @endif
                 title="{!! collect($titleLines)->map(fn (string $line): string => e($line))->implode('&#10;') !!}"
-                aria-label="{{ $supporter['ariaLabel'] }}"
+                aria-label="{{ $profileUrl ? 'View '.$user->publicName().'\'s Guide profile' : $supporter['ariaLabel'] }}"
             >
-                @if (filled($user->avatar_url))
-                    <img
-                        src="{{ $user->avatar_url }}"
-                        alt=""
-                        loading="lazy"
-                        class="{{ $avatarSizeClasses }} {{ $avatarRingClass }} rounded-full object-cover"
-                        onerror="this.hidden = true"
-                    >
-                @else
-                    <span class="{{ $avatarSizeClasses }} {{ $avatarRingClass }} inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
-                        {{ $initials }}
-                    </span>
-                @endif
-
-                @if ($foundingGuideNumberLabel)
-                    <span class="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/3 rounded-md border border-yellow-400/70 bg-slate-950/95 px-1 py-0.5 text-[8px] font-bold leading-none text-yellow-300 shadow-sm" aria-hidden="true">
-                        {{ $foundingGuideNumberLabel }}
-                    </span>
-                @endif
-            </span>
+                <x-guide-avatar :user="$user" :size="$isDetailLayout && ! $isCompactDetailLayout ? 'md' : ($size === 'md' || $isCompactDetailLayout ? 'sm' : 'xs')" />
+            </{{ $profileUrl ? 'a' : 'span' }}>
             @if ($showsSeparatedNames)
                 <span data-supporter-name class="mt-3 block w-full max-w-[88px] truncate text-center text-xs font-medium text-slate-600 dark:text-slate-300">
-                    {{ $user->publicName() }}
+                    @if ($profileUrl)
+                        <a href="{{ $profileUrl }}" class="hover:text-indigo-600 dark:hover:text-indigo-300">{{ $user->publicName() }}</a>
+                    @else
+                        {{ $user->publicName() }}
+                    @endif
                 </span>
             @endif
             </span>

@@ -30,6 +30,7 @@ class User extends Authenticatable
         'public_display_name',
         'public_handle',
         'public_profile_completed_at',
+        'public_profile_enabled',
         'display_name_prompt_dismissed_at',
         'email',
         'google_id',
@@ -62,6 +63,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'guide_number' => 'integer',
             'public_profile_completed_at' => 'datetime',
+            'public_profile_enabled' => 'boolean',
             'display_name_prompt_dismissed_at' => 'datetime',
             'can_access_video_tools' => 'boolean',
             'password' => 'hashed',
@@ -131,6 +133,20 @@ class User extends Authenticatable
     public function formattedPublicHandle(): ?string
     {
         return $this->publicHandle() ? '@'.$this->publicHandle() : null;
+    }
+
+    public function hasPublicGuideProfile(): bool
+    {
+        return (bool) $this->public_profile_enabled
+            && filled($this->public_handle)
+            && filled($this->public_display_name);
+    }
+
+    public function publicGuideProfileUrl(): ?string
+    {
+        return $this->hasPublicGuideProfile()
+            ? route('guides.show', ['handle' => $this->public_handle])
+            : null;
     }
 
     public function initialsForAvatar(): string

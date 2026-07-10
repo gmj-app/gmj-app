@@ -14,7 +14,11 @@
                         :include-upvoters="false"
                         layout="detail"
                     />
-                    <p class="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{{ $recommendation->submittedBy->publicName() }}</p>
+                    @if ($recommendation->submittedBy->publicGuideProfileUrl())
+                        <a href="{{ $recommendation->submittedBy->publicGuideProfileUrl() }}" class="min-w-0 truncate text-sm font-medium text-slate-700 hover:text-indigo-600 dark:text-slate-200 dark:hover:text-indigo-300">{{ $recommendation->submittedBy->publicName() }}</a>
+                    @else
+                        <p class="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{{ $recommendation->submittedBy->publicName() }}</p>
+                    @endif
                 </div>
             @else
                 <p class="mt-2 text-sm font-normal text-slate-500 dark:text-slate-400">Unknown Guide</p>

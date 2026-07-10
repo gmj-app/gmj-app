@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicGuideProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SearchController;
@@ -131,6 +132,10 @@ Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(functio
 });
 
 require __DIR__.'/auth.php';
+
+Route::get('/@{handle}', PublicGuideProfileController::class)
+    ->where('handle', '[A-Za-z0-9_-]+')
+    ->name('guides.show');
 
 Route::get('/{creator:slug}/published', [RecommendationController::class, 'published'])
     ->name('creators.published');
