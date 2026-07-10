@@ -55,7 +55,7 @@ class ExampleTest extends TestCase
             ->assertDontSee('From scattered comments to one organized creator journey.')
             ->assertDontSee('The creator stays in control')
             ->assertDontSee('Why it matters')
-            ->assertDontSee('href="'.route('dashboard').'"', false);
+            ->assertSee('href="'.route('dashboard').'"', false);
     }
 
     public function test_how_it_works_page_uses_authenticated_cta_and_nav_route(): void

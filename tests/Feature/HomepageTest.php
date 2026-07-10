@@ -20,15 +20,13 @@ class HomepageTest extends TestCase
             ->assertSee('Guide My Journey')
             ->assertSee('favicon.svg', false)
             ->assertSee(route('home'), false)
-            ->assertSee('Explore')
-            ->assertSee('How it Works')
-            ->assertSee('FAQ')
+            ->assertSeeInOrder(['My Hub', 'How it Works', 'FAQ'])
+            ->assertDontSee('>Explore</a>', false)
             ->assertSee('Sign in')
             ->assertDontSee('Register')
             ->assertSee(route('about'), false)
             ->assertSee(route('faq'), false)
-            ->assertSee(route('contact'), false)
-            ->assertSee('Toggle light and dark mode')
+            ->assertSee(route('dashboard'), false)
             ->assertSeeInOrder(['Fans', 'SUGGEST', 'Communities', 'VOTE', 'Creators', 'DECIDE'])
             ->assertSee('bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent', false)
             ->assertDontSee('Fans suggest. Communities vote. Creators decide.');
@@ -70,13 +68,31 @@ class HomepageTest extends TestCase
 
     public function test_authenticated_public_navigation_keeps_account_actions(): void
     {
-        $this->actingAs(User::factory()->create())
+        $user = User::factory()->create([
+            'public_display_name' => 'Public Guide',
+            'public_handle' => 'public-guide',
+            'avatar_url' => 'https://example.com/avatar.jpg',
+        ]);
+
+        $this->actingAs($user)
             ->get('/')
             ->assertOk()
-            ->assertSee('My Hub')
+            ->assertSeeInOrder(['My Hub', 'How it Works', 'FAQ'])
+            ->assertDontSee('>Explore</a>', false)
+            ->assertSee('aria-haspopup="menu"', false)
+            ->assertSee(':aria-expanded="accountOpen.toString()"', false)
+            ->assertSee('aria-label="Open account menu"', false)
+            ->assertSee('src="https://example.com/avatar.jpg"', false)
+            ->assertSee('alt="Public Guide avatar"', false)
+            ->assertSee('Public Guide')
+            ->assertSee($user->email)
             ->assertSee('Profile')
+            ->assertSee('Use dark theme')
+            ->assertSee('Toggle light and dark mode')
             ->assertSee('Log out')
             ->assertDontSee('Creator Dashboard')
+            ->assertDontSee('Sign in')
+            ->assertSee(route('profile.edit'), false)
             ->assertSee(route('logout'), false);
     }
 
