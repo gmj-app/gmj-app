@@ -180,6 +180,24 @@ class Recommendation extends Model
         return "https://img.youtube.com/vi/{$videoId}/hqdefault.jpg";
     }
 
+    public function isTopicOnly(): bool
+    {
+        return $this->recommendation_type === 'topic'
+            && blank($this->youtube_url)
+            && $this->youtubeThumbnailUrl() === null;
+    }
+
+    public function hasMediaPreview(): bool
+    {
+        return ! $this->isTopicOnly();
+    }
+
+    public function hasPublishedMediaPreview(): bool
+    {
+        return filled($this->displayPublishedUrl())
+            || filled($this->displayPublishedThumbnailUrl());
+    }
+
     public function displayPublishedTitle(): string
     {
         return filled($this->published_title)

@@ -12,6 +12,7 @@
 @endphp
 
 <article {{ $attributes->merge(['class' => 'overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900']) }}>
+    @if ($recommendation->hasPublishedMediaPreview())
     @if ($display['thumbnail_url'])
         <x-youtube-thumbnail
             :thumbnail-url="$display['thumbnail_url']"
@@ -34,6 +35,7 @@
                 </p>
             </div>
         </div>
+    @endif
     @endif
 
     <div class="p-5 sm:p-6">

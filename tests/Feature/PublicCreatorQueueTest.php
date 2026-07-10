@@ -574,7 +574,30 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('The history of the Amen break')
             ->assertSee('Trace one drum break across decades of music.')
             ->assertSee('Topic suggestion')
+            ->assertDontSee('Community topic')
+            ->assertDontSee('aria-label="Open original link for The history of the Amen break"', false)
             ->assertDontSee('Watch on YouTube');
+    }
+
+    public function test_published_topic_can_show_real_published_media_without_an_original_placeholder(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'published-topic']);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_type' => 'topic',
+            'youtube_url' => null,
+            'youtube_video_id' => null,
+            'title' => 'A community topic that became a video',
+            'status' => 'published',
+            'published_reaction_url' => 'https://www.youtube.com/watch?v=TOPICVIDEO1',
+            'published_thumbnail_url' => 'https://img.youtube.com/vi/TOPICVIDEO1/hqdefault.jpg',
+        ]);
+
+        $this->get(route('creators.published', $creator).'#recommendation-'.$recommendation->id)
+            ->assertOk()
+            ->assertSee('https://img.youtube.com/vi/TOPICVIDEO1/hqdefault.jpg', false)
+            ->assertSee('Open published video: A community topic that became a video', false)
+            ->assertDontSee('Community topic');
     }
 
     public function test_it_displays_human_readable_public_status_labels(): void
@@ -947,7 +970,8 @@ class PublicCreatorQueueTest extends TestCase
         $this->actingAs($viewer)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Community topic')
+            ->assertSee('Topic')
+            ->assertDontSee('Community topic')
             ->assertSee('Submitted by Example Fan')
             ->assertSee('aria-label="Add vote to this recommendation"', false)
             ->assertSee('mt-5 flex items-center justify-end', false)
