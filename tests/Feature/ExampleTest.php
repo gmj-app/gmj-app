@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\GuideAccoladeResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
@@ -22,40 +24,37 @@ class ExampleTest extends TestCase
 
     public function test_how_it_works_page_explains_the_product_and_uses_guest_cta(): void
     {
-        $this->get(route('about'))
+        $response = $this->get(route('about'))
             ->assertOk()
             ->assertSee('How It Works | Guide My Journey', false)
-            ->assertSee('How it works')
-            ->assertSee('Fans')
-            ->assertSee('suggest')
-            ->assertSee('Communities')
-            ->assertSee('vote')
-            ->assertSee('Creators')
-            ->assertSee('decide')
-            ->assertSee('Guide My Journey turns scattered comments, DMs, and requests into one organized board creators can actually use.')
-            ->assertSee('data-journey-infographic', false)
-            ->assertSee('Fans suggest')
-            ->assertSee('Fans submit ideas, topics, videos, links, and questions.')
-            ->assertSee('Communities vote')
-            ->assertSee('The best ideas rise as the community focuses the signal.')
-            ->assertSee('Creators decide')
-            ->assertSee('Creators review the board and choose what to make next.')
-            ->assertSee('Voting guides the journey, but creators always stay in control.')
-            ->assertSeeInOrder(['01', 'Fans suggest', '02', 'Communities vote', '03', 'Creators decide'])
-            ->assertSee("Start guiding a creator's journey", false)
-            ->assertSee('Find a creator and add your signal to the board.')
-            ->assertSee('Explore creators')
-            ->assertSee('Create free account')
-            ->assertSee(route('home'), false)
-            ->assertSee(route('register'), false)
-            ->assertDontSee('About Guide My Journey')
-            ->assertDontSee('>About<', false)
-            ->assertDontSee('One shared signal')
-            ->assertDontSee('How the journey works')
-            ->assertDontSee('From scattered comments to one organized creator journey.')
-            ->assertDontSee('The creator stays in control')
-            ->assertDontSee('Why it matters')
-            ->assertSee('href="'.route('dashboard').'"', false);
+            ->assertSee('Turn')
+            ->assertSee('fan requests')
+            ->assertSee('content roadmap.')
+            ->assertSee('Explore creator boards')
+            ->assertSee('Open My Hub')
+            ->assertSee('href="'.route('home').'"', false)
+            ->assertSee('href="'.route('register').'"', false)
+            ->assertSee('data-workflow-stages', false)
+            ->assertSeeInOrder(['A fan shares the spark', 'The community adds its signal', 'The strongest ideas rise', 'The creator chooses the next move'])
+            ->assertSee('One platform. Two powerful roles.')
+            ->assertSee('Help shape what gets made next')
+            ->assertSee('Replace noise with a clear creative signal')
+            ->assertSee('data-lifecycle', false)
+            ->assertSeeInOrder(['Suggested', 'Community backed', 'Approved', 'Scheduled', 'Published 2 days ago'])
+            ->assertSee('Votes carry weight')
+            ->assertSee('People, not anonymous numbers')
+            ->assertSee('No algorithm chooses for you')
+            ->assertSee('Every journey builds history')
+            ->assertSee('Your community already has ideas. Give them somewhere better to go.')
+            ->assertSee('href="'.route('faq').'"', false)
+            ->assertSee('href="'.route('contact').'"', false)
+            ->assertSee('accolade-founding', false)
+            ->assertSee('accolade-og', false)
+            ->assertSee('guide-accolade__number', false)
+            ->assertDontSee('href="#"', false);
+
+        $this->assertSame(1, substr_count($response->getContent(), '<h1'));
+        $this->assertSame(4, substr_count($response->getContent(), '<li class="relative border-l'));
     }
 
     public function test_how_it_works_page_uses_authenticated_cta_and_nav_route(): void
@@ -66,7 +65,36 @@ class ExampleTest extends TestCase
             ->assertSee('How it Works')
             ->assertSee('href="'.route('about').'"', false)
             ->assertSee('My Hub')
-            ->assertSee(route('dashboard'), false)
-            ->assertDontSee('Create free account');
+            ->assertSee('href="'.route('dashboard').'"', false)
+            ->assertSee('href="'.route('creators.create').'"', false)
+            ->assertDontSee('href="'.route('register').'"', false);
+    }
+
+    public function test_how_it_works_demo_accolades_use_the_shared_avatar_component(): void
+    {
+        $component = file_get_contents(resource_path('views/components/how-it-works/demo-avatars.blade.php'));
+        $pageTemplates = collect(glob(resource_path('views/pages/how-it-works/*.blade.php')))
+            ->map(fn (string $path): string => file_get_contents($path))
+            ->implode("\n");
+
+        $this->assertStringContainsString('<x-guide-avatar', $component);
+        $this->assertStringNotContainsString('guide_number <=', $pageTemplates);
+        $this->assertStringNotContainsString('guide_number >=', $pageTemplates);
+    }
+
+    public function test_how_it_works_avatar_previews_reuse_the_cached_tier_query(): void
+    {
+        app(GuideAccoladeResolver::class)->forgetCache();
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->get(route('about'))->assertOk();
+
+        $tierQueries = collect(DB::getQueryLog())->filter(
+            fn (array $query): bool => str_contains($query['query'], 'guide_accolades')
+                && str_contains($query['query'], 'rule_type'),
+        );
+
+        $this->assertCount(1, $tierQueries);
     }
 }

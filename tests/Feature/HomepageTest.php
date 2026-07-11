@@ -39,14 +39,14 @@ class HomepageTest extends TestCase
             ->assertOk()
             ->assertSee('How It Works | Guide My Journey', false)
             ->assertSee('How it works')
-            ->assertSee('Fans suggest')
-            ->assertSee('Communities vote')
-            ->assertSee('Creators decide')
-            ->assertSee('Voting guides the journey, but creators always stay in control.')
-            ->assertSee("Start guiding a creator's journey", false)
-            ->assertDontSee('How the journey works')
-            ->assertDontSee('The creator stays in control')
-            ->assertDontSee('About Guide My Journey');
+            ->assertSee('fan requests')
+            ->assertSee('content roadmap.')
+            ->assertSee('A fan shares the spark')
+            ->assertSee('The community adds its signal')
+            ->assertSee('The strongest ideas rise')
+            ->assertSee('The creator chooses the next move')
+            ->assertSee('The community guides the journey.')
+            ->assertSee('The creator owns the destination.');
 
         $this->get('/faq')
             ->assertOk()
