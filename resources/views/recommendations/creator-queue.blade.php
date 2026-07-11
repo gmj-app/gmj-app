@@ -713,7 +713,7 @@
                                 aria-expanded="false"
                                 x-bind:aria-expanded="open.toString()"
                                 aria-controls="recommendation-details-{{ $recommendation->id }}"
-                                class="group flex min-h-16 w-full min-w-0 cursor-pointer items-start gap-2.5 px-3 py-3 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:hover:bg-emerald-950/20 sm:min-h-20 sm:gap-4 sm:px-5"
+                                class="group flex min-h-14 w-full min-w-0 cursor-pointer items-center gap-2.5 px-3 py-2 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:hover:bg-emerald-950/20 sm:min-h-[66px] sm:gap-4 sm:px-5"
                             >
                                 <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
                                     {{ $rankLabel }}
@@ -721,29 +721,17 @@
 
                                 <x-recommendation-compact-media :recommendation="$recommendation" />
 
-                                <span class="min-w-0 flex-1 pt-0.5">
+                                <span class="min-w-0 flex-1">
                                     <span class="block break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
                                         {{ $recommendation->title }}
                                     </span>
                                     <x-recommendation-user-indicators
                                         :recommendation="$recommendation"
-                                        class="mt-1.5"
+                                        class="mt-1"
                                     />
-                                    <span class="pointer-events-none mt-2 block min-h-6">
-                                        <x-recommendation-support-avatars
-                                            :recommendation="$recommendation"
-                                            :limit="5"
-                                            class="sm:hidden"
-                                        />
-                                        <x-recommendation-support-avatars
-                                            :recommendation="$recommendation"
-                                            :limit="10"
-                                            class="hidden sm:flex"
-                                        />
-                                    </span>
                                 </span>
 
-                                <span class="shrink-0 pt-0.5 text-right">
+                                <span class="shrink-0 text-right">
                                     <span class="block text-base font-semibold leading-none text-slate-950 dark:text-white sm:text-lg">{{ $recommendation->totalVotes() }}</span>
                                     <span class="mt-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $recommendation->totalVotes()) }}</span>
                                 </span>

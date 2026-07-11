@@ -359,7 +359,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('You submitted');
     }
 
-    public function test_recommendation_rows_show_requester_and_upvoter_avatar_stacks(): void
+    public function test_collapsed_rows_hide_avatar_stacks_while_expanded_support_keeps_them(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
         $requester = User::factory()->create([
@@ -414,8 +414,8 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('href="'.route('guides.show', ['handle' => 'voter01']).'"', false)
             ->assertSee('ring-[3px] ring-yellow-400', false)
             ->assertSee('Community support')
-            ->assertSee('title="54 more supporters"', false)
-            ->assertSee('title="59 more supporters"', false)
+            ->assertDontSee('title="54 more supporters"', false)
+            ->assertDontSee('title="59 more supporters"', false)
             ->assertSee('title="13 additional supporters"', false)
             ->assertSee('aria-label="13 additional supporters"', false)
             ->assertSee('src="https://example.test/avatar-49.jpg"', false)
@@ -423,6 +423,17 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('data-supporter-name', false)
             ->assertDontSee('this.nextElementSibling.hidden', false)
             ->assertDontSee('original@example.test');
+
+        $collapsedHeader = Str::of($response->getContent())
+            ->after('aria-controls="recommendation-details-'.$recommendation->id.'"')
+            ->before('</button>');
+
+        $this->assertStringNotContainsString('recommendation-support-avatars', (string) $collapsedHeader);
+        $this->assertStringNotContainsString('Suggested by Original Fan', (string) $collapsedHeader);
+        $this->assertStringNotContainsString('Supported by Voter', (string) $collapsedHeader);
+        $this->assertStringNotContainsString('more supporters', (string) $collapsedHeader);
+        $this->assertStringContainsString('items-center', (string) $collapsedHeader);
+        $this->assertStringContainsString('sm:min-h-[66px]', (string) $collapsedHeader);
     }
 
     public function test_full_community_support_separates_up_to_twenty_larger_avatars(): void
