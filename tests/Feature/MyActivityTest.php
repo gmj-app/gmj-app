@@ -136,12 +136,37 @@ class MyActivityTest extends TestCase
         $this->assertLessThanOrEqual(9, collect(DB::getQueryLog())->count());
     }
 
-    public function test_avatar_menu_contains_my_activity_before_profile(): void
+    public function test_avatar_menu_contains_my_hub_first_and_preserves_account_actions(): void
     {
-        $this->actingAs(User::factory()->create())->get(route('activity.index'))
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->get(route('activity.index'))
             ->assertOk()
-            ->assertSeeInOrder(['My Activity', 'Profile', 'Theme', 'Log out'])
+            ->assertSee('aria-controls="account-menu"', false)
+            ->assertSee('href="'.route('dashboard').'" @click="accountOpen = false" role="menuitem"', false)
             ->assertSee('href="'.route('activity.index').'"', false);
+
+        $accountMenu = substr($response->getContent(), strpos($response->getContent(), 'id="account-menu"'));
+
+        $this->assertNotFalse(strpos($accountMenu, $user->publicName()));
+        $this->assertTrue(strpos($accountMenu, 'My Hub') < strpos($accountMenu, 'My Activity'));
+        $this->assertTrue(strpos($accountMenu, 'My Activity') < strpos($accountMenu, 'Profile'));
+        $this->assertTrue(strpos($accountMenu, 'Profile') < strpos($accountMenu, 'Theme'));
+        $this->assertTrue(strpos($accountMenu, 'Theme') < strpos($accountMenu, 'Log out'));
+        $this->assertStringContainsString('class="border-t border-slate-100 pt-2 dark:border-slate-800"', $accountMenu);
+    }
+
+    public function test_my_hub_dropdown_item_uses_the_dashboard_active_state(): void
+    {
+        $response = $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $accountMenu = substr($response->getContent(), strpos($response->getContent(), 'id="account-menu"'));
+
+        $this->assertMatchesRegularExpression(
+            '/href="'.preg_quote(route('dashboard'), '/').'"[^>]*class="[^"]*bg-indigo-50 text-indigo-700[^"]*"/',
+            $accountMenu,
+        );
     }
 
     public function test_page_has_one_primary_heading_and_body_begins_with_the_subtitle(): void

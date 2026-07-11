@@ -44,6 +44,7 @@
                         @click="accountOpen = ! accountOpen"
                         class="inline-flex size-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-sm font-extrabold text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-200 dark:hover:border-indigo-500 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-950"
                         aria-haspopup="menu"
+                        aria-controls="account-menu"
                         :aria-expanded="accountOpen.toString()"
                         aria-label="Open account menu"
                     >
@@ -55,6 +56,7 @@
                     </button>
 
                     <div
+                        id="account-menu"
                         x-show="accountOpen"
                         x-cloak
                         x-transition.origin.top.right
@@ -65,6 +67,17 @@
                             <p class="truncate font-extrabold text-slate-950 dark:text-white">{{ $accountUser->publicName() }}</p>
                             <p class="mt-0.5 truncate text-xs font-medium text-slate-500 dark:text-slate-400">{{ $accountUser->email }}</p>
                         </div>
+
+                        <a href="{{ route('dashboard') }}" @click="accountOpen = false" role="menuitem" @class([
+                            'flex min-h-11 items-center gap-3 px-4 py-2 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800',
+                            'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300' => request()->routeIs('dashboard'),
+                        ])>
+                            <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.5 10.5 12 3l8.5 7.5" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.5 9v11h13V9M9.5 20v-6h5v6" />
+                            </svg>
+                            My Hub
+                        </a>
 
                         <a href="{{ route('activity.index') }}" @click="accountOpen = false" role="menuitem" class="flex min-h-11 items-center gap-3 px-4 py-2 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800">
                             <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6h14M5 12h14M5 18h9"/><path stroke-linecap="round" stroke-linejoin="round" d="m17 17 2 2 4-5"/></svg>
