@@ -1,15 +1,8 @@
 <x-public-layout :title="'Search | '.config('app.name', 'Guide My Journey')">
     <section class="px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <div class="mx-auto max-w-5xl">
-            <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Search</p>
-                    <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">Search results</h1>
-                    @if ($searchable)
-                        <p class="mt-2 text-base text-slate-600 dark:text-slate-300">Results for “{{ $query }}”</p>
-                    @endif
-                </div>
-
+            <x-page-header eyebrow="Search" title="Search results" :subtitle="$searchable ? 'Results for “'.$query.'”' : null">
+                <x-slot:actions>
                 <form method="GET" action="{{ route('search.index') }}" class="flex w-full max-w-xl gap-2">
                     <label for="search-query" class="sr-only">Search creators, artists, songs, or topics</label>
                     <input
@@ -24,7 +17,8 @@
                     >
                     <button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500">Search</button>
                 </form>
-            </div>
+                </x-slot:actions>
+            </x-page-header>
 
             @if (! $searchable)
                 <div class="mt-10 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-slate-900">
@@ -61,9 +55,9 @@
                                 @if ($matches->isEmpty())
                                     <p class="pb-5 text-sm font-semibold text-indigo-600 dark:text-indigo-300">Creator match</p>
                                 @else
-                                    <p class="text-xs font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                    <x-subsection-label>
                                         {{ $matches->count() }} matching {{ Str::plural('recommendation', $matches->count()) }}
-                                    </p>
+                                    </x-subsection-label>
 
                                     <div class="mt-3 divide-y divide-slate-200 dark:divide-slate-800">
                                         @foreach ($visibleMatches as $recommendation)

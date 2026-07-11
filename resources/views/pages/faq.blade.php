@@ -116,24 +116,14 @@
 
     <section class="px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div class="mx-auto max-w-4xl">
-            <div class="max-w-3xl">
-                <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-indigo-600 dark:text-indigo-400 sm:text-sm">FAQ</p>
-                <h1 class="mt-4 text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-5xl">
-                    Frequently asked questions
-                </h1>
-                <p class="mt-5 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg sm:leading-8">
-                    Learn how suggestions, votes, creator pages, and community resources work across Guide My Journey.
-                </p>
-            </div>
+            <x-page-header eyebrow="FAQ" title="Frequently asked questions" subtitle="Learn how suggestions, votes, creator pages, and community resources work across Guide My Journey." />
 
             <div class="mt-12 space-y-12">
                 @foreach ($sections as $section => $faqs)
                     <section aria-labelledby="faq-{{ Str::slug($section) }}">
                         <div class="flex items-center gap-3">
                             <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
-                            <h2 id="faq-{{ Str::slug($section) }}" class="shrink-0 text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                                {{ $section }}
-                            </h2>
+                            <x-subsection-label as="h2" id="faq-{{ Str::slug($section) }}" class="shrink-0">{{ $section }}</x-subsection-label>
                             <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
                         </div>
 

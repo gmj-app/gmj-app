@@ -14,7 +14,7 @@
 
 @if ($body !== '')
     <section {{ $attributes->merge(['class' => 'mt-4']) }} x-data="{ expanded: false }">
-        <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ $label }}</h4>
+        <x-subsection-label as="h4">{{ $label }}</x-subsection-label>
 
         @if ($isLong)
             <p

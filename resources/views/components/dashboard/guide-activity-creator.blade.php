@@ -55,7 +55,7 @@
     >
         <div class="grid gap-5 lg:grid-cols-2">
             <section aria-labelledby="{{ $detailsId }}-votes">
-                <h3 id="{{ $detailsId }}-votes" class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Your active votes</h3>
+                <x-subsection-label as="h3" id="{{ $detailsId }}-votes">Your active votes</x-subsection-label>
 
                 @if ($activeVotes->isEmpty())
                     <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">No active votes with this creator.</p>
@@ -74,7 +74,7 @@
             </section>
 
             <section aria-labelledby="{{ $detailsId }}-suggestions">
-                <h3 id="{{ $detailsId }}-suggestions" class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Your suggestions</h3>
+                <x-subsection-label as="h3" id="{{ $detailsId }}-suggestions">Your suggestions</x-subsection-label>
 
                 @if ($suggestions->isEmpty())
                     <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">No suggestions submitted to this creator.</p>

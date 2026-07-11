@@ -50,20 +50,11 @@
 
     <section class="border-t border-slate-200 bg-white/60 px-4 py-14 dark:border-slate-800 dark:bg-slate-900/40 sm:px-6 sm:py-20 lg:px-8">
         <div class="mx-auto max-w-7xl">
-            <div class="flex items-end justify-between gap-4">
-                <div>
-                    <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Creator journeys</p>
-                    <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">
-                        {{ $search !== '' ? 'Search results' : 'Popular creators' }}
-                    </h2>
-                </div>
-
+            <x-section-header eyebrow="Creator journeys" :title="$search !== '' ? 'Search results' : 'Popular creators'">
                 @if ($search !== '')
-                    <a href="{{ route('home') }}" class="shrink-0 text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-                        Clear search
-                    </a>
+                    <x-slot:actions><a href="{{ route('home') }}" class="shrink-0 text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">Clear search</a></x-slot:actions>
                 @endif
-            </div>
+            </x-section-header>
 
             @if ($creators->isEmpty() && $search !== '')
                 <div class="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
@@ -114,7 +105,7 @@
                                 </p>
 
                                 <div class="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/60">
-                                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Top requests</p>
+                                    <x-subsection-label>Top requests</x-subsection-label>
 
                                     @if ($creatorTopRequests->isEmpty())
                                         <p class="mt-3 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-300">

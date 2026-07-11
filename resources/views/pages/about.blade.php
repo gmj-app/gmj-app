@@ -3,20 +3,13 @@
         <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto h-96 max-w-5xl bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.16),transparent_65%)] dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.2),transparent_65%)]"></div>
 
         <div class="mx-auto max-w-6xl">
-            <div class="mx-auto max-w-4xl text-center">
-                <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-400 sm:text-sm">
-                    How it works
-                </p>
-                <h1 class="mt-4 text-4xl font-extrabold leading-tight tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
+            <x-page-header eyebrow="How it works" subtitle="Guide My Journey turns scattered comments, DMs, and requests into one organized board creators can actually use." align="center" class="mx-auto max-w-4xl">
+                <x-slot:titleContent>
                     Fans <span class="bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent">suggest</span>.
                     Communities <span class="bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent">vote</span>.
                     Creators <span class="bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent">decide</span>.
-                </h1>
-
-                <p class="mx-auto mt-8 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg sm:leading-8">
-                    Guide My Journey turns scattered comments, DMs, and requests into one organized board creators can actually use.
-                </p>
-            </div>
+                </x-slot:titleContent>
+            </x-page-header>
 
             <section aria-label="How Guide My Journey works" class="mt-14 lg:mt-16">
                 <div class="relative">
@@ -69,7 +62,7 @@
                                     </span>
                                 </div>
 
-                                <h3 class="mt-7 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">{{ $step['title'] }}</h3>
+                                <h3 class="mt-7 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{{ $step['title'] }}</h3>
                                 <p class="mt-3 text-base leading-7 text-slate-600 dark:text-slate-300">{{ $step['copy'] }}</p>
                             </article>
                         </li>
@@ -83,7 +76,7 @@
             </p>
 
             <section class="mx-auto mt-14 max-w-4xl border-t border-slate-200 px-4 pt-10 text-center dark:border-slate-800 sm:mt-16 sm:pt-12">
-                <h2 class="text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl">Start guiding a creator's journey</h2>
+                <h2 class="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">Start guiding a creator's journey</h2>
                 <p class="mx-auto mt-3 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
                     Find a creator and add your signal to the board.
                 </p>

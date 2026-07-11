@@ -3,8 +3,7 @@
 
     <x-slot name="header">
         <div class="mx-auto min-w-0 max-w-5xl">
-            <p class="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">Guide My Journey</p>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-slate-50">My Hub</h2>
+            <x-page-header eyebrow="Your launchpad" title="My Hub" subtitle="Manage your creator pages, resources, votes, and suggestions." compact />
         </div>
     </x-slot>
 
@@ -13,10 +12,9 @@
         <div class="mx-auto min-w-0 max-w-5xl">
             <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">
                 <div class="max-w-3xl">
-                    <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Your launchpad</p>
-                    <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+                    <h2 class="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
                         Welcome back, {{ auth()->user()->publicName() }}
-                    </h1>
+                    </h2>
                     <p class="mt-4 text-lg font-bold leading-7 text-slate-800 dark:text-slate-100 sm:text-xl">
                         Fans suggest. Communities vote. Creators decide.
                     </p>
