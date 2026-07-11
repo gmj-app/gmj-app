@@ -2,16 +2,18 @@
     'creator',
     'activeVotes',
     'suggestions',
+    'defaultOpen' => false,
 ])
 
 @php
-    $activeVoteCount = (int) $activeVotes->sum('vote_count');
-    $suggestionCount = $suggestions->count();
+    $activeVoteCount = (int) ($creator->active_vote_count ?? $activeVotes->sum('vote_count'));
+    $suggestionCount = (int) ($creator->suggestion_count ?? $suggestions->count());
+    $publishedCount = (int) ($creator->published_count ?? $suggestions->where('status', 'published')->count());
     $detailsId = 'guide-activity-creator-'.$creator->id;
 @endphp
 
 <article
-    x-data="{ open: false }"
+    x-data="{ open: @js($defaultOpen) }"
     class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-700"
     x-bind:class="open ? 'border-emerald-400 ring-1 ring-emerald-300/60 dark:border-emerald-500 dark:ring-emerald-500/30' : ''"
 >
@@ -34,6 +36,8 @@
                 {{ $activeVoteCount }} active {{ Str::plural('vote', $activeVoteCount) }}
                 <span aria-hidden="true">&middot;</span>
                 {{ $suggestionCount }} {{ Str::plural('suggestion', $suggestionCount) }}
+                <span aria-hidden="true">&middot;</span>
+                {{ $publishedCount }} published
             </span>
         </span>
 
@@ -51,7 +55,7 @@
     >
         <div class="grid gap-5 lg:grid-cols-2">
             <section aria-labelledby="{{ $detailsId }}-votes">
-                <h3 id="{{ $detailsId }}-votes" class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Your votes</h3>
+                <h3 id="{{ $detailsId }}-votes" class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Your active votes</h3>
 
                 @if ($activeVotes->isEmpty())
                     <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">No active votes with this creator.</p>
@@ -95,6 +99,8 @@
                                         {{ $suggestion->mediaTypeLabel() }}
                                         <span aria-hidden="true">&middot;</span>
                                         {{ $suggestion->created_at->format('M j, Y') }}
+                                        <span aria-hidden="true">&middot;</span>
+                                        {{ $suggestion->totalVotes() }} community {{ Str::plural('vote', $suggestion->totalVotes()) }}
                                     </span>
                                 </span>
                                 <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold {{ $suggestion->statusBadgeClass() }}">{{ $suggestion->statusLabel() }}</span>

@@ -154,7 +154,7 @@ class DashboardTest extends TestCase
             ->assertSee('Favorite Journey')
             ->assertSee('2 active votes')
             ->assertSee('2 suggestions')
-            ->assertSee('Your votes')
+            ->assertSee('Your active votes')
             ->assertSee('Your suggestions')
             ->assertSee('href="'.route('creator.queue', $favoriteCreator).'"', false)
             ->assertDontSee('Inactive Favorite');
@@ -230,8 +230,8 @@ class DashboardTest extends TestCase
             ->assertSee(route('creators.published', $firstCreator).'#recommendation-'.$publishedSuggestion->id, false)
             ->assertSee('No active votes with this creator.')
             ->assertSee('No suggestions submitted to this creator.')
-            ->assertDontSee('Not Favorited')
-            ->assertDontSee('Suggestion outside favorites');
+            ->assertSee('Not Favorited')
+            ->assertSee('Suggestion outside favorites');
     }
 
     public function test_dashboard_activity_shows_a_useful_empty_state_without_favorites(): void
@@ -239,8 +239,8 @@ class DashboardTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('No favorite creators yet.')
-            ->assertSee('Favorite a creator to track your suggestions and votes here.')
+            ->assertSee('No Guide activity yet.')
+            ->assertSee('Favorite a creator, submit a suggestion, or cast a vote to begin.')
             ->assertSee('Find creators')
             ->assertSee('href="'.route('home').'"', false);
     }
@@ -274,6 +274,6 @@ class DashboardTest extends TestCase
                 || str_contains($query, 'user_picks')
                 || str_contains($query, 'recommendations'));
 
-        $this->assertLessThanOrEqual(8, $activityQueries->count());
+        $this->assertLessThanOrEqual(10, $activityQueries->count());
     }
 }

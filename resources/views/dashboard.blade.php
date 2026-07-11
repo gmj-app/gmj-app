@@ -51,15 +51,13 @@
                         <h2 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Your creators and activity</h2>
                         <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">See what you’ve suggested and where your votes are currently allocated.</p>
                     </div>
-                    @if ($favoriteCreators->isNotEmpty())
-                        <a href="{{ route('home') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">Find more creators</a>
-                    @endif
+                    <a href="{{ route('activity.index') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-400">View full activity</a>
                 </div>
 
                 @if ($favoriteCreators->isEmpty())
                     <div class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center dark:border-slate-700 dark:bg-slate-900">
-                        <h3 class="font-bold text-slate-950 dark:text-white">No favorite creators yet.</h3>
-                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Favorite a creator to track your suggestions and votes here.</p>
+                        <h3 class="font-bold text-slate-950 dark:text-white">No Guide activity yet.</h3>
+                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Favorite a creator, submit a suggestion, or cast a vote to begin.</p>
                         <a href="{{ route('home') }}" class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500">Find creators</a>
                     </div>
                 @else

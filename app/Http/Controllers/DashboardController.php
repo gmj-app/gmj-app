@@ -3,56 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Recommendation;
+use App\Services\GuideActivityService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request, GuideActivityService $activity): View
     {
         $user = $request->user();
         $ownedCreators = $user->ownedCreators()
             ->wherePivot('role', 'owner')
             ->orderBy('display_name')
             ->get();
-        $favoriteCreators = $user->favoriteCreators()
-            ->active()
-            ->orderByPivot('created_at', 'desc')
-            ->get();
-        $favoriteCreatorIds = $favoriteCreators->pluck('id');
-
-        $activeVotesByCreator = $user->userPicks()
-            ->whereIn('creator_id', $favoriteCreatorIds)
-            ->whereHas('recommendation', fn ($query) => $query->votable())
-            ->with(['recommendation' => fn ($query) => $query->select([
-                'id',
-                'creator_id',
-                'title',
-                'status',
-                'recommendation_type',
-                'media_type',
-            ])])
-            ->orderByDesc('vote_count')
-            ->latest()
-            ->get()
-            ->groupBy('creator_id');
-
-        $suggestionsByCreator = $user->recommendationsSubmitted()
-            ->whereIn('creator_id', $favoriteCreatorIds)
-            ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
-            ->where('status', '!=', 'hidden')
-            ->select([
-                'id',
-                'creator_id',
-                'title',
-                'status',
-                'recommendation_type',
-                'media_type',
-                'created_at',
-            ])
-            ->latest()
-            ->get()
-            ->groupBy('creator_id');
+        $guideActivity = $activity->forUser($user);
+        $favoriteCreators = $guideActivity['creators'];
+        $activeVotesByCreator = $guideActivity['activeVotesByCreator'];
+        $suggestionsByCreator = $guideActivity['suggestionsByCreator'];
 
         $resources = [
             'creator_favorites_used' => $user->creatorFavoritesUsed(),

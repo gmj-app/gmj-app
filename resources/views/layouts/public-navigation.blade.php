@@ -66,6 +66,11 @@
                             <p class="mt-0.5 truncate text-xs font-medium text-slate-500 dark:text-slate-400">{{ $accountUser->email }}</p>
                         </div>
 
+                        <a href="{{ route('activity.index') }}" @click="accountOpen = false" role="menuitem" class="flex min-h-11 items-center gap-3 px-4 py-2 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800">
+                            <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6h14M5 12h14M5 18h9"/><path stroke-linecap="round" stroke-linejoin="round" d="m17 17 2 2 4-5"/></svg>
+                            My Activity
+                        </a>
+
                         <a href="{{ route('profile.edit') }}" role="menuitem" class="flex min-h-11 items-center px-4 py-2 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800">
                             Profile
                         </a>
@@ -136,6 +141,10 @@
                         </div>
                     </div>
                 </div>
+                <a href="{{ route('activity.index') }}" @click="open = false" class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-900">
+                    <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M5 6h14M5 12h14M5 18h9"/><path stroke-linecap="round" stroke-linejoin="round" d="m17 17 2 2 4-5"/></svg>
+                    My Activity
+                </a>
                 <a href="{{ route('profile.edit') }}" class="flex min-h-11 items-center rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900">Profile</a>
                 <button
                     type="button"

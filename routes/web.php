@@ -9,6 +9,7 @@ use App\Http\Controllers\CreatorStarterSuggestionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
+use App\Http\Controllers\MyActivityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicGuideProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
@@ -39,6 +40,7 @@ Route::get('/dashboard', [DashboardController::class, '__invoke'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/my-activity', [MyActivityController::class, 'index'])->name('activity.index');
     Route::get('/profile/setup', [ProfileController::class, 'setup'])->name('profile.setup');
     Route::post('/profile/setup', [ProfileController::class, 'completeSetup'])->name('profile.setup.store');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

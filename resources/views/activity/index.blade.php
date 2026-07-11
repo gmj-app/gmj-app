@@ -1,0 +1,51 @@
+<x-app-layout>
+    <x-slot name="title">My Activity</x-slot>
+
+    <x-slot name="header">
+        <div class="mx-auto min-w-0 max-w-5xl">
+            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-300">My Guide Activity</p>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-slate-50">My Activity</h2>
+        </div>
+    </x-slot>
+
+    <div class="py-10 sm:py-12">
+        <main class="px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto min-w-0 max-w-5xl">
+                <header>
+                    <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">My Guide Activity</p>
+                    <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">My Activity</h1>
+                    <p class="mt-3 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">See what you’ve suggested and where your votes are currently allocated.</p>
+                </header>
+
+                <nav aria-label="Activity filters" class="mt-6 flex gap-2 overflow-x-auto pb-1">
+                    @foreach (['all' => 'All', 'votes' => 'Votes', 'suggestions' => 'Suggestions', 'published' => 'Published'] as $value => $label)
+                        <a href="{{ route('activity.index', $value === 'all' ? [] : ['type' => $value]) }}" @class([
+                            'inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 py-2 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500',
+                            'border-emerald-500 bg-emerald-500 text-slate-950' => $type === $value,
+                            'border-slate-300 bg-white text-slate-700 hover:border-emerald-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200' => $type !== $value,
+                        ]) aria-current="{{ $type === $value ? 'page' : 'false' }}">{{ $label }}</a>
+                    @endforeach
+                </nav>
+
+                @if ($creators->isEmpty())
+                    <section class="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900">
+                        <h2 class="text-lg font-extrabold text-slate-950 dark:text-white">{{ $type === 'all' ? 'You haven’t created any Guide activity yet.' : 'No activity matches this filter.' }}</h2>
+                        <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">Favorite a creator, submit a suggestion, or cast a vote to start building your activity history.</p>
+                        <a href="{{ route('home') }}" class="mt-5 inline-flex min-h-11 items-center rounded-xl bg-emerald-500 px-5 py-2 text-sm font-extrabold text-slate-950 hover:bg-emerald-400">Find creators</a>
+                    </section>
+                @else
+                    <section class="mt-6 space-y-3" aria-label="Your creator activity">
+                        @foreach ($creators as $creator)
+                            <x-dashboard.guide-activity-creator
+                                :creator="$creator"
+                                :active-votes="$activeVotesByCreator->get($creator->id, collect())"
+                                :suggestions="$suggestionsByCreator->get($creator->id, collect())"
+                                :default-open="$loop->first"
+                            />
+                        @endforeach
+                    </section>
+                @endif
+            </div>
+        </main>
+    </div>
+</x-app-layout>
