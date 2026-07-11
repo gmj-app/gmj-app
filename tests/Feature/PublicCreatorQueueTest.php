@@ -177,7 +177,7 @@ class PublicCreatorQueueTest extends TestCase
         }
     }
 
-    public function test_it_orders_pinned_first_then_votes_then_newest(): void
+    public function test_it_orders_by_votes_then_oldest_submission_and_ignores_pinned_state(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
 
@@ -208,18 +208,103 @@ class PublicCreatorQueueTest extends TestCase
         ]);
 
         $this->addPicks($creator, $pinned, 1);
-        $this->addPicks($creator, $mostVotes, 3);
-        $this->addPicks($creator, $newest, 2);
-        $this->addPicks($creator, $oldest, 2);
+        $this->addPicks($creator, $mostVotes, 4);
+        $this->addPicks($creator, $newest, 3);
+        $this->addPicks($creator, $oldest, 3);
 
         $this->get('/jfragment')
             ->assertOk()
             ->assertSeeInOrder([
-                'Pinned recommendation',
                 'Most voted recommendation',
-                'Newest recommendation',
                 'Oldest recommendation',
+                'Newest recommendation',
+                'Pinned recommendation',
             ]);
+    }
+
+    public function test_vote_changes_recalculate_public_ranking(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'ranking-vote-changes']);
+        $older = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Older three vote suggestion',
+            'status' => 'approved',
+            'created_at' => now()->subDay(),
+        ]);
+        $newer = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Newer changing suggestion',
+            'status' => 'approved',
+            'created_at' => now(),
+        ]);
+
+        $this->addPicks($creator, $older, 3);
+        $this->addPicks($creator, $newer, 3);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertSeeInOrder([$older->title, $newer->title]);
+
+        $extraVote = UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $newer->id,
+            'vote_count' => 1,
+        ]);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertSeeInOrder([$newer->title, $older->title]);
+
+        $extraVote->delete();
+
+        $this->get(route('creator.queue', $creator))
+            ->assertSeeInOrder([$older->title, $newer->title]);
+    }
+
+    public function test_identical_votes_and_submission_times_use_id_ascending(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'deterministic-ranking']);
+        $submittedAt = now()->subHour();
+        $first = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Lower ID suggestion',
+            'status' => 'approved',
+            'created_at' => $submittedAt,
+        ]);
+        $second = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Higher ID suggestion',
+            'status' => 'approved',
+            'created_at' => $submittedAt,
+        ]);
+        $this->addPicks($creator, $first, 3);
+        $this->addPicks($creator, $second, 3);
+
+        $this->get(route('creator.queue', $creator))
+            ->assertSeeInOrder([$first->title, $second->title]);
+    }
+
+    public function test_vote_ordering_is_stable_across_pagination_boundaries(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'paginated-ranking']);
+        $submittedAt = now()->subDay();
+        $recommendations = collect(range(1, 27))->map(fn (int $number) => Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => "Boundary suggestion {$number}",
+            'status' => 'approved',
+            'created_at' => $submittedAt,
+        ]));
+
+        $firstPage = $this->get(route('creator.queue', $creator))->assertOk();
+        $secondPage = $this->get(route('creator.queue', ['creator' => $creator, 'page' => 2]))->assertOk();
+
+        $this->assertSame(
+            $recommendations->take(25)->pluck('id')->all(),
+            $firstPage->viewData('recommendations')->getCollection()->pluck('id')->all(),
+        );
+        $this->assertSame(
+            $recommendations->skip(25)->pluck('id')->all(),
+            $secondPage->viewData('recommendations')->getCollection()->pluck('id')->all(),
+        );
+        $secondPage->assertSee('26th')->assertSee('27th');
     }
 
     public function test_recommendations_render_as_ranked_expandable_leaderboard_rows(): void

@@ -68,8 +68,8 @@ class RecommendationController extends Controller
             ->votable()
             ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('user_picks_count')
-            ->orderByDesc('is_pinned')
-            ->latest()
+            ->orderBy('created_at')
+            ->orderBy('id')
             ->first()
             ?->id;
 
@@ -126,21 +126,23 @@ class RecommendationController extends Controller
                 ], 'vote_count');
         }
 
-        $recommendationsQuery->orderByDesc('is_pinned');
-
         match ($filters['sort']) {
-            'newest' => $recommendationsQuery->latest(),
-            'status' => $recommendationsQuery->orderBy('status')->latest(),
+            'newest' => $recommendationsQuery->orderByDesc('created_at')->orderByDesc('id'),
+            'status' => $recommendationsQuery->orderBy('status')->orderBy('created_at')->orderBy('id'),
             'scheduled' => $recommendationsQuery
                 ->orderByRaw('scheduled_for IS NULL')
                 ->orderBy('scheduled_for')
-                ->latest(),
+                ->orderBy('created_at')
+                ->orderBy('id'),
             default => $recommendationsQuery
                 ->orderByDesc('user_picks_count')
-                ->latest(),
+                ->orderBy('created_at')
+                ->orderBy('id'),
         };
 
-        $recommendations = $recommendationsQuery->get();
+        $recommendations = $recommendationsQuery
+            ->paginate(25)
+            ->withQueryString();
         $tagOptions = $creator->creatorTags()
             ->whereHas('recommendations', fn ($query) => $query
                 ->whereIn('recommendations.status', $activePublicStatuses))

@@ -665,7 +665,7 @@
 
                     @forelse ($recommendations as $recommendation)
                         @php
-                            $rank = $loop->iteration;
+                            $rank = ($recommendations->firstItem() ?? 1) + $loop->index;
                             $rankMod100 = $rank % 100;
                             $rankSuffix = in_array($rankMod100, [11, 12, 13], true)
                                 ? 'th'
@@ -789,6 +789,12 @@
                             @endif
                         </div>
                     @endforelse
+
+                    @if ($recommendations->hasPages())
+                        <div class="pt-2">
+                            {{ $recommendations->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
