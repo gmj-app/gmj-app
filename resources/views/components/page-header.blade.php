@@ -12,7 +12,7 @@
 
 <div {{ $attributes->class([
     'flex min-w-0 flex-col gap-5 sm:flex-row sm:items-end sm:justify-between',
-    'text-center sm:block' => $centered,
+    'text-center' => $centered,
 ]) }}>
     <div @class(['min-w-0', 'mx-auto' => $centered])>
         @if ($eyebrow)

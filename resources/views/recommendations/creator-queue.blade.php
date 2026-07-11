@@ -424,7 +424,7 @@
                                     x-transition:leave-end="opacity-0 -translate-y-1"
                                     class="border-t border-slate-100 px-4 pb-4 pt-3 dark:border-slate-800"
                                 >
-                                    <h2 class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Your limits</h2>
+                                    <x-subsection-label as="h2">Your limits</x-subsection-label>
                                     <dl class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">
                                         @foreach ([
                                             ['Creator favorites remaining', $usage['reactors_remaining'], $usage['reactors_used'], $usage['reactors_limit']],
@@ -466,7 +466,7 @@
                         </div>
 
                         <section class="w-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="recently-published-title">
-                            <h2 id="recently-published-title" class="text-sm font-semibold text-slate-950 dark:text-white">Recently Published</h2>
+                            <x-subsection-label as="h2" id="recently-published-title">Recently Published</x-subsection-label>
 
                             @if ($recentPublishedRecommendations->isEmpty())
                                 <p class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">No published recommendations yet.</p>

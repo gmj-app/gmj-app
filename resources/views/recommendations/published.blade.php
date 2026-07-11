@@ -109,7 +109,7 @@
                     @foreach ($publishedRecommendations as $recommendation)
                         <div x-show="selectedId === {{ $recommendation->id }}" x-cloak>
                             <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-                                <h2 class="text-sm font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">Selected published recommendation</h2>
+                            <x-subsection-label as="h2">Selected published recommendation</x-subsection-label>
                                 <a href="{{ route('creators.published', $creator) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400" x-on:click="selectedId = null">
                                     View full catalog
                                 </a>
@@ -123,7 +123,7 @@
             <div class="mt-6">
                 @if ($publishedRecommendations->isNotEmpty())
                     <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-                        <h2 class="text-sm font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400" x-text="selectedId === null ? 'Published catalog' : 'More published recommendations'">Published catalog</h2>
+                        <x-subsection-label as="h2" x-text="selectedId === null ? 'Published catalog' : 'More published recommendations'">Published catalog</x-subsection-label>
                     </div>
 
                     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

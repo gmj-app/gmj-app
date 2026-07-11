@@ -157,7 +157,7 @@ class MyActivityTest extends TestCase
             ]);
 
         $this->assertSame(1, substr_count($response->getContent(), '<h1'));
-        $this->assertStringContainsString('<h1 class="text-xl font-semibold leading-tight text-gray-800 dark:text-slate-50">My Activity</h1>', $response->getContent());
+        $this->assertMatchesRegularExpression('/<h1[^>]*>\s*My Activity\s*<\/h1>/', $response->getContent());
         $this->assertSame(1, substr_count($response->getContent(), '>My Guide Activity<'));
     }
 }

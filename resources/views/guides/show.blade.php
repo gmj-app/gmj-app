@@ -5,8 +5,8 @@
                 <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
                     <x-guide-avatar :user="$guide" size="xl" />
                     <div class="min-w-0">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">Guide Profile</p>
-                        <h1 class="mt-2 break-words text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">{{ $guide->publicName() }}</h1>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-300">Guide Profile</p>
+                        <h1 class="mt-1 break-words text-3xl font-semibold tracking-tight text-slate-950 dark:text-white md:text-4xl">{{ $guide->publicName() }}</h1>
                         <p class="mt-1 text-base font-semibold text-slate-500 dark:text-slate-400">{{ $guide->formattedPublicHandle() }}</p>
                         @if ($guide->primaryGuideAccolade())
                             <p class="mt-3 inline-flex rounded-full bg-amber-100 px-3 py-1.5 text-sm font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
@@ -39,8 +39,7 @@
             </section>
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
-                <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Guide impact</p>
-                <h2 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Published from their suggestions</h2>
+                <x-section-header eyebrow="Guide impact" title="Published from their suggestions" />
 
                 @if ($publishedSuggestions->isEmpty())
                     <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">None of this Guide’s suggestions have been published yet.</p>
@@ -68,7 +67,7 @@
             </section>
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
-                <h2 class="text-2xl font-extrabold text-slate-950 dark:text-white">Suggestions</h2>
+                <x-section-header title="Suggestions" />
 
                 @if ($suggestions->isEmpty())
                     <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">This Guide hasn’t submitted any public suggestions yet.</p>
@@ -94,8 +93,7 @@
             </section>
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
-                <h2 class="text-2xl font-extrabold text-slate-950 dark:text-white">Supported recommendations</h2>
-                <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Completed public recommendations this Guide supported. Active support details remain private.</p>
+                <x-section-header title="Supported recommendations" subtitle="Completed public recommendations this Guide supported. Active support details remain private." />
 
                 @if ($supportedRecommendations->isEmpty())
                     <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">This Guide has no public support history yet.</p>
