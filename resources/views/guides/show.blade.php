@@ -8,8 +8,15 @@
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-300">Guide Profile</p>
                         <h1 class="mt-1 break-words text-3xl font-semibold tracking-tight text-slate-950 dark:text-white md:text-4xl">{{ $guide->publicName() }}</h1>
                         <p class="mt-1 text-base font-semibold text-slate-500 dark:text-slate-400">{{ $guide->formattedPublicHandle() }}</p>
+                        @php
+                            $avatarAccolade = $guide->guideAvatarAccolade();
+                        @endphp
                         @if ($guide->primaryGuideAccolade())
-                            <p class="mt-3 inline-flex rounded-full bg-amber-100 px-3 py-1.5 text-sm font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                            <p @class([
+                                'mt-3 inline-flex rounded-full px-3 py-1.5 text-sm font-bold',
+                                'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' => ($avatarAccolade['css_variant'] ?? null) !== 'silver',
+                                'border border-slate-300 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 text-slate-800 dark:border-slate-500 dark:from-slate-600 dark:via-slate-800 dark:to-slate-950 dark:text-slate-100' => ($avatarAccolade['css_variant'] ?? null) === 'silver',
+                            ])>
                                 {{ $guide->primaryGuideAccolade()->label }}{{ $guide->guideNumberLabel() ? ' ('.$guide->guideNumberLabel().')' : '' }}
                             </p>
                         @elseif ($guide->guideAccoladeLabel())

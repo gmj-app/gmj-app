@@ -65,8 +65,8 @@
     $isDetailLayout = $layout === 'detail';
     $isCompactDetailLayout = $isDetailLayout && $supporters->count() > 20;
     $showsSeparatedNames = $showNames && $isDetailLayout && ! $isCompactDetailLayout;
-    $hasVisibleFoundingGuide = $visibleSupporters->contains(
-        fn (array $supporter): bool => $supporter['user']->isFoundingGuide()
+    $hasVisibleEarlyGuide = $visibleSupporters->contains(
+        fn (array $supporter): bool => $supporter['user']->guideAvatarAccolade() !== null
     );
     $avatarSizeClasses = match (true) {
         $isDetailLayout && ! $isCompactDetailLayout => 'size-9 text-sm sm:size-10',
@@ -83,7 +83,7 @@
 @endphp
 
 @if ($visibleSupporters->isNotEmpty())
-    <span {{ $attributes->merge(['class' => 'min-w-0 overflow-visible'.($showsSeparatedNames ? ' grid w-full grid-cols-4 gap-x-3 gap-y-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8' : ' flex items-center').($isDetailLayout && ! $showsSeparatedNames ? ' flex-wrap gap-x-2 gap-y-3' : '').($hasVisibleFoundingGuide ? ' pb-1' : '')]) }}>
+    <span {{ $attributes->merge(['class' => 'min-w-0 overflow-visible'.($showsSeparatedNames ? ' grid w-full grid-cols-4 gap-x-3 gap-y-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8' : ' flex items-center').($isDetailLayout && ! $showsSeparatedNames ? ' flex-wrap gap-x-2 gap-y-3' : '').($hasVisibleEarlyGuide ? ' pb-1' : '')]) }}>
         @foreach ($supporterRows as $supporterRow)
             <span class="{{ $showsSeparatedNames ? 'contents' : 'inline-flex' }} items-center overflow-visible {{ $isCompactDetailLayout ? 'pb-1' : ($isDetailLayout && ! $showsSeparatedNames ? 'flex-wrap gap-2 pb-1' : '') }}">
             @foreach ($supporterRow as $supporter)

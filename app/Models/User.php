@@ -103,26 +103,32 @@ class User extends Authenticatable
 
     public function isFoundingGuide(): bool
     {
-        return $this->guide_number !== null
-            && $this->guide_number >= 1
-            && $this->guide_number <= 100;
+        return ($this->guideAvatarAccolade()['key'] ?? null) === GuideAccoladeService::FOUNDING_CODE;
     }
 
     public function foundingGuideNumberLabel(): ?string
     {
-        return $this->isFoundingGuide() ? '#'.$this->guide_number : null;
+        return $this->isFoundingGuide() ? $this->guideAvatarAccolade()['plate_text'] : null;
+    }
+
+    /**
+     * @return array{key: string, label: string, guide_number: int, plate_text: string, css_variant: string}|null
+     */
+    public function guideAvatarAccolade(): ?array
+    {
+        return app(GuideAccoladeService::class)->resolveEarlyGuideAccolade($this->guide_number);
     }
 
     public function guideAccoladeLabel(): ?string
     {
-        return $this->isFoundingGuide() ? 'Founding Guide' : null;
+        return $this->guideAvatarAccolade()['label'] ?? null;
     }
 
     public function guideAccoladeTooltipLine(): ?string
     {
-        return $this->isFoundingGuide()
-            ? "Founding Guide (#{$this->guide_number})"
-            : null;
+        $accolade = $this->guideAvatarAccolade();
+
+        return $accolade ? "{$accolade['label']} ({$accolade['plate_text']})" : null;
     }
 
     public function publicHandle(): ?string
@@ -272,8 +278,10 @@ class User extends Authenticatable
 
     public function guideAvatarRingClass(): string
     {
-        if ($this->isFoundingGuide()) {
-            return 'ring-[3px] ring-yellow-400';
+        if ($accolade = $this->guideAvatarAccolade()) {
+            return $accolade['css_variant'] === 'gold'
+                ? 'ring-[3px] ring-yellow-400'
+                : 'ring-[3px] ring-slate-300';
         }
 
         return (string) ($this->primaryGuideAccolade()?->ring_class ?? '');

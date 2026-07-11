@@ -11,7 +11,17 @@
         'xl' => 'size-20 text-2xl sm:size-24 sm:text-3xl',
         default => 'size-9 text-sm sm:size-10',
     };
-    $numberLabel = $user->foundingGuideNumberLabel();
+    $accolade = $user->guideAvatarAccolade();
+    $numberLabel = $accolade['plate_text'] ?? null;
+    $ringClass = match ($accolade['css_variant'] ?? null) {
+        'gold' => 'ring-[3px] ring-yellow-400',
+        'silver' => 'ring-[3px] ring-slate-300 shadow-[0_0_0_1px_rgba(255,255,255,0.22)]',
+        default => $user->guideAvatarRingClass(),
+    };
+    $plateClass = match ($accolade['css_variant'] ?? null) {
+        'silver' => 'border-slate-200/80 bg-gradient-to-br from-slate-500 via-slate-700 to-slate-950 text-white shadow-[0_1px_4px_rgba(148,163,184,0.45)]',
+        default => 'border-yellow-400/70 bg-slate-950/95 text-yellow-300 shadow-sm',
+    };
 @endphp
 
 <span {{ $attributes->class(['relative inline-flex shrink-0 overflow-visible rounded-full']) }}>
@@ -20,15 +30,15 @@
             src="{{ $user->avatar_url }}"
             alt=""
             loading="lazy"
-            class="{{ $sizeClasses }} {{ $user->guideAvatarRingClass() }} rounded-full bg-slate-200 object-cover dark:bg-slate-700"
+            class="{{ $sizeClasses }} {{ $ringClass }} rounded-full bg-slate-200 object-cover dark:bg-slate-700"
             onerror="this.hidden = true; this.nextElementSibling.classList.remove('hidden')"
         >
-        <span class="hidden {{ $sizeClasses }} {{ $user->guideAvatarRingClass() }} items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">{{ $user->initialsForAvatar() }}</span>
+        <span class="hidden {{ $sizeClasses }} {{ $ringClass }} items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">{{ $user->initialsForAvatar() }}</span>
     @else
-        <span class="{{ $sizeClasses }} {{ $user->guideAvatarRingClass() }} inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">{{ $user->initialsForAvatar() }}</span>
+        <span class="{{ $sizeClasses }} {{ $ringClass }} inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">{{ $user->initialsForAvatar() }}</span>
     @endif
 
     @if ($numberLabel)
-        <span class="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/3 rounded-md border border-yellow-400/70 bg-slate-950/95 px-1 py-0.5 text-[8px] font-bold leading-none text-yellow-300 shadow-sm" aria-hidden="true">{{ $numberLabel }}</span>
+        <span class="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/3 rounded-md border px-1 py-0.5 text-[8px] font-bold leading-none {{ $plateClass }}" aria-hidden="true">{{ $numberLabel }}</span>
     @endif
 </span>

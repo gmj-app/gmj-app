@@ -17,30 +17,46 @@ class GuideAccoladeService
      */
     public function initialAccolades(): array
     {
-        return [
-            self::FOUNDING_CODE => [
-                'label' => 'Founding Guide',
-                'description' => 'First 100 guides to join Guide My Journey.',
-                'tier' => 'founding',
-                'ring_color' => 'gold',
-                'ring_class' => 'ring-2 ring-yellow-400',
-                'badge_class' => 'bg-yellow-500/15 text-yellow-200 border-yellow-400/40',
-                'tooltip_template' => 'Founding Guide (#{guide_number})',
-                'priority' => 100,
-                'is_active' => true,
-            ],
-            self::OG_CODE => [
-                'label' => 'OG Guide',
-                'description' => 'First 500 guides to join Guide My Journey.',
-                'tier' => 'og',
-                'ring_color' => 'silver',
-                'ring_class' => 'ring-2 ring-slate-300',
-                'badge_class' => 'bg-slate-400/15 text-slate-100 border-slate-300/40',
-                'tooltip_template' => 'OG Guide (#{guide_number})',
-                'priority' => 90,
-                'is_active' => true,
-            ],
-        ];
+        return collect(config('guide_accolades.early_guide_tiers', []))
+            ->mapWithKeys(fn (array $tier): array => [
+                $tier['key'] => [
+                    'label' => $tier['label'],
+                    'description' => $tier['description'],
+                    'tier' => str($tier['key'])->beforeLast('_guide')->toString(),
+                    'ring_color' => $tier['variant'],
+                    'ring_class' => $tier['variant'] === 'gold'
+                        ? 'ring-[3px] ring-yellow-400'
+                        : 'ring-[3px] ring-slate-300',
+                    'badge_class' => $tier['variant'] === 'gold'
+                        ? 'border-yellow-400/70 bg-slate-950/95 text-yellow-300'
+                        : 'border-slate-200/80 bg-gradient-to-br from-slate-600 via-slate-800 to-slate-950 text-slate-100',
+                    'tooltip_template' => $tier['label'].' (#{guide_number})',
+                    'priority' => $tier['priority'],
+                    'is_active' => true,
+                ],
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array{key: string, label: string, guide_number: int, plate_text: string, css_variant: string}|null
+     */
+    public function resolveEarlyGuideAccolade(?int $guideNumber): ?array
+    {
+        if ($guideNumber === null) {
+            return null;
+        }
+
+        $tier = collect(config('guide_accolades.early_guide_tiers', []))
+            ->first(fn (array $candidate): bool => $guideNumber >= $candidate['min'] && $guideNumber <= $candidate['max']);
+
+        return $tier ? [
+            'key' => $tier['key'],
+            'label' => $tier['label'],
+            'guide_number' => $guideNumber,
+            'plate_text' => '#'.$guideNumber,
+            'css_variant' => $tier['variant'],
+        ] : null;
     }
 
     public function ensureInitialAccolades(): void
@@ -57,24 +73,20 @@ class GuideAccoladeService
 
     public function syncEarlyGuideAccolades(User $user): void
     {
-        if ($user->guide_number === null) {
-            return;
-        }
-
         $this->ensureInitialAccolades();
 
+        $earlyAccoladeCodes = collect(config('guide_accolades.early_guide_tiers', []))
+            ->pluck('key')
+            ->all();
+
         $earlyAccolades = GuideAccolade::query()
-            ->whereIn('code', [self::FOUNDING_CODE, self::OG_CODE])
+            ->whereIn('code', $earlyAccoladeCodes)
             ->get()
             ->keyBy('code');
 
-        $targetCode = match (true) {
-            $user->guide_number >= 1 && $user->guide_number <= 100 => self::FOUNDING_CODE,
-            $user->guide_number >= 101 && $user->guide_number <= 500 => self::OG_CODE,
-            default => null,
-        };
+        $targetCode = $this->resolveEarlyGuideAccolade($user->guide_number)['key'] ?? null;
 
-        foreach ([self::FOUNDING_CODE, self::OG_CODE] as $code) {
+        foreach ($earlyAccoladeCodes as $code) {
             $accolade = $earlyAccolades->get($code);
 
             if (! $accolade) {

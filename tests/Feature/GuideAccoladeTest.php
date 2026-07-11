@@ -109,14 +109,20 @@ class GuideAccoladeTest extends TestCase
         $this->assertSame('OG Guide', $guideOneHundredOne->fresh()->primaryGuideAccolade()?->label);
         $this->assertSame('OG Guide', $guideFiveHundred->fresh()->primaryGuideAccolade()?->label);
         $this->assertNull($guideFiveHundredOne->fresh()->primaryGuideAccolade());
+        $this->assertSame(['OG Guide (#101)'], $guideOneHundredOne->fresh()->guideAccoladeTooltipLines());
+        $this->assertSame('OG Guide number 101', $guideOneHundredOne->fresh()->guideAccoladeAriaLine());
 
         $this->assertFalse($guideOne->fresh()->guideAccolades()->where('code', 'og_guide')->exists());
     }
 
-    public function test_founding_guide_avatar_helpers_use_the_first_one_hundred_boundary(): void
+    public function test_early_guide_avatar_helpers_resolve_normalized_tiers(): void
     {
         $foundingGuide = User::factory()->make(['guide_number' => 45]);
-        $guideOneHundredOne = User::factory()->make(['guide_number' => 101]);
+        $foundingBoundary = User::factory()->make(['guide_number' => 100]);
+        $ogGuide = User::factory()->make(['guide_number' => 101]);
+        $ogGuideMidTier = User::factory()->make(['guide_number' => 233]);
+        $ogBoundary = User::factory()->make(['guide_number' => 500]);
+        $guideFiveHundredOne = User::factory()->make(['guide_number' => 501]);
         $unnumberedGuide = User::factory()->make(['guide_number' => null]);
 
         $this->assertTrue($foundingGuide->isFoundingGuide());
@@ -124,13 +130,46 @@ class GuideAccoladeTest extends TestCase
         $this->assertSame('Founding Guide', $foundingGuide->guideAccoladeLabel());
         $this->assertSame('Founding Guide (#45)', $foundingGuide->guideAccoladeTooltipLine());
         $this->assertSame('ring-[3px] ring-yellow-400', $foundingGuide->guideAvatarRingClass());
+        $this->assertSame('founding_guide', $foundingGuide->guideAvatarAccolade()['key']);
+        $this->assertSame('gold', $foundingGuide->guideAvatarAccolade()['css_variant']);
+        $this->assertSame('Founding Guide', $foundingBoundary->guideAccoladeLabel());
 
-        foreach ([$guideOneHundredOne, $unnumberedGuide] as $guide) {
+        $this->assertSame([
+            'key' => 'og_guide',
+            'label' => 'OG Guide',
+            'guide_number' => 101,
+            'plate_text' => '#101',
+            'css_variant' => 'silver',
+        ], $ogGuide->guideAvatarAccolade());
+        $this->assertSame('OG Guide (#233)', $ogGuideMidTier->guideAccoladeTooltipLine());
+        $this->assertSame('ring-[3px] ring-slate-300', $ogGuideMidTier->guideAvatarRingClass());
+        $this->assertSame('OG Guide', $ogBoundary->guideAccoladeLabel());
+
+        foreach ([$guideFiveHundredOne, $unnumberedGuide] as $guide) {
             $this->assertFalse($guide->isFoundingGuide());
             $this->assertNull($guide->foundingGuideNumberLabel());
             $this->assertNull($guide->guideAccoladeLabel());
             $this->assertNull($guide->guideAccoladeTooltipLine());
+            $this->assertNull($guide->guideAvatarAccolade());
         }
+    }
+
+    public function test_guide_avatar_renders_silver_plate_and_no_plate_without_accolade(): void
+    {
+        $ogAvatar = $this->blade('<x-guide-avatar :user="$user" size="sm" />', [
+            'user' => User::factory()->make(['guide_number' => 233]),
+        ]);
+
+        $ogAvatar->assertSee('#233')
+            ->assertSee('ring-slate-300', false)
+            ->assertSee('from-slate-500', false);
+
+        $plainAvatar = $this->blade('<x-guide-avatar :user="$user" size="sm" />', [
+            'user' => User::factory()->make(['guide_number' => 501]),
+        ]);
+
+        $plainAvatar->assertDontSee('#501')
+            ->assertDontSee('ring-slate-300', false);
     }
 
     public function test_primary_accolade_uses_highest_priority_active_non_expired_award(): void
