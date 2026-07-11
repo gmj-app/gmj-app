@@ -6,6 +6,7 @@ use App\Models\Creator;
 use App\Models\CreatorFavorite;
 use App\Models\CreatorOwner;
 use App\Models\CreatorTag;
+use App\Models\GuideAccolade;
 use App\Models\Recommendation;
 use App\Models\RecommendationAlternative;
 use App\Models\User;
@@ -1171,6 +1172,100 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('name="vote_action" value="remove"', false)
             ->assertSee('1')
             ->assertSee('vote');
+    }
+
+    public function test_mobile_vote_module_centers_controls_and_supports_multi_digit_allocations(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'mobile-vote-controls']);
+        $guide = User::factory()->create(['plan_slug' => 'pro']);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Mobile vote layout',
+            'status' => 'approved',
+        ]);
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $recommendation->id,
+            'user_id' => $guide->id,
+            'vote_count' => 10,
+        ]);
+
+        $response = $this->actingAs($guide)
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSee('data-vote-controls', false)
+            ->assertSee('grid-cols-[2.75rem_minmax(4.5rem,auto)_2.75rem]', false)
+            ->assertSee('sm:flex sm:w-auto sm:max-w-none sm:justify-end', false)
+            ->assertSee('>10/10</p>', false)
+            ->assertSee('whitespace-nowrap', false)
+            ->assertSee('aria-label="Remove vote from this recommendation"', false)
+            ->assertSee('aria-label="Add vote to this recommendation"', false);
+
+        $voteModule = Str::of($response->getContent())
+            ->after('data-vote-controls')
+            ->before('</div>\n                    @else');
+
+        $this->assertGreaterThanOrEqual(2, substr_count((string) $voteModule, 'size-11'));
+        $this->assertStringContainsString('disabled', (string) $voteModule);
+    }
+
+    public function test_mobile_expanded_support_uses_generic_founder_og_and_future_accolades(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'mobile-accolades']);
+        $founder = User::factory()->create([
+            'guide_number' => 45,
+            'public_display_name' => 'Mobile Founder',
+        ]);
+        $og = User::factory()->create([
+            'guide_number' => 233,
+            'public_display_name' => 'Mobile OG',
+        ]);
+        GuideAccolade::factory()->create([
+            'code' => 'mobile_future',
+            'label' => 'Mobile Future',
+            'rule_type' => GuideAccolade::RULE_GUIDE_NUMBER_RANGE,
+            'minimum_guide_number' => 700,
+            'maximum_guide_number' => 800,
+            'priority' => 80,
+            'display_number_plate' => true,
+            'plate_prefix' => '#',
+            'css_class' => 'accolade-mobile-future',
+        ]);
+        $future = User::factory()->create([
+            'guide_number' => 750,
+            'public_display_name' => 'Mobile Future Guide',
+        ]);
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $founder->id,
+            'title' => 'Mobile accolade support',
+            'status' => 'approved',
+        ]);
+        foreach ([$og, $future] as $supporter) {
+            UserPick::factory()->create([
+                'creator_id' => $creator->id,
+                'recommendation_id' => $recommendation->id,
+                'user_id' => $supporter->id,
+            ]);
+        }
+
+        $response = $this->get(route('creator.queue', $creator))->assertOk();
+
+        foreach ([
+            ['accolade-founding', '#45'],
+            ['accolade-og', '#233'],
+            ['accolade-mobile-future', '#750'],
+        ] as [$class, $plate]) {
+            $response->assertSee($class, false)->assertSee($plate);
+        }
+        $response
+            ->assertSee('guide-avatar relative inline-flex', false)
+            ->assertSee('z-10 accolade-', false)
+            ->assertSee('guide-accolade__number absolute bottom-0 left-1/2 z-30', false)
+            ->assertSee('overflow-visible', false);
+
+        $accoladeCss = file_get_contents(resource_path('css/app.css'));
+        $this->assertDoesNotMatchRegularExpression('/@media[^}]*accolade[^}]*display\s*:\s*none/is', $accoladeCss);
     }
 
     public function test_logged_in_guides_can_privately_suggest_an_alternative_video(): void

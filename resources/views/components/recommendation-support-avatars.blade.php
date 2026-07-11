@@ -92,12 +92,13 @@
                 $initials = $user->initialsForAvatar();
                 $titleLines = $supporter['titleLines'];
                 $profileUrl = $user->publicGuideProfileUrl();
+                $hasAccolade = $user->guideAvatarAccolade() !== null;
             @endphp
 
             <span class="{{ $showsSeparatedNames ? 'inline-flex min-w-0 flex-col items-center' : 'contents' }}">
             <{{ $profileUrl ? 'a' : 'span' }}
                 @if ($profileUrl) href="{{ $profileUrl }}" @endif
-                class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 hover:z-20 focus-within:z-20 dark:ring-slate-900 {{ ! $loop->first && ! ($isDetailLayout && ! $isCompactDetailLayout) ? $stackSpacing : '' }}"
+                class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 hover:z-20 focus-within:z-20 dark:ring-slate-900 {{ $hasAccolade ? 'z-10' : '' }} {{ ! $loop->first && ! ($isDetailLayout && ! $isCompactDetailLayout) ? $stackSpacing : '' }}"
                 @if (! $profileUrl) tabindex="0" @endif
                 title="{!! collect($titleLines)->map(fn (string $line): string => e($line))->implode('&#10;') !!}"
                 aria-label="{{ $profileUrl ? 'View '.$user->publicName().'\'s Guide profile' : $supporter['ariaLabel'] }}"

@@ -312,7 +312,7 @@
                     </div>
 
                     @auth
-                        <div class="flex items-center justify-end gap-2">
+                        <div data-vote-controls class="grid w-full max-w-xs grid-cols-[2.75rem_minmax(4.5rem,auto)_2.75rem] items-center justify-center gap-2 sm:flex sm:w-auto sm:max-w-none sm:justify-end">
                             <form
                                 method="POST"
                                 action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
@@ -332,8 +332,8 @@
                                 </button>
                             </form>
 
-                            <div class="min-w-14 rounded-xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
-                                <p class="text-sm font-extrabold leading-none text-slate-950 dark:text-white">{{ $currentUserVotes }}/{{ $voteLimit }}</p>
+                            <div class="min-w-0 rounded-xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sm:min-w-14">
+                                <p class="whitespace-nowrap text-sm font-extrabold leading-none text-slate-950 dark:text-white">{{ $currentUserVotes }}/{{ $voteLimit }}</p>
                                 <p class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">yours</p>
                             </div>
 
@@ -358,14 +358,14 @@
                             </form>
                         </div>
                     @else
-                        <div class="flex items-center justify-end gap-2">
+                        <div data-vote-controls class="grid w-full max-w-xs grid-cols-[2.75rem_minmax(4.5rem,auto)_2.75rem] items-center justify-center gap-2 sm:flex sm:w-auto sm:max-w-none sm:justify-end">
                             <span class="inline-flex size-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 opacity-45 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600" aria-hidden="true">
                                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25">
                                     <path stroke-linecap="round" d="M6 12h12" />
                                 </svg>
                             </span>
-                            <div class="min-w-14 rounded-xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
-                                <p class="text-sm font-extrabold leading-none text-slate-950 dark:text-white">0/{{ $voteLimit ?: 3 }}</p>
+                            <div class="min-w-0 rounded-xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sm:min-w-14">
+                                <p class="whitespace-nowrap text-sm font-extrabold leading-none text-slate-950 dark:text-white">0/{{ $voteLimit ?: 3 }}</p>
                                 <p class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">yours</p>
                             </div>
                             <a
