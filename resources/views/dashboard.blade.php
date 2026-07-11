@@ -44,34 +44,42 @@
                 </dl>
             </section>
 
-            <section class="mt-6 rounded-3xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 sm:p-8">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">My Guide Activity</p>
-                        <h2 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">Your creators and activity</h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">See what you’ve suggested and where your votes are currently allocated.</p>
-                    </div>
-                    <a href="{{ route('activity.index') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-400">View full activity</a>
-                </div>
-
-                @if ($favoriteCreators->isEmpty())
-                    <div class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center dark:border-slate-700 dark:bg-slate-900">
-                        <h3 class="font-bold text-slate-950 dark:text-white">No Guide activity yet.</h3>
-                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Favorite a creator, submit a suggestion, or cast a vote to begin.</p>
-                        <a href="{{ route('home') }}" class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500">Find creators</a>
-                    </div>
-                @else
-                    <div class="mt-6 space-y-3">
-                        @foreach ($favoriteCreators as $creator)
-                            <x-dashboard.guide-activity-creator
-                                :creator="$creator"
-                                :active-votes="$activeVotesByCreator->get($creator->id, collect())"
-                                :suggestions="$suggestionsByCreator->get($creator->id, collect())"
-                            />
-                        @endforeach
-                    </div>
-                @endif
-            </section>
+            @php($hasActivity = $activitySummary['active_vote_count'] > 0 || $activitySummary['suggestion_count'] > 0)
+            <a
+                href="{{ $hasActivity ? route('activity.index') : route('home') }}"
+                aria-label="{{ $hasActivity ? 'View your votes, suggestions, and published activity' : 'Find creators and start your activity history' }}"
+                class="group mt-6 flex min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-900 p-5 text-white shadow-sm transition hover:border-emerald-400 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-500 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+            >
+                <span class="flex min-w-0 items-start gap-4">
+                    <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300" aria-hidden="true">
+                        <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 6h14M5 12h14M5 18h9" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m17 17 2 2 4-5" />
+                        </svg>
+                    </span>
+                    <span class="min-w-0">
+                        <span class="block text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-300">My Activity</span>
+                        <span class="mt-1 block text-lg font-extrabold">Your votes and suggestions</span>
+                        @if ($hasActivity)
+                            <span class="mt-1 block text-sm font-semibold text-slate-200">
+                                {{ $activitySummary['active_vote_count'] }} active {{ Str::plural('vote', $activitySummary['active_vote_count']) }}
+                                <span aria-hidden="true">&middot;</span>
+                                {{ $activitySummary['suggestion_count'] }} {{ Str::plural('suggestion', $activitySummary['suggestion_count']) }}
+                                <span aria-hidden="true">&middot;</span>
+                                {{ $activitySummary['published_count'] }} published
+                            </span>
+                            <span class="mt-2 block text-sm leading-6 text-slate-400">See where your votes are allocated and track what happened to your suggestions.</span>
+                        @else
+                            <span class="mt-1 block text-sm font-semibold text-slate-200">No activity yet</span>
+                            <span class="mt-2 block text-sm leading-6 text-slate-400">Favorite a creator, submit a suggestion, or cast a vote to start building your activity history.</span>
+                        @endif
+                    </span>
+                </span>
+                <span class="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-xl bg-emerald-400 px-4 py-2 text-sm font-extrabold text-slate-950 transition group-hover:bg-emerald-300 sm:self-center">
+                    {{ $hasActivity ? 'View My Activity' : 'Find creators' }}
+                    <span aria-hidden="true">&rarr;</span>
+                </span>
+            </a>
 
             <section class="mt-6 grid gap-6 lg:grid-cols-2">
                 <article class="flex min-w-0 flex-col rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm dark:border-indigo-900 dark:from-indigo-950/60 dark:to-slate-900 sm:p-8">

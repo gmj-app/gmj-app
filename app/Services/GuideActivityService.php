@@ -17,6 +17,26 @@ class GuideActivityService
     public const SUGGESTION_LIMIT_PER_CREATOR = 10;
 
     /**
+     * @return array{active_vote_count: int, suggestion_count: int, published_count: int}
+     */
+    public function summaryFor(User $user): array
+    {
+        $suggestions = $user->recommendationsSubmitted()
+            ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
+            ->whereNotIn('status', ['hidden', 'withdrawn'])
+            ->selectRaw('count(*) as suggestion_count, sum(case when status = ? then 1 else 0 end) as published_count', ['published'])
+            ->first();
+
+        return [
+            'active_vote_count' => (int) $user->userPicks()
+                ->whereHas('recommendation', fn ($query) => $query->votable())
+                ->sum('vote_count'),
+            'suggestion_count' => (int) ($suggestions?->suggestion_count ?? 0),
+            'published_count' => (int) ($suggestions?->published_count ?? 0),
+        ];
+    }
+
+    /**
      * @return array{creators: Collection, activeVotesByCreator: Collection, suggestionsByCreator: Collection}
      */
     public function forUser(User $user, string $type = 'all'): array

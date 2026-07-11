@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Recommendation;
 use App\Services\GuideActivityService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,28 +15,19 @@ class DashboardController extends Controller
             ->wherePivot('role', 'owner')
             ->orderBy('display_name')
             ->get();
-        $guideActivity = $activity->forUser($user);
-        $favoriteCreators = $guideActivity['creators'];
-        $activeVotesByCreator = $guideActivity['activeVotesByCreator'];
-        $suggestionsByCreator = $guideActivity['suggestionsByCreator'];
+        $activitySummary = $activity->summaryFor($user);
 
         $resources = [
             'creator_favorites_used' => $user->creatorFavoritesUsed(),
             'creator_favorites_limit' => $user->creatorFavoriteLimit(),
-            'active_upvotes' => $user->userPicks()
-                ->whereHas('recommendation', fn ($query) => $query->votable())
-                ->sum('vote_count'),
-            'suggestions_submitted' => $user->recommendationsSubmitted()
-                ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
-                ->count(),
+            'active_upvotes' => $activitySummary['active_vote_count'],
+            'suggestions_submitted' => $activitySummary['suggestion_count'],
         ];
 
         return view('dashboard', compact(
-            'activeVotesByCreator',
-            'favoriteCreators',
+            'activitySummary',
             'ownedCreators',
             'resources',
-            'suggestionsByCreator',
         ));
     }
 }

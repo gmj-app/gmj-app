@@ -102,28 +102,30 @@ class DashboardTest extends TestCase
             ->assertSee('href="'.route('creators.index').'"', false);
     }
 
-    public function test_dashboard_shows_resource_counts_and_active_favorite_creators(): void
+    public function test_dashboard_shows_a_compact_activity_summary_with_centralized_counts(): void
     {
         $user = User::factory()->create(['membership_tier' => 'free']);
         $favoriteCreator = Creator::factory()->create([
             'display_name' => 'Favorite Journey',
             'status' => 'active',
         ]);
-        $inactiveCreator = Creator::factory()->create([
-            'display_name' => 'Inactive Favorite',
-            'status' => 'inactive',
+        CreatorFavorite::query()->create([
+            'creator_id' => $favoriteCreator->id,
+            'user_id' => $user->id,
         ]);
 
-        foreach ([$favoriteCreator, $inactiveCreator] as $creator) {
-            CreatorFavorite::query()->create([
-                'creator_id' => $creator->id,
-                'user_id' => $user->id,
-            ]);
-        }
-
-        Recommendation::factory()->count(2)->create([
+        Recommendation::factory()->create([
             'creator_id' => $favoriteCreator->id,
             'submitted_by' => $user->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            'title' => 'Active suggestion detail',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $favoriteCreator->id,
+            'submitted_by' => $user->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
+            'title' => 'Published suggestion detail',
+            'status' => 'published',
         ]);
         $activeRecommendation = Recommendation::factory()->create([
             'creator_id' => $favoriteCreator->id,
@@ -146,106 +148,34 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSeeInOrder(['Creator favorites', '2', '/ 3'])
+            ->assertSeeInOrder(['Creator favorites', '1', '/ 3'])
             ->assertSeeInOrder(['Active votes', '2'])
             ->assertSeeInOrder(['Suggestions submitted', '2'])
-            ->assertSee('My Guide Activity')
-            ->assertSee('Your creators and activity')
-            ->assertSee('Favorite Journey')
+            ->assertSee('My Activity')
+            ->assertSee('Your votes and suggestions')
             ->assertSee('2 active votes')
             ->assertSee('2 suggestions')
-            ->assertSee('Your active votes')
-            ->assertSee('Your suggestions')
-            ->assertSee('href="'.route('creator.queue', $favoriteCreator).'"', false)
-            ->assertDontSee('Inactive Favorite');
+            ->assertSee('1 published')
+            ->assertSee('View My Activity')
+            ->assertSee('href="'.route('activity.index').'"', false)
+            ->assertDontSee('Active suggestion detail')
+            ->assertDontSee('Published suggestion detail')
+            ->assertDontSee('Your active votes');
     }
 
-    public function test_dashboard_activity_groups_active_votes_and_suggestions_by_favorite_creator(): void
-    {
-        $user = User::factory()->create();
-        $firstCreator = Creator::factory()->create(['display_name' => 'First Favorite', 'status' => 'active']);
-        $secondCreator = Creator::factory()->create(['display_name' => 'Second Favorite', 'status' => 'active']);
-        $unrelatedCreator = Creator::factory()->create(['display_name' => 'Not Favorited', 'status' => 'active']);
-
-        foreach ([$firstCreator, $secondCreator] as $creator) {
-            CreatorFavorite::query()->create(['creator_id' => $creator->id, 'user_id' => $user->id]);
-        }
-
-        $active = Recommendation::factory()->create([
-            'creator_id' => $firstCreator->id,
-            'title' => 'Active allocation',
-            'status' => 'approved',
-        ]);
-        $publishedVote = Recommendation::factory()->create([
-            'creator_id' => $firstCreator->id,
-            'title' => 'Historical allocation',
-            'status' => 'published',
-        ]);
-        UserPick::factory()->create([
-            'user_id' => $user->id,
-            'creator_id' => $firstCreator->id,
-            'recommendation_id' => $active->id,
-            'vote_count' => 2,
-        ]);
-        UserPick::factory()->create([
-            'user_id' => $user->id,
-            'creator_id' => $firstCreator->id,
-            'recommendation_id' => $publishedVote->id,
-            'vote_count' => 5,
-        ]);
-
-        $activeSuggestion = Recommendation::factory()->create([
-            'creator_id' => $firstCreator->id,
-            'submitted_by' => $user->id,
-            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
-            'title' => 'My active suggestion',
-            'status' => 'approved',
-        ]);
-        $publishedSuggestion = Recommendation::factory()->create([
-            'creator_id' => $firstCreator->id,
-            'submitted_by' => $user->id,
-            'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
-            'title' => 'My published suggestion',
-            'status' => 'published',
-        ]);
-        Recommendation::factory()->create([
-            'creator_id' => $unrelatedCreator->id,
-            'submitted_by' => $user->id,
-            'title' => 'Suggestion outside favorites',
-            'status' => 'approved',
-        ]);
-
-        $response = $this->actingAs($user)->get(route('dashboard'));
-
-        $response->assertOk()
-            ->assertSeeInOrder(['First Favorite', '2 active votes', '2 suggestions'])
-            ->assertSee('Active allocation')
-            ->assertSee('2 votes')
-            ->assertDontSee('Historical allocation')
-            ->assertSee('My active suggestion')
-            ->assertSee('My published suggestion')
-            ->assertSee('Approved')
-            ->assertSee('Published')
-            ->assertSee(route('creator.queue', $firstCreator).'#recommendation-'.$activeSuggestion->id, false)
-            ->assertSee(route('creators.published', $firstCreator).'#recommendation-'.$publishedSuggestion->id, false)
-            ->assertSee('No active votes with this creator.')
-            ->assertSee('No suggestions submitted to this creator.')
-            ->assertSee('Not Favorited')
-            ->assertSee('Suggestion outside favorites');
-    }
-
-    public function test_dashboard_activity_shows_a_useful_empty_state_without_favorites(): void
+    public function test_dashboard_activity_card_has_a_useful_zero_state(): void
     {
         $this->actingAs(User::factory()->create())
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('No Guide activity yet.')
-            ->assertSee('Favorite a creator, submit a suggestion, or cast a vote to begin.')
+            ->assertSee('Your votes and suggestions')
+            ->assertSee('No activity yet')
+            ->assertSee('Favorite a creator, submit a suggestion, or cast a vote to start building your activity history.')
             ->assertSee('Find creators')
             ->assertSee('href="'.route('home').'"', false);
     }
 
-    public function test_dashboard_activity_query_count_does_not_scale_per_favorite_creator(): void
+    public function test_dashboard_does_not_load_detailed_creator_activity_collections(): void
     {
         $user = User::factory()->create();
 
@@ -274,6 +204,7 @@ class DashboardTest extends TestCase
                 || str_contains($query, 'user_picks')
                 || str_contains($query, 'recommendations'));
 
-        $this->assertLessThanOrEqual(10, $activityQueries->count());
+        $this->assertLessThanOrEqual(4, $activityQueries->count());
+        $this->assertFalse($activityQueries->contains(fn (string $query): bool => str_contains($query, 'select * from "creators"')));
     }
 }
