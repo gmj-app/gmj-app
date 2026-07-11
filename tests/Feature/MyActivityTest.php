@@ -140,7 +140,7 @@ class MyActivityTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get(route('activity.index'))
             ->assertOk()
-            ->assertSeeInOrder(['My Activity', 'Profile', 'Toggle light and dark mode', 'Log out'])
+            ->assertSeeInOrder(['My Activity', 'Profile', 'Theme', 'Log out'])
             ->assertSee('href="'.route('activity.index').'"', false);
     }
 

@@ -71,7 +71,11 @@
                             My Activity
                         </a>
 
-                        <a href="{{ route('profile.edit') }}" role="menuitem" class="flex min-h-11 items-center px-4 py-2 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800">
+                        <a href="{{ route('profile.edit') }}" role="menuitem" class="flex min-h-11 items-center gap-3 px-4 py-2 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800">
+                            <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <circle cx="12" cy="8" r="3" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.5 20a6.5 6.5 0 0 1 13 0M12 2.5a9.5 9.5 0 1 1-6.72 2.78" />
+                            </svg>
                             Profile
                         </a>
 
@@ -80,7 +84,8 @@
                             @click="toggleTheme()"
                             role="menuitem"
                             class="flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800"
-                            aria-label="Toggle light and dark mode"
+                            x-bind:aria-label="dark ? 'Switch to light theme' : 'Switch to dark theme'"
+                            x-bind:title="dark ? 'Switch to light theme' : 'Switch to dark theme'"
                         >
                             <svg x-show="! dark" class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                 <path stroke-linecap="round" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
@@ -89,12 +94,15 @@
                                 <circle cx="12" cy="12" r="4" />
                                 <path stroke-linecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
                             </svg>
-                            <span x-text="dark ? 'Use light theme' : 'Use dark theme'"></span>
+                            <span>Theme</span>
                         </button>
 
                         <form method="POST" action="{{ route('logout') }}" class="border-t border-slate-100 pt-2 dark:border-slate-800">
                             @csrf
-                            <button type="submit" role="menuitem" class="flex min-h-11 w-full items-center px-4 py-2 text-left text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:bg-slate-800">
+                            <button type="submit" role="menuitem" class="flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:bg-slate-800">
+                                <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 5H6.5A2.5 2.5 0 0 0 4 7.5v9A2.5 2.5 0 0 0 6.5 19H10M14 8l4 4-4 4M8 12h10" />
+                                </svg>
                                 Log out
                             </button>
                         </form>
@@ -145,12 +153,19 @@
                     <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M5 6h14M5 12h14M5 18h9"/><path stroke-linecap="round" stroke-linejoin="round" d="m17 17 2 2 4-5"/></svg>
                     My Activity
                 </a>
-                <a href="{{ route('profile.edit') }}" class="flex min-h-11 items-center rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900">Profile</a>
+                <a href="{{ route('profile.edit') }}" class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-900">
+                    <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <circle cx="12" cy="8" r="3" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.5 20a6.5 6.5 0 0 1 13 0M12 2.5a9.5 9.5 0 1 1-6.72 2.78" />
+                    </svg>
+                    Profile
+                </a>
                 <button
                     type="button"
                     @click="toggleTheme()"
                     class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-left text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
-                    aria-label="Toggle light and dark mode"
+                    x-bind:aria-label="dark ? 'Switch to light theme' : 'Switch to dark theme'"
+                    x-bind:title="dark ? 'Switch to light theme' : 'Switch to dark theme'"
                 >
                     <svg x-show="! dark" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <path stroke-linecap="round" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
@@ -159,11 +174,16 @@
                         <circle cx="12" cy="12" r="4" />
                         <path stroke-linecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
                     </svg>
-                    <span x-text="dark ? 'Use light theme' : 'Use dark theme'"></span>
+                    <span>Theme</span>
                 </button>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" class="border-t border-slate-200 pt-2 dark:border-slate-800">
                     @csrf
-                    <button type="submit" class="min-h-11 w-full rounded-xl px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-900">Log out</button>
+                    <button type="submit" class="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-900">
+                        <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 5H6.5A2.5 2.5 0 0 0 4 7.5v9A2.5 2.5 0 0 0 6.5 19H10M14 8l4 4-4 4M8 12h10" />
+                        </svg>
+                        Log out
+                    </button>
                 </form>
             @else
                 <a href="{{ route('login') }}" class="flex min-h-11 items-center rounded-xl bg-indigo-600 px-3 py-2 text-white">Sign in</a>
