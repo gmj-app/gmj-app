@@ -10,6 +10,7 @@
     $isAdminFeedbackViewer = $betaFeedbackUser?->canViewBetaFeedbackInbox() ?? false;
     $adminFeedbackItems = collect();
     $adminUnreadFeedbackCount = 0;
+    $betaChangelog = app(\App\Services\ChangelogService::class)->get();
 
     if ($isAdminFeedbackViewer) {
         $adminFeedbackItems = \App\Models\BetaFeedback::query()
@@ -37,6 +38,7 @@
 <div
     x-data="{
         open: false,
+        activeTab: 'inbox',
         unreadCount: {{ $adminUnreadFeedbackCount }},
         markReadUrlTemplate: @js(route('internal.beta-feedback.mark-read', ['feedback' => '__FEEDBACK_ID__'], false)),
         markRead(id, setRead) {
@@ -62,6 +64,7 @@
                 .catch(() => {});
         },
         openModal() {
+            this.activeTab = 'inbox';
             this.open = true;
             this.$nextTick(() => {
                 if (this.$refs.closeButton) {
@@ -141,17 +144,21 @@
                     </button>
                 </div>
 
-                <div class="mt-5 flex items-center justify-between gap-3 border-y border-slate-100 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                    <span>Showing latest 25</span>
-                    <span x-show="unreadCount > 0" x-cloak><strong x-text="unreadCount"></strong> unread</span>
+                <div class="mt-5 flex gap-1 border-b border-slate-200 dark:border-slate-700" role="tablist" aria-label="Testing feedback sections">
+                    <button type="button" id="beta-admin-inbox-tab" role="tab" aria-controls="beta-admin-inbox-panel" x-bind:aria-selected="(activeTab === 'inbox').toString()" x-on:click="activeTab = 'inbox'" x-bind:class="activeTab === 'inbox' ? 'border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'" class="min-h-11 border-b-2 px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Feedback Inbox</button>
+                    <button type="button" id="beta-admin-changelog-tab" role="tab" aria-controls="beta-admin-changelog-panel" x-bind:aria-selected="(activeTab === 'changelog').toString()" x-on:click="activeTab = 'changelog'" x-bind:class="activeTab === 'changelog' ? 'border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'" class="min-h-11 border-b-2 px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Change Log</button>
                 </div>
 
-                @if ($adminFeedbackItems->isEmpty())
-                    <div class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center text-sm font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-                        No feedback yet.
+                <div id="beta-admin-inbox-panel" role="tabpanel" aria-labelledby="beta-admin-inbox-tab" x-show="activeTab === 'inbox'" class="mt-5">
+                    <div class="flex items-center justify-between gap-3 border-y border-slate-100 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                        <span>Showing latest 25</span>
+                        <span x-show="unreadCount > 0" x-cloak><strong x-text="unreadCount"></strong> unread</span>
                     </div>
-                @else
-                    <div class="mt-5 max-h-[70vh] space-y-4 overflow-y-auto pr-1">
+
+                    @if ($adminFeedbackItems->isEmpty())
+                        <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center text-sm font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">No feedback yet.</div>
+                    @else
+                    <div class="mt-5 max-h-[62vh] space-y-4 overflow-y-auto pr-1">
                         @foreach ($adminFeedbackItems as $feedback)
                             @php
                                 $feedbackAvatarUrl = $feedback->user?->avatar_url;
@@ -229,7 +236,12 @@
                             </article>
                         @endforeach
                     </div>
-                @endif
+                    @endif
+                </div>
+
+                <div id="beta-admin-changelog-panel" role="tabpanel" aria-labelledby="beta-admin-changelog-tab" x-show="activeTab === 'changelog'" x-cloak class="mt-5">
+                    <x-beta-changelog-panel :changelog="$betaChangelog" />
+                </div>
             </div>
         </div>
     </div>
@@ -238,6 +250,7 @@
 <div
     x-data="{
         open: false,
+        activeTab: 'feedback',
         sent: false,
         sending: false,
         errors: {},
@@ -283,6 +296,7 @@
         },
         openModal() {
             this.captureContext();
+            this.activeTab = 'feedback';
             this.sent = false;
             this.errors = {};
             this.open = true;
@@ -403,6 +417,12 @@
                 </button>
             </div>
 
+            <div class="mt-5 flex gap-1 border-b border-slate-200 dark:border-slate-700" role="tablist" aria-label="Testing feedback sections">
+                <button type="button" id="beta-feedback-form-tab" role="tab" aria-controls="beta-feedback-form-panel" x-bind:aria-selected="(activeTab === 'feedback').toString()" x-on:click="activeTab = 'feedback'" x-bind:class="activeTab === 'feedback' ? 'border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'" class="min-h-11 border-b-2 px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Send Feedback</button>
+                <button type="button" id="beta-feedback-changelog-tab" role="tab" aria-controls="beta-feedback-changelog-panel" x-bind:aria-selected="(activeTab === 'changelog').toString()" x-on:click="activeTab = 'changelog'" x-bind:class="activeTab === 'changelog' ? 'border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'" class="min-h-11 border-b-2 px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Change Log</button>
+            </div>
+
+            <div id="beta-feedback-form-panel" role="tabpanel" aria-labelledby="beta-feedback-form-tab" x-show="activeTab === 'feedback'">
             <div x-show="sent" x-cloak class="mt-5 rounded-md bg-emerald-50 p-4 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:ring-emerald-900">
                 Thanks, your feedback was sent.
             </div>
@@ -512,6 +532,11 @@
                     <span x-show="! sending">Submit feedback</span>
                     <span x-show="sending" x-cloak>Submitting...</span>
                 </button>
+            </div>
+            </div>
+
+            <div id="beta-feedback-changelog-panel" role="tabpanel" aria-labelledby="beta-feedback-changelog-tab" x-show="activeTab === 'changelog'" x-cloak class="mt-5">
+                <x-beta-changelog-panel :changelog="$betaChangelog" />
             </div>
             </form>
         </div>

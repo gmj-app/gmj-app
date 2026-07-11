@@ -6,6 +6,7 @@ use App\Mail\BetaFeedbackSubmitted;
 use App\Models\BetaFeedback;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use RuntimeException;
 use Tests\TestCase;
@@ -13,6 +14,20 @@ use Tests\TestCase;
 class BetaFeedbackTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        File::delete(storage_path('framework/testing/changelog.json'));
+        parent::tearDown();
+    }
+
+    private function useTestChangelogPath(): string
+    {
+        $path = storage_path('framework/testing/changelog.json');
+        config(['changelog.path' => $path]);
+
+        return $path;
+    }
 
     public function test_feedback_button_renders_when_enabled(): void
     {
@@ -71,10 +86,58 @@ class BetaFeedbackTest extends TestCase
             ->assertSee('Unread')
             ->assertSee('Mark read')
             ->assertSee('Showing latest 25')
+            ->assertSee('Feedback Inbox')
+            ->assertSee('Change Log')
+            ->assertSee("activeTab: 'inbox'", false)
             ->assertDontSee('Tell us what happened. This form automatically includes the page and browser details so you do not have to.');
 
         $this->assertNull($older->read_at);
         $this->assertNull($newer->read_at);
+    }
+
+    public function test_tester_defaults_to_send_feedback_and_can_open_changelog_tab(): void
+    {
+        config(['gmj.beta_feedback_enabled' => true]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Send Feedback')
+            ->assertSee('Change Log')
+            ->assertSee("activeTab: 'feedback'", false)
+            ->assertSee("x-on:click=\"activeTab = 'changelog'\"", false)
+            ->assertSee('role="tablist"', false)
+            ->assertSee('role="tabpanel"', false);
+    }
+
+    public function test_missing_changelog_has_a_safe_unavailable_state(): void
+    {
+        config(['gmj.beta_feedback_enabled' => true]);
+        $this->useTestChangelogPath();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Change log is temporarily unavailable.')
+            ->assertDontSee(storage_path(), false);
+    }
+
+    public function test_valid_changelog_is_sorted_escaped_and_does_not_render_sensitive_fields(): void
+    {
+        config(['gmj.beta_feedback_enabled' => true]);
+        $path = $this->useTestChangelogPath();
+        File::ensureDirectoryExists(dirname($path));
+        File::put($path, json_encode([
+            ['hash' => 'old1234', 'date' => '2026-07-10T10:00:00Z', 'subject' => 'Older public update', 'author_email' => 'secret@example.test'],
+            ['hash' => 'new1234', 'date' => '2026-07-11T10:00:00Z', 'subject' => '<script>alert("x")</script> New update', 'author_email' => 'private@example.test'],
+        ], JSON_THROW_ON_ERROR));
+
+        $response = $this->get('/')->assertOk();
+
+        $response
+            ->assertSeeInOrder(['Jul 11, 2026', '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; New update', 'Jul 10, 2026', 'Older public update'], false)
+            ->assertDontSee('<script>alert', false)
+            ->assertDontSee('secret@example.test')
+            ->assertDontSee('private@example.test')
+            ->assertDontSee('new1234');
     }
 
     public function test_admin_feedback_inbox_routes_are_hidden_from_normal_users(): void
