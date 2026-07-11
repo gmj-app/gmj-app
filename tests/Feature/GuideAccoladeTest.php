@@ -251,6 +251,20 @@ class GuideAccoladeTest extends TestCase
         $this->assertSame(1, GuideAccolade::query()->where('code', 'og_guide')->count());
     }
 
+    public function test_seeder_recovers_from_an_empty_cached_tier_result(): void
+    {
+        GuideAccolade::query()->delete();
+        app(GuideAccoladeResolver::class)->forgetCache();
+
+        $guide = User::factory()->make(['guide_number' => 45]);
+
+        $this->assertNull(app(GuideAccoladeResolver::class)->resolveForGuide($guide));
+
+        $this->seed(GuideAccoladeSeeder::class);
+
+        $this->assertSame('founding_guide', app(GuideAccoladeResolver::class)->resolveForGuide($guide)?->code);
+    }
+
     public function test_soft_deleted_guides_do_not_release_their_permanent_number(): void
     {
         $first = User::factory()->create(['guide_number' => 1]);
