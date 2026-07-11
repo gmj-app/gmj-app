@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+    .guide-avatar[class*="accolade-"] .guide-avatar__image {
+        @apply ring-[3px];
+    }
+
+    .guide-avatar[class*="accolade-"] .guide-accolade__number {
+        @apply border-slate-300 bg-slate-950/95 text-slate-100 shadow-sm;
+    }
+
+    .guide-avatar.accolade-founding .guide-avatar__image {
+        @apply ring-yellow-400;
+    }
+
+    .guide-avatar.accolade-founding .guide-accolade__number {
+        @apply border-yellow-400/70 text-yellow-300;
+    }
+
+    .guide-avatar.accolade-og .guide-avatar__image {
+        @apply ring-slate-300 shadow-[0_0_0_1px_rgba(255,255,255,0.22)];
+    }
+
+    .guide-avatar.accolade-og .guide-accolade__number {
+        @apply border-slate-200/80 bg-gradient-to-br from-slate-500 via-slate-700 to-slate-950 text-white shadow-[0_1px_4px_rgba(148,163,184,0.45)];
+    }
+}
+
 [x-cloak] {
     display: none !important;
 }

@@ -14,8 +14,8 @@
                         @if ($guide->primaryGuideAccolade())
                             <p @class([
                                 'mt-3 inline-flex rounded-full px-3 py-1.5 text-sm font-bold',
-                                'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' => ($avatarAccolade['css_variant'] ?? null) !== 'silver',
-                                'border border-slate-300 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 text-slate-800 dark:border-slate-500 dark:from-slate-600 dark:via-slate-800 dark:to-slate-950 dark:text-slate-100' => ($avatarAccolade['css_variant'] ?? null) === 'silver',
+                                'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' => ($avatarAccolade['css_class'] ?? null) !== 'accolade-og',
+                                'border border-slate-300 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 text-slate-800 dark:border-slate-500 dark:from-slate-600 dark:via-slate-800 dark:to-slate-950 dark:text-slate-100' => ($avatarAccolade['css_class'] ?? null) === 'accolade-og',
                             ])>
                                 {{ $guide->primaryGuideAccolade()->label }}{{ $guide->guideNumberLabel() ? ' ('.$guide->guideNumberLabel().')' : '' }}
                             </p>

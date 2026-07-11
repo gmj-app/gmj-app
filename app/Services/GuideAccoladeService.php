@@ -22,6 +22,14 @@ class GuideAccoladeService
                 $tier['key'] => [
                     'label' => $tier['label'],
                     'description' => $tier['description'],
+                    'short_label' => $tier['short_label'],
+                    'rule_type' => GuideAccolade::RULE_GUIDE_NUMBER_RANGE,
+                    'minimum_guide_number' => $tier['min'],
+                    'maximum_guide_number' => $tier['max'],
+                    'display_number_plate' => true,
+                    'plate_prefix' => '#',
+                    'css_class' => $tier['css_class'],
+                    'icon' => null,
                     'tier' => str($tier['key'])->beforeLast('_guide')->toString(),
                     'ring_color' => $tier['variant'],
                     'ring_class' => $tier['variant'] === 'gold'

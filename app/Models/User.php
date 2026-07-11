@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\GuideAccoladeResolver;
 use App\Services\GuideAccoladeService;
 use App\Services\GuideNumberService;
 use App\Services\PlanEntitlementService;
@@ -11,13 +12,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -112,23 +114,23 @@ class User extends Authenticatable
     }
 
     /**
-     * @return array{key: string, label: string, guide_number: int, plate_text: string, css_variant: string}|null
+     * @return array{key: string, name: string, short_label: string, description: ?string, css_class: string, icon: ?string, display_number_plate: bool, plate_text: ?string, tooltip: string, priority: int}|null
      */
     public function guideAvatarAccolade(): ?array
     {
-        return app(GuideAccoladeService::class)->resolveEarlyGuideAccolade($this->guide_number);
+        return app(GuideAccoladeResolver::class)->resolveForGuide($this)?->viewDataFor($this);
     }
 
     public function guideAccoladeLabel(): ?string
     {
-        return $this->guideAvatarAccolade()['label'] ?? null;
+        return $this->guideAvatarAccolade()['name'] ?? null;
     }
 
     public function guideAccoladeTooltipLine(): ?string
     {
         $accolade = $this->guideAvatarAccolade();
 
-        return $accolade ? "{$accolade['label']} ({$accolade['plate_text']})" : null;
+        return $accolade['tooltip'] ?? null;
     }
 
     public function publicHandle(): ?string
@@ -245,10 +247,12 @@ class User extends Authenticatable
 
     public function primaryGuideAccolade(): ?GuideAccolade
     {
+        $resolvedTier = app(GuideAccoladeResolver::class)->resolveForGuide($this);
+
         if ($this->relationLoaded('guideAccolades')) {
             $now = now();
 
-            return $this->guideAccolades
+            $assignedAccolade = $this->guideAccolades
                 ->filter(function (GuideAccolade $accolade) use ($now): bool {
                     $expiresAt = $accolade->pivot?->expires_at;
 
@@ -261,9 +265,17 @@ class User extends Authenticatable
                         ?: ($first->id <=> $second->id);
                 })
                 ->first();
+
+            return ! $assignedAccolade || ($resolvedTier && $resolvedTier->priority > $assignedAccolade->priority)
+                ? $resolvedTier
+                : $assignedAccolade;
         }
 
-        return app(GuideAccoladeService::class)->getPrimaryDisplayAccolade($this);
+        $assignedAccolade = app(GuideAccoladeService::class)->getPrimaryDisplayAccolade($this);
+
+        return ! $assignedAccolade || ($resolvedTier && $resolvedTier->priority > $assignedAccolade->priority)
+            ? $resolvedTier
+            : $assignedAccolade;
     }
 
     /**
@@ -278,10 +290,8 @@ class User extends Authenticatable
 
     public function guideAvatarRingClass(): string
     {
-        if ($accolade = $this->guideAvatarAccolade()) {
-            return $accolade['css_variant'] === 'gold'
-                ? 'ring-[3px] ring-yellow-400'
-                : 'ring-[3px] ring-slate-300';
+        if ($accolade = app(GuideAccoladeResolver::class)->resolveForGuide($this)) {
+            return (string) $accolade->ring_class;
         }
 
         return (string) ($this->primaryGuideAccolade()?->ring_class ?? '');
@@ -289,7 +299,11 @@ class User extends Authenticatable
 
     public function guideAccoladeAriaLine(): ?string
     {
-        return $this->primaryGuideAccolade()?->ariaLineFor($this);
+        $accolade = $this->guideAvatarAccolade();
+
+        return $accolade
+            ? $accolade['name'].($accolade['plate_text'] ? ' number '.$this->guide_number : '')
+            : $this->primaryGuideAccolade()?->ariaLineFor($this);
     }
 
     public function youtubeChannelToken(): HasOne

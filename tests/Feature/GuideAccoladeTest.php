@@ -4,9 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\GuideAccolade;
 use App\Models\User;
+use App\Services\GuideAccoladeResolver;
 use App\Services\GuideAccoladeService;
 use App\Services\GuideNumberService;
+use Database\Seeders\GuideAccoladeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class GuideAccoladeTest extends TestCase
@@ -117,6 +120,8 @@ class GuideAccoladeTest extends TestCase
 
     public function test_early_guide_avatar_helpers_resolve_normalized_tiers(): void
     {
+        app(GuideAccoladeService::class)->ensureInitialAccolades();
+
         $foundingGuide = User::factory()->make(['guide_number' => 45]);
         $foundingBoundary = User::factory()->make(['guide_number' => 100]);
         $ogGuide = User::factory()->make(['guide_number' => 101]);
@@ -131,16 +136,13 @@ class GuideAccoladeTest extends TestCase
         $this->assertSame('Founding Guide (#45)', $foundingGuide->guideAccoladeTooltipLine());
         $this->assertSame('ring-[3px] ring-yellow-400', $foundingGuide->guideAvatarRingClass());
         $this->assertSame('founding_guide', $foundingGuide->guideAvatarAccolade()['key']);
-        $this->assertSame('gold', $foundingGuide->guideAvatarAccolade()['css_variant']);
+        $this->assertSame('accolade-founding', $foundingGuide->guideAvatarAccolade()['css_class']);
         $this->assertSame('Founding Guide', $foundingBoundary->guideAccoladeLabel());
 
-        $this->assertSame([
-            'key' => 'og_guide',
-            'label' => 'OG Guide',
-            'guide_number' => 101,
-            'plate_text' => '#101',
-            'css_variant' => 'silver',
-        ], $ogGuide->guideAvatarAccolade());
+        $this->assertSame('og_guide', $ogGuide->guideAvatarAccolade()['key']);
+        $this->assertSame('OG Guide', $ogGuide->guideAvatarAccolade()['name']);
+        $this->assertSame('#101', $ogGuide->guideAvatarAccolade()['plate_text']);
+        $this->assertSame('accolade-og', $ogGuide->guideAvatarAccolade()['css_class']);
         $this->assertSame('OG Guide (#233)', $ogGuideMidTier->guideAccoladeTooltipLine());
         $this->assertSame('ring-[3px] ring-slate-300', $ogGuideMidTier->guideAvatarRingClass());
         $this->assertSame('OG Guide', $ogBoundary->guideAccoladeLabel());
@@ -156,20 +158,109 @@ class GuideAccoladeTest extends TestCase
 
     public function test_guide_avatar_renders_silver_plate_and_no_plate_without_accolade(): void
     {
+        app(GuideAccoladeService::class)->ensureInitialAccolades();
+
         $ogAvatar = $this->blade('<x-guide-avatar :user="$user" size="sm" />', [
             'user' => User::factory()->make(['guide_number' => 233]),
         ]);
 
         $ogAvatar->assertSee('#233')
-            ->assertSee('ring-slate-300', false)
-            ->assertSee('from-slate-500', false);
+            ->assertSee('accolade-og', false)
+            ->assertSee('guide-accolade__number', false);
 
         $plainAvatar = $this->blade('<x-guide-avatar :user="$user" size="sm" />', [
             'user' => User::factory()->make(['guide_number' => 501]),
         ]);
 
         $plainAvatar->assertDontSee('#501')
-            ->assertDontSee('ring-slate-300', false);
+            ->assertDontSee('guide-accolade__number', false);
+    }
+
+    public function test_inactive_tiers_are_ignored_and_priority_wins_for_overlaps(): void
+    {
+        $guide = User::factory()->make(['guide_number' => 45]);
+
+        GuideAccolade::factory()->create([
+            'code' => 'inactive_overlap',
+            'label' => 'Inactive Overlap',
+            'rule_type' => GuideAccolade::RULE_GUIDE_NUMBER_RANGE,
+            'minimum_guide_number' => 1,
+            'maximum_guide_number' => 100,
+            'priority' => 500,
+            'is_active' => false,
+        ]);
+        GuideAccolade::factory()->create([
+            'code' => 'priority_overlap',
+            'label' => 'Priority Winner',
+            'rule_type' => GuideAccolade::RULE_GUIDE_NUMBER_RANGE,
+            'minimum_guide_number' => 1,
+            'maximum_guide_number' => 100,
+            'priority' => 200,
+            'is_active' => true,
+        ]);
+
+        $this->assertSame('priority_overlap', app(GuideAccoladeResolver::class)->resolveForGuide($guide)?->code);
+    }
+
+    public function test_database_tier_renders_without_avatar_component_changes(): void
+    {
+        GuideAccolade::factory()->create([
+            'code' => 'early_supporter',
+            'label' => 'Early Supporter',
+            'short_label' => 'Early',
+            'rule_type' => GuideAccolade::RULE_GUIDE_NUMBER_RANGE,
+            'minimum_guide_number' => 501,
+            'maximum_guide_number' => 1000,
+            'priority' => 80,
+            'display_number_plate' => true,
+            'plate_prefix' => '#',
+            'css_class' => 'accolade-early-supporter',
+        ]);
+
+        $guide = User::factory()->make(['guide_number' => 750]);
+
+        $this->assertSame('early_supporter', $guide->guideAvatarAccolade()['key']);
+        $this->blade('<x-guide-avatar :user="$user" />', ['user' => $guide])
+            ->assertSee('accolade-early-supporter', false)
+            ->assertSee('#750');
+    }
+
+    public function test_avatar_lists_reuse_cached_tier_definitions(): void
+    {
+        app(GuideAccoladeService::class)->ensureInitialAccolades();
+        app(GuideAccoladeResolver::class)->forgetCache();
+        $guides = collect(range(101, 110))->map(fn (int $number) => User::factory()->make(['guide_number' => $number]));
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->blade('@foreach ($guides as $guide)<x-guide-avatar :user="$guide" />@endforeach', compact('guides'));
+
+        $tierQueries = collect(DB::getQueryLog())->filter(
+            fn (array $query): bool => str_contains($query['query'], 'guide_accolades')
+        );
+
+        $this->assertCount(1, $tierQueries);
+    }
+
+    public function test_seeder_is_idempotent(): void
+    {
+        $this->seed(GuideAccoladeSeeder::class);
+        $this->seed(GuideAccoladeSeeder::class);
+
+        $this->assertSame(1, GuideAccolade::query()->where('code', 'founding_guide')->count());
+        $this->assertSame(1, GuideAccolade::query()->where('code', 'og_guide')->count());
+    }
+
+    public function test_soft_deleted_guides_do_not_release_their_permanent_number(): void
+    {
+        $first = User::factory()->create(['guide_number' => 1]);
+        $later = User::factory()->create(['guide_number' => 101]);
+        $first->delete();
+
+        $newGuide = User::factory()->create(['guide_number' => null]);
+
+        $this->assertSame(102, $newGuide->fresh()->guide_number);
+        $this->assertSame('og_guide', $later->fresh()->guideAvatarAccolade()['key']);
     }
 
     public function test_primary_accolade_uses_highest_priority_active_non_expired_award(): void

@@ -35,6 +35,7 @@ class GuideNumberService
                 }
 
                 $nextGuideNumber = ((int) User::query()
+                    ->withTrashed()
                     ->whereNotNull('guide_number')
                     ->lockForUpdate()
                     ->max('guide_number')) + 1;
@@ -56,6 +57,7 @@ class GuideNumberService
     public function nextGuideNumber(): int
     {
         return ((int) User::query()
+            ->withTrashed()
             ->whereNotNull('guide_number')
             ->max('guide_number')) + 1;
     }
