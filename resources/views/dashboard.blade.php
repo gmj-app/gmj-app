@@ -10,34 +10,32 @@
     <div class="py-10 sm:py-12">
         <div class="px-4 sm:px-6 lg:px-8">
         <div class="mx-auto min-w-0 max-w-5xl">
-            <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">
-                <div class="max-w-3xl">
-                    <h2 class="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+            <section class="grid min-w-0 gap-5 overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:px-6 sm:py-5 lg:grid-cols-[minmax(0,1fr)_minmax(25rem,1.15fr)] lg:items-center lg:gap-6">
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">Your launchpad</p>
+                    <h2 class="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white md:text-3xl">
                         Welcome back, {{ auth()->user()->publicName() }}
                     </h2>
-                    <p class="mt-4 text-lg font-bold leading-7 text-slate-800 dark:text-slate-100 sm:text-xl">
+                    <p class="mt-2 text-sm font-medium leading-6 text-slate-600 dark:text-slate-300 md:text-base">
                         Fans suggest. Communities vote. Creators decide.
-                    </p>
-                    <p class="mt-2 text-base leading-7 text-slate-600 dark:text-slate-300">
-                        Use your resources to favorite creators, submit suggestions, and vote for ideas.
                     </p>
                 </div>
 
-                <dl class="mt-6 grid gap-3 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/50">
-                        <dt class="text-sm font-semibold text-slate-500 dark:text-slate-400">Creator favorites</dt>
-                        <dd class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">
+                <dl class="grid min-w-0 grid-cols-3 divide-x divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-950/50">
+                    <div class="min-w-0 px-2 py-3 text-center sm:px-4">
+                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">
                             {{ $resources['creator_favorites_used'] }}
-                            <span class="text-sm font-semibold text-slate-400">/ {{ $resources['creator_favorites_limit'] }}</span>
+                            <span class="text-sm font-medium text-slate-400">/ {{ $resources['creator_favorites_limit'] }}</span>
                         </dd>
+                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Creator favorites</dt>
                     </div>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/50">
-                        <dt class="text-sm font-semibold text-slate-500 dark:text-slate-400">Active votes</dt>
-                        <dd class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">{{ $resources['active_upvotes'] }}</dd>
+                    <div class="min-w-0 px-2 py-3 text-center sm:px-4">
+                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['active_upvotes'] }}</dd>
+                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Active votes</dt>
                     </div>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/50">
-                        <dt class="text-sm font-semibold text-slate-500 dark:text-slate-400">Suggestions submitted</dt>
-                        <dd class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">{{ $resources['suggestions_submitted'] }}</dd>
+                    <div class="min-w-0 px-2 py-3 text-center sm:px-4">
+                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['suggestions_submitted'] }}</dd>
+                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Suggestions submitted</dt>
                     </div>
                 </dl>
             </section>

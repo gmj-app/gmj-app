@@ -29,7 +29,7 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Welcome back, Guide User')
             ->assertSee('Fans suggest. Communities vote. Creators decide.')
-            ->assertSee('Use your resources to favorite creators, submit suggestions, and vote for ideas.')
+            ->assertDontSee('Use your resources to favorite creators, submit suggestions, and vote for ideas.')
             ->assertSee('My Hub')
             ->assertSee("I'm a Creator", false)
             ->assertSee('Create your creator page so fans can suggest, vote, and help guide what you make next.')
@@ -61,6 +61,19 @@ class DashboardTest extends TestCase
             $response->getContent(),
             'mx-auto min-w-0 max-w-5xl',
         ));
+    }
+
+    public function test_dashboard_launchpad_uses_a_compact_divided_stat_rail(): void
+    {
+        $response = $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $response
+            ->assertSee('lg:grid-cols-[minmax(0,1fr)_minmax(25rem,1.15fr)]', false)
+            ->assertSee('grid min-w-0 grid-cols-3 divide-x', false)
+            ->assertSee('sm:px-6 sm:py-5', false)
+            ->assertDontSee('bg-slate-50/80 p-4', false);
     }
 
     public function test_dashboard_links_a_single_owned_creator_directly_to_its_dashboard(): void
@@ -148,9 +161,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSeeInOrder(['Creator favorites', '1', '/ 3'])
-            ->assertSeeInOrder(['Active votes', '2'])
-            ->assertSeeInOrder(['Suggestions submitted', '2'])
+            ->assertSeeInOrder(['1', '/ 3', 'Creator favorites'])
+            ->assertSeeInOrder(['2', 'Active votes'])
+            ->assertSeeInOrder(['2', 'Suggestions submitted'])
             ->assertSee('My Activity')
             ->assertSee('Your votes and suggestions')
             ->assertSee('2 active votes')
