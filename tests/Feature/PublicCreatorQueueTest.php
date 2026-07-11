@@ -548,13 +548,50 @@ class PublicCreatorQueueTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSee('size-9 text-sm sm:size-10', false)
-            ->assertSee('grid w-full grid-cols-4 gap-x-3 gap-y-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8', false)
+            ->assertSee('grid w-full grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))] items-start gap-x-3 gap-y-4 px-1', false)
             ->assertSee('data-supporter-name', false)
             ->assertSee('Samantha with a very long public name 🌟')
             ->assertSee('max-w-[88px] truncate', false)
             ->assertDontSee('Private Google Profile Name')
             ->assertDontSee('private-google@example.test')
             ->assertDontSee('additional supporters');
+    }
+
+    public function test_detail_support_grid_handles_small_and_large_support_counts_without_stacking(): void
+    {
+        $creator = Creator::factory()->create();
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+        ]);
+        $recommendation->load('submittedBy');
+        $this->blade(
+            '<x-recommendation-support-avatars :recommendation="$recommendation" :limit="1" :include-upvoters="false" layout="detail" />',
+            compact('recommendation'),
+        )
+            ->assertSee('flex-wrap gap-x-2 gap-y-3', false)
+            ->assertDontSee('grid-cols-[repeat(auto-fill', false);
+        $created = 0;
+
+        foreach ([1, 4, 8, 12, 20, 30] as $supportCount) {
+            User::factory()->count($supportCount - $created)->create()->each(fn (User $user) => UserPick::factory()->create([
+                'creator_id' => $creator->id,
+                'recommendation_id' => $recommendation->id,
+                'user_id' => $user->id,
+            ]));
+            $created = $supportCount;
+            $recommendation->load('userPicks.user');
+
+            $view = $this->blade(
+                '<x-recommendation-support-avatars :recommendation="$recommendation" :limit="50" :include-requester="false" layout="detail" />',
+                compact('recommendation'),
+            );
+
+            $view
+                ->assertSee('grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))]', false)
+                ->assertDontSee('-ml-', false);
+            $this->assertSame($supportCount, substr_count((string) $view, 'guide-avatar relative inline-flex'));
+        }
     }
 
     public function test_public_queue_can_search_filter_and_sort_recommendations(): void
@@ -1262,6 +1299,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('guide-avatar relative inline-flex', false)
             ->assertSee('z-10 accolade-', false)
             ->assertSee('guide-accolade__number absolute bottom-0 left-1/2 z-30', false)
+            ->assertSee('grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))]', false)
             ->assertSee('overflow-visible', false);
 
         $accoladeCss = file_get_contents(resource_path('css/app.css'));

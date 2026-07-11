@@ -63,30 +63,21 @@
     $visibleSupporters = $supporters->take($limit);
     $hiddenSupportersCount = max(0, $supporters->count() - $visibleSupporters->count());
     $isDetailLayout = $layout === 'detail';
+    $usesDetailGrid = $isDetailLayout && $includeUpvoters;
     $isCompactDetailLayout = $isDetailLayout && $supporters->count() > 20;
     $showsSeparatedNames = $showNames && $isDetailLayout && ! $isCompactDetailLayout;
     $hasVisibleEarlyGuide = $visibleSupporters->contains(
         fn (array $supporter): bool => $supporter['user']->guideAvatarAccolade() !== null
     );
-    $avatarSizeClasses = match (true) {
-        $isDetailLayout && ! $isCompactDetailLayout => 'size-9 text-sm sm:size-10',
-        $isCompactDetailLayout, $size === 'md' => 'size-8 text-xs',
-        default => 'size-6 text-[10px]',
-    };
     $stackSpacing = $size === 'md' || $isCompactDetailLayout ? '-ml-2' : '-ml-1.5';
     $morePillClasses = $isDetailLayout
         ? 'h-8 px-2 text-xs'
         : ($size === 'md' ? 'h-8 px-2 text-xs' : 'h-6 px-1.5 text-[10px]');
-    $supporterRows = $isCompactDetailLayout
-        ? $visibleSupporters->chunk(10)
-        : collect([$visibleSupporters]);
 @endphp
 
 @if ($visibleSupporters->isNotEmpty())
-    <span {{ $attributes->merge(['class' => 'min-w-0 overflow-visible'.($showsSeparatedNames ? ' grid w-full grid-cols-4 gap-x-3 gap-y-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8' : ' flex items-center').($isDetailLayout && ! $showsSeparatedNames ? ' flex-wrap gap-x-2 gap-y-3' : '').($hasVisibleEarlyGuide ? ' pb-1' : '')]) }}>
-        @foreach ($supporterRows as $supporterRow)
-            <span class="{{ $showsSeparatedNames ? 'contents' : 'inline-flex' }} items-center overflow-visible {{ $isCompactDetailLayout ? 'pb-1' : ($isDetailLayout && ! $showsSeparatedNames ? 'flex-wrap gap-2 pb-1' : '') }}">
-            @foreach ($supporterRow as $supporter)
+    <span {{ $attributes->merge(['class' => 'min-w-0 overflow-visible'.($usesDetailGrid ? ' grid w-full grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))] items-start gap-x-3 gap-y-4 px-1' : ' flex items-center').($isDetailLayout && ! $usesDetailGrid ? ' flex-wrap gap-x-2 gap-y-3' : '').($hasVisibleEarlyGuide ? ' pb-1' : '')]) }}>
+        @foreach ($visibleSupporters as $supporter)
             @php
                 $user = $supporter['user'];
                 $initials = $user->initialsForAvatar();
@@ -95,10 +86,10 @@
                 $hasAccolade = $user->guideAvatarAccolade() !== null;
             @endphp
 
-            <span class="{{ $showsSeparatedNames ? 'inline-flex min-w-0 flex-col items-center' : 'contents' }}">
+            <span class="{{ $usesDetailGrid ? 'inline-flex min-w-0 justify-center' : 'contents' }} {{ $showsSeparatedNames ? 'flex-col items-center' : '' }}">
             <{{ $profileUrl ? 'a' : 'span' }}
                 @if ($profileUrl) href="{{ $profileUrl }}" @endif
-                class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 hover:z-20 focus-within:z-20 dark:ring-slate-900 {{ $hasAccolade ? 'z-10' : '' }} {{ ! $loop->first && ! ($isDetailLayout && ! $isCompactDetailLayout) ? $stackSpacing : '' }}"
+                class="relative inline-flex shrink-0 overflow-visible rounded-full ring-2 ring-white first:ml-0 hover:z-20 focus-within:z-20 dark:ring-slate-900 {{ $hasAccolade ? 'z-10' : '' }} {{ ! $loop->first && ! $isDetailLayout ? $stackSpacing : '' }}"
                 @if (! $profileUrl) tabindex="0" @endif
                 title="{!! collect($titleLines)->map(fn (string $line): string => e($line))->implode('&#10;') !!}"
                 aria-label="{{ $profileUrl ? 'View '.$user->publicName().'\'s Guide profile' : $supporter['ariaLabel'] }}"
@@ -114,8 +105,6 @@
                     @endif
                 </span>
             @endif
-            </span>
-            @endforeach
             </span>
         @endforeach
 
