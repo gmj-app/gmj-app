@@ -29,6 +29,9 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Welcome back, Guide User')
             ->assertSee('Fans suggest. Communities vote. Creators decide.')
+            ->assertSee('<h1 class="text-2xl font-semibold', false)
+            ->assertDontSee('Your launchpad')
+            ->assertDontSee('Manage your creator pages, resources, votes, and suggestions.')
             ->assertDontSee('Use your resources to favorite creators, submit suggestions, and vote for ideas.')
             ->assertSee('My Hub')
             ->assertSee("I'm a Creator", false)
@@ -57,13 +60,17 @@ class DashboardTest extends TestCase
             ->assertSee('class="mx-auto min-w-0 max-w-5xl"', false)
             ->assertDontSee('mx-auto max-w-7xl px-4 sm:px-6 lg:px-8', false);
 
-        $this->assertGreaterThanOrEqual(2, substr_count(
+        $this->assertSame(1, substr_count(
             $response->getContent(),
             'mx-auto min-w-0 max-w-5xl',
         ));
+
+        $response
+            ->assertSee('class="py-10 sm:py-12"', false)
+            ->assertDontSee('<header class="border-b border-gray-200 bg-white shadow-sm', false);
     }
 
-    public function test_dashboard_launchpad_uses_a_compact_divided_stat_rail(): void
+    public function test_dashboard_welcome_card_uses_a_compact_divided_stat_rail(): void
     {
         $response = $this->actingAs(User::factory()->create())
             ->get(route('dashboard'))

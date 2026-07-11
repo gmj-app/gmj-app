@@ -1,21 +1,14 @@
 <x-app-layout>
     <x-slot name="title">My Hub</x-slot>
 
-    <x-slot name="header">
-        <div class="mx-auto min-w-0 max-w-5xl">
-            <x-page-header eyebrow="Your launchpad" title="My Hub" subtitle="Manage your creator pages, resources, votes, and suggestions." compact />
-        </div>
-    </x-slot>
-
     <div class="py-10 sm:py-12">
         <div class="px-4 sm:px-6 lg:px-8">
         <div class="mx-auto min-w-0 max-w-5xl">
             <section class="grid min-w-0 gap-5 overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:px-6 sm:py-5 lg:grid-cols-[minmax(0,1fr)_minmax(25rem,1.15fr)] lg:items-center lg:gap-6">
                 <div class="min-w-0">
-                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">Your launchpad</p>
-                    <h2 class="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white md:text-3xl">
+                    <h1 class="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white md:text-3xl">
                         Welcome back, {{ auth()->user()->publicName() }}
-                    </h2>
+                    </h1>
                     <p class="mt-2 text-sm font-medium leading-6 text-slate-600 dark:text-slate-300 md:text-base">
                         Fans suggest. Communities vote. Creators decide.
                     </p>
