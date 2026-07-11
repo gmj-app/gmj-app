@@ -143,4 +143,21 @@ class MyActivityTest extends TestCase
             ->assertSeeInOrder(['My Activity', 'Profile', 'Toggle light and dark mode', 'Log out'])
             ->assertSee('href="'.route('activity.index').'"', false);
     }
+
+    public function test_page_has_one_primary_heading_and_body_begins_with_the_subtitle(): void
+    {
+        $response = $this->actingAs(User::factory()->create())
+            ->get(route('activity.index'))
+            ->assertOk()
+            ->assertSee('My Guide Activity')
+            ->assertSee('See what you’ve suggested and where your votes are currently allocated.')
+            ->assertSeeInOrder([
+                'See what you’ve suggested and where your votes are currently allocated.',
+                'Activity filters',
+            ]);
+
+        $this->assertSame(1, substr_count($response->getContent(), '<h1'));
+        $this->assertStringContainsString('<h1 class="text-xl font-semibold leading-tight text-gray-800 dark:text-slate-50">My Activity</h1>', $response->getContent());
+        $this->assertSame(1, substr_count($response->getContent(), '>My Guide Activity<'));
+    }
 }
