@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Creator;
+use App\Models\HomepageAdvertisement;
 use App\Models\Recommendation;
 use App\Services\HomepageStatsService;
+use App\Services\PopularCreatorGridService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function index(Request $request, HomepageStatsService $homepageStats): View
+    public function index(Request $request, HomepageStatsService $homepageStats, PopularCreatorGridService $gridService): View
     {
         $search = trim((string) $request->query('q', ''));
 
@@ -58,6 +60,11 @@ class HomeController extends Controller
             'guideCount' => $guideCount,
         ] = $homepageStats->counts();
 
-        return view('home', compact('creatorCount', 'creators', 'guideCount', 'search', 'topRequests'));
+        $advertisements = $search === ''
+            ? HomepageAdvertisement::active()->orderBy('placement')->orderBy('id')->get()
+            : collect();
+        $gridItems = $gridService->compose($creators->getCollection(), $advertisements, $search === '');
+
+        return view('home', compact('creatorCount', 'creators', 'gridItems', 'guideCount', 'search', 'topRequests'));
     }
 }

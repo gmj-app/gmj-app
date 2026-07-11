@@ -351,6 +351,13 @@ class User extends Authenticatable
             || (bool) $this->can_access_video_tools;
     }
 
+    public function isSuperAdmin(): bool
+    {
+        $email = strtolower(trim((string) $this->email));
+
+        return $email !== '' && in_array($email, config('super_admin.emails', []), true);
+    }
+
     public function canViewBetaFeedbackInbox(): bool
     {
         return (bool) config('gmj.beta_feedback_enabled') && $this->isAdminTester();

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdvertisementClickController;
 use App\Http\Controllers\BetaFeedbackController;
 use App\Http\Controllers\CreatorDashboardController;
 use App\Http\Controllers\CreatorRecommendationController;
@@ -15,12 +16,15 @@ use App\Http\Controllers\PublicGuideProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\HomepageAdvertisementController;
 use App\Http\Controllers\ToolsAdminController;
 use App\Http\Controllers\YoutubeToolsController;
 use App\Http\Middleware\EnsurePublicProfileIsComplete;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/ads/{advertisement}/click', AdvertisementClickController::class)->name('ads.click');
 Route::get('/search', SearchController::class)->name('search.index');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/faq', 'pages.faq')->name('faq');
@@ -134,6 +138,12 @@ Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(functio
 });
 
 require __DIR__.'/auth.php';
+
+Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verified', 'super-admin'])->group(function () {
+    Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
+    Route::patch('/ads/{advertisement}/toggle', [HomepageAdvertisementController::class, 'toggle'])->name('ads.toggle');
+    Route::resource('ads', HomepageAdvertisementController::class)->parameters(['ads' => 'advertisement'])->except('show');
+});
 
 Route::get('/@{handle}', PublicGuideProfileController::class)
     ->where('handle', '[A-Za-z0-9_-]+')

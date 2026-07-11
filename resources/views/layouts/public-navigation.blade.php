@@ -84,6 +84,12 @@
                             My Activity
                         </a>
 
+                        @if ($accountUser->isSuperAdmin())
+                            <a href="{{ route('super-admin.dashboard') }}" @click="accountOpen = false" role="menuitem" class="flex min-h-11 items-center gap-3 px-4 py-2 font-bold text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/40">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 2.8 8.1 7 10 4.2-1.9 7-5.5 7-10V6l-7-3Z"/><path d="M9.5 12 11 13.5l3.5-4"/></svg>Super Admin
+                            </a>
+                        @endif
+
                         <a href="{{ route('profile.edit') }}" role="menuitem" class="flex min-h-11 items-center gap-3 px-4 py-2 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800">
                             <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                 <circle cx="12" cy="8" r="3" />
@@ -166,6 +172,7 @@
                     <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M5 6h14M5 12h14M5 18h9"/><path stroke-linecap="round" stroke-linejoin="round" d="m17 17 2 2 4-5"/></svg>
                     My Activity
                 </a>
+                @if ($accountUser->isSuperAdmin())<a href="{{ route('super-admin.dashboard') }}" class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 font-bold text-indigo-600">Super Admin</a>@endif
                 <a href="{{ route('profile.edit') }}" class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-900">
                     <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <circle cx="12" cy="8" r="3" />
