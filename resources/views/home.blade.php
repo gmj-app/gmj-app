@@ -144,13 +144,15 @@
                             @php($advertisement = $gridItem['item'])
                             <a href="{{ route('ads.click', $advertisement) }}" target="_blank" rel="noopener noreferrer sponsored" aria-label="Sponsored: {{ $advertisement->advertiser_name ?: $advertisement->alt_text }}" class="group relative flex min-h-[26rem] min-w-0 overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:focus-visible:ring-offset-slate-950">
                                 <img src="{{ $advertisement->imageUrl() }}" alt="{{ $advertisement->alt_text }}" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105">
-                                <span class="absolute left-4 top-4 rounded-full bg-slate-950/90 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wide text-white">Sponsored</span>
                                 @if ($advertisement->advertiser_name || $advertisement->cta_label)
-                                    <span class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-5 pt-20 text-white">
-                                        <span class="font-extrabold">{{ $advertisement->advertiser_name }}</span>
-                                        @if ($advertisement->cta_label)<span class="rounded-xl bg-white px-3 py-2 text-sm font-bold text-slate-950">{{ $advertisement->cta_label }}</span>@endif
+                                    <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-5 pr-32 pt-20 text-white">
+                                        <span class="flex min-w-0 flex-col items-start gap-3">
+                                            @if ($advertisement->advertiser_name)<span class="font-extrabold">{{ $advertisement->advertiser_name }}</span>@endif
+                                            @if ($advertisement->cta_label)<span class="rounded-xl bg-white px-3 py-2 text-sm font-bold text-slate-950">{{ $advertisement->cta_label }}</span>@endif
+                                        </span>
                                     </span>
                                 @endif
+                                <span class="absolute bottom-4 right-4 rounded-full bg-indigo-600 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/20">Sponsored</span>
                             </a>
                         @elseif ($gridItem['type'] === 'add_creator')
                         <a

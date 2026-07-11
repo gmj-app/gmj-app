@@ -57,6 +57,16 @@ class SuperAdminAdvertisementTest extends TestCase
         ])->assertInvalid(['image', 'destination_url']);
     }
 
+    public function test_admin_preview_matches_the_public_sponsored_pill(): void
+    {
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+
+        $this->actingAs($admin)->get(route('super-admin.ads.create'))
+            ->assertOk()
+            ->assertSee('absolute bottom-4 right-4 rounded-full bg-indigo-600', false)
+            ->assertSee('Sponsored');
+    }
+
     public function test_active_ads_are_composed_by_visual_position_and_clicks_are_tracked(): void
     {
         Creator::factory()->create(['display_name' => 'First Creator']);
@@ -64,7 +74,7 @@ class SuperAdminAdvertisementTest extends TestCase
         $ad = HomepageAdvertisement::create(['internal_name' => 'Ad', 'image_path' => 'advertisements/homepage/ad.jpg', 'destination_url' => 'https://example.com', 'alt_text' => 'Sponsor creative', 'placement' => 1, 'is_active' => true]);
         Storage::disk('public')->put($ad->image_path, 'image');
 
-        $this->get('/')->assertOk()->assertSeeInOrder(['Sponsored', 'First Creator', 'Second Creator', 'Add Creator Account'])->assertSee('rel="noopener noreferrer sponsored"', false);
+        $this->get('/')->assertOk()->assertSeeInOrder(['Sponsored', 'First Creator', 'Second Creator', 'Add Creator Account'])->assertSee('rel="noopener noreferrer sponsored"', false)->assertSee('absolute bottom-4 right-4 rounded-full bg-indigo-600', false)->assertDontSee('absolute left-4 top-4', false);
         $this->get(route('ads.click', $ad))->assertRedirect('https://example.com');
         $this->assertSame(1, $ad->fresh()->click_count);
     }
