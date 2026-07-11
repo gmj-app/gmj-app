@@ -30,8 +30,8 @@ class ExampleTest extends TestCase
             ->assertSee('Turn')
             ->assertSee('fan requests')
             ->assertSee('content roadmap.')
-            ->assertSee('Explore creator boards')
-            ->assertSee('Open My Hub')
+            ->assertSee('Explore creators')
+            ->assertSee('Go to My Hub')
             ->assertSee('href="'.route('home').'"', false)
             ->assertSee('href="'.route('register').'"', false)
             ->assertSee('data-workflow-stages', false)
@@ -45,7 +45,8 @@ class ExampleTest extends TestCase
             ->assertSee('People, not anonymous numbers')
             ->assertSee('No algorithm chooses for you')
             ->assertSee('Every journey builds history')
-            ->assertSee('Your community already has ideas. Give them somewhere better to go.')
+            ->assertSee('Your community already has ideas.')
+            ->assertSee('Give them somewhere better to go.')
             ->assertSee('href="'.route('faq').'"', false)
             ->assertSee('href="'.route('contact').'"', false)
             ->assertSee('accolade-founding', false)
@@ -54,7 +55,18 @@ class ExampleTest extends TestCase
             ->assertDontSee('href="#"', false);
 
         $this->assertSame(1, substr_count($response->getContent(), '<h1'));
+        $this->assertSame(1, substr_count($response->getContent(), 'Your community already has ideas.'));
         $this->assertSame(4, substr_count($response->getContent(), '<li class="relative border-l'));
+        $response->assertSeeInOrder([
+            'data-primary-hero',
+            'Your community already has ideas.',
+            'product-explanation-title',
+            'Turn',
+            'data-workflow-stages',
+        ], false);
+
+        preg_match_all('/\sid="([^"]+)"/', $response->getContent(), $idMatches);
+        $this->assertCount(count(array_unique($idMatches[1])), $idMatches[1]);
     }
 
     public function test_how_it_works_page_uses_authenticated_cta_and_nav_route(): void
