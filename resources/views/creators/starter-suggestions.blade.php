@@ -14,13 +14,13 @@
                     <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Creator onboarding</p>
                     <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">Seed your journey</h1>
                     <p class="mt-3 text-lg font-semibold leading-7 text-slate-700 dark:text-slate-200">
-                        Add up to 20 starter suggestions so your community has something to vote on right away.
+                        Add up to 20 starter requests so your community has something to vote on right away.
                     </p>
                     <p class="mt-2 max-w-3xl leading-7 text-slate-600 dark:text-slate-300">
                         These can be video ideas, topics, questions, YouTube links, source links, or anything you want your community to help prioritize.
                     </p>
                     <p class="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">
-                        Not ready? You can skip this and add suggestions later from your creator dashboard.
+                        Not ready? You can skip this and add requests later from your creator dashboard.
                     </p>
                 </div>
 
@@ -34,7 +34,7 @@
 
                     @if ($errors->any())
                         <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-                            Please fix the highlighted starter suggestions and try again.
+                            Please fix the highlighted starter requests and try again.
                         </div>
                     @endif
 
@@ -45,7 +45,7 @@
                                 x-cloak
                                 class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-950/40 sm:p-5"
                             >
-                                <legend class="px-2 text-sm font-bold text-slate-500 dark:text-slate-400">Suggestion {{ $index + 1 }}</legend>
+                                <legend class="px-2 text-sm font-bold text-slate-500 dark:text-slate-400">Request {{ $index + 1 }}</legend>
 
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div class="md:col-span-2">
@@ -113,12 +113,12 @@
                         @click="visibleRows++"
                         class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm font-bold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:bg-slate-900 dark:text-indigo-300 dark:hover:bg-indigo-950/50"
                     >
-                        Add another suggestion
+                        Add another request
                     </button>
 
                     <div class="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-end dark:border-slate-800">
                         <button type="submit" class="inline-flex min-h-12 items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
-                            Save starter suggestions
+                            Save starter requests
                         </button>
                     </div>
                 </form>

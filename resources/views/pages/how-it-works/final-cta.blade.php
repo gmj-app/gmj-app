@@ -4,7 +4,7 @@
         <h1 class="text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
             Your community already has ideas.<br class="hidden sm:block"> Give them somewhere better to go.
         </h1>
-        <p class="mx-auto mt-7 max-w-2xl text-lg leading-8 text-slate-300">Start with one creator board, one suggestion, or one vote. The journey grows from there.</p>
+        <p class="mx-auto mt-7 max-w-2xl text-lg leading-8 text-slate-300">Start with one creator board, one request, or one vote. The journey grows from there.</p>
         <div class="mx-auto mt-9 flex max-w-xl flex-col justify-center gap-3 sm:flex-row">
             <a href="{{ route('home') }}" class="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-indigo-500 px-6 py-3 font-extrabold transition hover:bg-indigo-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">Explore creators</a>
             @auth

@@ -1,8 +1,8 @@
 <x-app-layout>
-    <x-slot name="title">Manage Recommendations</x-slot>
+    <x-slot name="title">Manage Requests</x-slot>
 
     <x-slot name="header">
-        @include('creators.partials.header', ['section' => 'Manage Recommendations'])
+        @include('creators.partials.header', ['section' => 'Manage Requests'])
     </x-slot>
 
     <div class="py-12">
@@ -202,7 +202,7 @@
                                                     placeholder="Published URL"
                                                     class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
                                                 >
-                                                <p class="text-[11px] leading-4 text-gray-500 dark:text-slate-400">Add the link to the video or content you made from this recommendation.</p>
+                                                <p class="text-[11px] leading-4 text-gray-500 dark:text-slate-400">Add the link to the video or content you made from this request.</p>
                                                 <label for="published-at-{{ $recommendation->id }}" class="sr-only">Published date</label>
                                                 <input
                                                     id="published-at-{{ $recommendation->id }}"
@@ -245,7 +245,7 @@
                                                     <div role="dialog" aria-modal="true" aria-labelledby="edit-title-{{ $recommendation->id }}" class="fixed inset-x-4 top-8 z-50 mx-auto max-h-[calc(100vh-4rem)] max-w-3xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl dark:border dark:border-slate-700 dark:bg-slate-900">
                                                     <div class="flex items-start justify-between gap-4">
                                                         <div>
-                                                            <h3 id="edit-title-{{ $recommendation->id }}" class="text-lg font-semibold text-gray-900 dark:text-slate-50">Edit recommendation</h3>
+                                                            <h3 id="edit-title-{{ $recommendation->id }}" class="text-lg font-semibold text-gray-900 dark:text-slate-50">Edit request</h3>
                                                             <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">{{ $recommendation->title }}</p>
                                                         </div>
                                                         <button type="button" @click="editing = false" class="rounded-md px-2 py-1 text-sm font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Close</button>
@@ -315,7 +315,7 @@
                                                         <div class="md:col-span-2">
                                                             <x-input-label :for="'reaction-edit-'.$recommendation->id" value="Published URL" />
                                                             <x-text-input :id="'reaction-edit-'.$recommendation->id" name="published_reaction_url" type="url" class="mt-1 block w-full" :value="$recommendation->published_reaction_url" />
-                                                            <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">Add the link to the video or content you made from this recommendation.</p>
+                                                            <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">Add the link to the video or content you made from this request.</p>
                                                             @if ($recommendation->published_title || $recommendation->published_channel)
                                                                 <p class="mt-2 text-xs font-semibold text-gray-600 dark:text-slate-300">
                                                                     Current published metadata:
@@ -325,7 +325,7 @@
                                                         </div>
 
                                                         <div class="md:col-span-2">
-                                                            <x-input-label :for="'reason-'.$recommendation->id" value="Recommendation reason / note" />
+                                                            <x-input-label :for="'reason-'.$recommendation->id" value="Request reason / note" />
                                                             <textarea id="reason-{{ $recommendation->id }}" name="reason" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">{{ $recommendation->reason }}</textarea>
                                                         </div>
 
@@ -337,7 +337,7 @@
                                                         <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                                                             <input type="hidden" name="is_pinned" value="0">
                                                             <input type="checkbox" name="is_pinned" value="1" @checked($recommendation->is_pinned) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950">
-                                                            Pin recommendation
+                                                            Pin request
                                                         </label>
 
                                                         <div class="md:col-span-2">
@@ -358,7 +358,7 @@
                                                 <button class="font-semibold text-amber-700 hover:text-amber-600 dark:text-amber-300 dark:hover:text-amber-200">Hide</button>
                                             </form>
 
-                                            <form method="POST" action="{{ route('creators.recommendations.destroy', [$creator, $recommendation]) }}" onsubmit="return confirm('Permanently delete this recommendation? This cannot be undone.')">
+                                            <form method="POST" action="{{ route('creators.recommendations.destroy', [$creator, $recommendation]) }}" onsubmit="return confirm('Permanently delete this request? This cannot be undone.')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="font-semibold text-red-600 hover:text-red-500 dark:text-red-300 dark:hover:text-red-200">Delete</button>
@@ -369,7 +369,7 @@
                             @empty
                                 <tr>
                                     <td colspan="10" class="px-6 py-12 text-center">
-                                        <h3 class="font-semibold text-gray-900 dark:text-slate-50">No recommendations found</h3>
+                                        <h3 class="font-semibold text-gray-900 dark:text-slate-50">No requests found</h3>
                                         <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">Try changing the search or filters.</p>
                                     </td>
                                 </tr>

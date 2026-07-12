@@ -24,7 +24,7 @@
                                 <path stroke-linecap="round" d="M12 10.5v6M9 13.5h6" />
                             </svg>
                         </span>
-                        <dt class="text-sm font-semibold leading-5 text-gray-700 dark:text-slate-200">Recommendations received</dt>
+                        <dt class="text-sm font-semibold leading-5 text-gray-700 dark:text-slate-200">Requests received</dt>
                     </div>
                     <dd class="mt-4 border-t border-dashed border-gray-200 pt-4 text-4xl font-bold tracking-tight text-gray-950 dark:border-slate-800 dark:text-slate-50">
                         {{ $stats['recommendations'] }}
@@ -85,7 +85,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.5 18 1.5 1.5 3-3.375" />
                             </svg>
                         </span>
-                        <dt class="text-sm font-semibold leading-5 text-gray-700 dark:text-slate-200">Published recommendations</dt>
+                        <dt class="text-sm font-semibold leading-5 text-gray-700 dark:text-slate-200">Published requests</dt>
                     </div>
                     <dd class="mt-4 border-t border-dashed border-gray-200 pt-4 text-4xl font-bold tracking-tight text-gray-950 dark:border-slate-800 dark:text-slate-50">
                         {{ $stats['published'] }}
@@ -97,10 +97,10 @@
                 <div class="flex items-center justify-between gap-4">
                     <div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-slate-50">Needs action</h3>
-                        <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">The latest recommendations waiting for review.</p>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">The latest requests waiting for review.</p>
                     </div>
                     <a href="{{ route('creators.recommendations.index', $creator) }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">
-                        View all recommendations
+                        View all requests
                     </a>
                 </div>
 
@@ -156,7 +156,7 @@
                         @empty
                             <div class="p-10 text-center">
                                 <h4 class="font-semibold text-gray-900 dark:text-slate-50">You are all caught up</h4>
-                                <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">There are no pending recommendations to review.</p>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">There are no pending requests to review.</p>
                             </div>
                         @endforelse
                     </div>

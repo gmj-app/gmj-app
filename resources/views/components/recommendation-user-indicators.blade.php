@@ -27,7 +27,7 @@
 
         @if ($submittedByCurrentUser)
             <span
-                title="You submitted this recommendation"
+                title="You submitted this request"
                 class="inline-flex items-center gap-1 rounded-full border border-amber-300/70 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200"
             >
                 <svg class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">

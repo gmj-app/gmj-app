@@ -26,7 +26,7 @@
                         <dd class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">{{ $limits['creator_favorites_limit'] }}</dd>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/70">
-                        <dt class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Suggestions per creator</dt>
+                        <dt class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Requests per creator</dt>
                         <dd class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white">{{ $limits['suggestions_per_creator_limit'] }}</dd>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/70">

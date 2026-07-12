@@ -4,7 +4,7 @@
             'Basics' => [
                 [
                     'What is Guide My Journey?',
-                    'Guide My Journey is a community suggestion board for creators. Fans suggest ideas, communities vote, and creators decide what to make, cover, or explore next.',
+                    'Guide My Journey is a community request board for creators. Fans submit requests, communities vote, and creators decide what to make, cover, or explore next.',
                 ],
                 [
                     'Is this only for reaction channels?',
@@ -12,81 +12,81 @@
                 ],
                 [
                     'How does Guide My Journey work?',
-                    'Choose a creator, suggest an idea or link, and vote on the suggestions you want most. The creator gets an organized board that shows what their community is asking for, while still keeping full control over what they make.',
+                    'Choose a creator, submit an idea or link as a request, and vote on the requests you want most. The creator gets an organized board that shows what their community is asking for, while still keeping full control over what they make.',
                 ],
             ],
             'For Fans and Guides' => [
                 [
                     'What is a Guide?',
-                    'A Guide is a fan who helps shape a creator\'s journey. Guides can favorite creators, submit suggestions, and vote for active ideas they want to see next.',
+                    'A Guide is a fan who helps shape a creator\'s journey. Guides can favorite creators, submit requests, and vote for active ideas they want to see next.',
                 ],
                 [
                     'What are resources?',
-                    'Resources are the limits that help keep participation meaningful. Your resources include how many creators you can favorite, how many suggestions you can submit, and how many active votes you can use for each creator.',
+                    'Resources are the limits that help keep participation meaningful. Your resources include how many creators you can favorite, how many requests you can submit, and how many active votes you can use for each creator.',
                 ],
                 [
                     'Why do I have a limited number of votes?',
-                    'Limited votes make each choice more meaningful. Instead of every idea getting a casual like, Guides choose the suggestions they care about most.',
+                    'Limited votes make each choice more meaningful. Instead of every idea getting a casual like, Guides choose the requests they care about most.',
                 ],
                 [
                     'Why do I need to favorite a creator before suggesting or upvoting?',
-                    'Favoriting a creator means you want to participate in that creator\'s journey. Once you favorite a creator, you can use your suggestion and vote resources on that creator\'s page.',
+                    'Favoriting a creator means you want to participate in that creator\'s journey. Once you favorite a creator, you can use your request and vote resources on that creator\'s page.',
                 ],
                 [
                     'What happens if I unfavorite a creator?',
-                    'If you unfavorite a creator, your active votes on that creator\'s suggestions are removed. This frees that creator slot so you can favorite someone else.',
+                    'If you unfavorite a creator, your active votes on that creator\'s requests are removed. This frees that creator slot so you can favorite someone else.',
                 ],
                 [
                     'Do votes guarantee a creator will make something?',
                     'No. Votes help creators understand community interest, but creators always decide what they make, cover, or explore.',
                 ],
             ],
-            'Suggestions and Voting' => [
+            'Requests and Voting' => [
                 [
                     'What can I suggest?',
-                    'You can suggest ideas, topics, questions, YouTube videos, source links, tutorials, reviews, deep dives, or anything that fits the creator\'s page and submission guidelines.',
+                    'You can request ideas, topics, questions, YouTube videos, source links, tutorials, reviews, deep dives, or anything that fits the creator\'s request guidelines.',
                 ],
                 [
-                    'What is the difference between a suggestion and a vote?',
-                    'A suggestion is a new idea added to a creator\'s board. A vote is your way of supporting an existing suggestion so the creator can see what the community wants most.',
+                    'What is the difference between a request and a vote?',
+                    'A request is a new idea added to a creator\'s board. A vote is your way of supporting an existing request so the creator can see what the community wants most.',
                 ],
                 [
-                    'Can I vote for my own suggestion?',
+                    'Can I vote for my own request?',
                     'Yes. If you suggest something you care about, you can also use one of your votes on it.',
                 ],
                 [
-                    'What happens when a creator marks a suggestion as Scheduled, Published, Passed, Hidden, or Already Seen?',
-                    'When a suggestion is no longer actively being considered, its votes stop counting against active limits. This lets Guides use those votes on other active suggestions while preserving historical support.',
+                    'What happens when a creator marks a request as Scheduled, Published, Passed, Hidden, or Already Seen?',
+                    'When a request is no longer actively being considered, its votes stop counting against active limits. This lets Guides use those votes on other active requests while preserving historical support.',
                 ],
                 [
                     'What does Already Seen mean?',
-                    'Already Seen means the creator has already seen the video, topic, or idea before. It does not necessarily mean the creator dislikes the suggestion.',
+                    'Already Seen means the creator has already seen the video, topic, or idea before. It does not necessarily mean the creator dislikes the request.',
                 ],
             ],
             'For Creators' => [
                 [
                     'How do creators create a page?',
-                    'During beta, creators can manually set up a creator page from My Hub. You can add your channel name, YouTube channel URL, bio, submission instructions, avatar, hero image, and approval settings. YouTube verification is planned for later.',
+                    'During beta, creators can manually set up a creator page from My Hub. You can add your channel name, YouTube channel URL, bio, request instructions, avatar, hero image, and approval settings. YouTube verification is planned for later.',
                 ],
                 [
-                    'Can creators approve suggestions before they appear publicly?',
-                    'Yes. Creators can choose to hold new suggestions for review or auto-approve them. Hold for review keeps new suggestions private until approved. Auto-approve lets suggestions appear publicly right away.',
+                    'Can creators approve requests before they appear publicly?',
+                    'Yes. Creators can choose to hold new requests for review or allow them immediately. Review mode keeps new requests private until approved. When review is off, requests appear publicly right away.',
                 ],
                 [
-                    'Can creators add their own starter suggestions?',
-                    'Yes. Creators can seed their journey with starter suggestions so the page is not empty and the community has ideas to vote on right away.',
+                    'Can creators add their own starter requests?',
+                    'Yes. Creators can seed their journey with starter requests so the page is not empty and the community has ideas to vote on right away.',
                 ],
                 [
-                    'Can creators organize suggestions?',
-                    'Yes. Creators can use statuses, categories, and creator-specific tags to organize suggestions for their community.',
+                    'Can creators organize requests?',
+                    'Yes. Creators can use statuses, categories, and creator-specific tags to organize requests for their community.',
                 ],
                 [
-                    'Can creators remove inappropriate suggestions?',
-                    'Yes. Creator page owners can hide or remove inappropriate suggestions and manage the status of submissions from their creator dashboard.',
+                    'Can creators remove inappropriate requests?',
+                    'Yes. Creator page owners can hide or remove inappropriate requests and manage their status from the creator dashboard.',
                 ],
                 [
                     'Can creators block users?',
-                    'Creator-level blocking is planned. For now, creators can hide or remove inappropriate suggestions from their dashboard.',
+                    'Creator-level blocking is planned. For now, creators can hide or remove inappropriate requests from their dashboard.',
                 ],
                 [
                     'Do creators have to follow the vote results?',
@@ -103,12 +103,12 @@
                     'During beta, creator pages are created manually. YouTube-based verification is planned for a later phase.',
                 ],
                 [
-                    'Can suggestions be something other than a YouTube link?',
-                    'Yes. Fans can suggest topics, questions, ideas, or links, as well as YouTube videos.',
+                    'Can requests be something other than a YouTube link?',
+                    'Yes. Fans can submit requests for topics, questions, ideas, links, or YouTube videos.',
                 ],
                 [
                     'Is Guide My Journey free?',
-                    'The core product is free first. Fans can favorite creators, submit suggestions, and vote for ideas within their available resources. Paid features may come later, but the free creator and fan experience comes first.',
+                    'The core product is free first. Fans can favorite creators, submit requests, and vote for ideas within their available resources. Paid features may come later, but the free creator and fan experience comes first.',
                 ],
             ],
         ];
@@ -116,7 +116,7 @@
 
     <section class="px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div class="mx-auto max-w-4xl">
-            <x-page-header eyebrow="FAQ" title="Frequently asked questions" subtitle="Learn how suggestions, votes, creator pages, and community resources work across Guide My Journey." />
+            <x-page-header eyebrow="FAQ" title="Frequently asked questions" subtitle="Learn how requests, votes, creator pages, and community resources work across Guide My Journey." />
 
             <div class="mt-12 space-y-12">
                 @foreach ($sections as $section => $faqs)

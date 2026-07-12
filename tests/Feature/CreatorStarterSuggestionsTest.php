@@ -33,8 +33,8 @@ class CreatorStarterSuggestionsTest extends TestCase
             ->get(route('creators.starter-suggestions.create', $creator))
             ->assertOk()
             ->assertSee('Seed your journey')
-            ->assertSee('Add up to 20 starter suggestions')
-            ->assertSee('Add another suggestion')
+            ->assertSee('Add up to 20 starter requests')
+            ->assertSee('Add another request')
             ->assertSee('Skip for now');
     }
 
@@ -67,7 +67,7 @@ class CreatorStarterSuggestionsTest extends TestCase
                 ],
             ])
             ->assertRedirect(route('creators.dashboard', $creator))
-            ->assertSessionHas('success', 'Starter suggestions added. Your creator page is ready.');
+            ->assertSessionHas('success', 'Starter requests added. Your creator page is ready.');
 
         $this->assertDatabaseCount('recommendations', 3);
         $this->assertDatabaseHas('recommendations', [
@@ -96,7 +96,7 @@ class CreatorStarterSuggestionsTest extends TestCase
 
         $this->get(route('dashboard'))
             ->assertOk()
-            ->assertSeeInOrder(['Suggestions submitted', '0']);
+            ->assertSeeInOrder(['Requests submitted', '0']);
 
         $this->post(route('logout'))->assertRedirect('/');
 
@@ -107,7 +107,7 @@ class CreatorStarterSuggestionsTest extends TestCase
             ->assertSee('Added by creator')
             ->assertSee('aria-label="Open original link for Explore the history of local bridges"', false)
             ->assertSee('rel="noopener noreferrer nofollow ugc"', false)
-            ->assertSee('aria-label="Add vote to this recommendation"', false);
+            ->assertSee('aria-label="Add vote to this request"', false);
 
         $fan = User::factory()->create();
         $youtubeSuggestion = Recommendation::query()
@@ -140,7 +140,7 @@ class CreatorStarterSuggestionsTest extends TestCase
         $this->actingAs($owner)
             ->post(route('creators.starter-suggestions.skip', $creator))
             ->assertRedirect(route('creators.dashboard', $creator))
-            ->assertSessionHas('success', 'You can add suggestions later from your dashboard.');
+            ->assertSessionHas('success', 'You can add requests later from your dashboard.');
 
         $this->assertDatabaseCount('recommendations', 0);
     }
@@ -154,7 +154,7 @@ class CreatorStarterSuggestionsTest extends TestCase
                 'suggestions' => [[], [], []],
             ])
             ->assertRedirect(route('creators.dashboard', $creator))
-            ->assertSessionHas('success', 'No starter suggestions added. You can add them later.');
+            ->assertSessionHas('success', 'No starter requests added. You can add them later.');
 
         $this->assertDatabaseCount('recommendations', 0);
     }

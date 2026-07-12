@@ -28,7 +28,7 @@
                     </div>
                     <div class="min-w-0 px-2 py-3 text-center sm:px-4">
                         <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['suggestions_submitted'] }}</dd>
-                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Suggestions submitted</dt>
+                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Requests submitted</dt>
                     </div>
                 </dl>
             </section>
@@ -36,7 +36,7 @@
             @php($hasActivity = $activitySummary['active_vote_count'] > 0 || $activitySummary['suggestion_count'] > 0)
             <a
                 href="{{ $hasActivity ? route('activity.index') : route('home') }}"
-                aria-label="{{ $hasActivity ? 'View your votes, suggestions, and published activity' : 'Find creators and start your activity history' }}"
+                aria-label="{{ $hasActivity ? 'View your votes, requests, and published activity' : 'Find creators and start your activity history' }}"
                 class="group mt-6 flex min-w-0 flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-900 p-5 text-white shadow-sm transition hover:border-emerald-400 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-500 sm:flex-row sm:items-center sm:justify-between sm:p-6"
             >
                 <span class="flex min-w-0 items-start gap-4">
@@ -48,19 +48,19 @@
                     </span>
                     <span class="min-w-0">
                         <span class="block text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-300">My Activity</span>
-                        <span class="mt-1 block text-lg font-extrabold">Your votes and suggestions</span>
+                        <span class="mt-1 block text-lg font-extrabold">Your votes and requests</span>
                         @if ($hasActivity)
                             <span class="mt-1 block text-sm font-semibold text-slate-200">
                                 {{ $activitySummary['active_vote_count'] }} active {{ Str::plural('vote', $activitySummary['active_vote_count']) }}
                                 <span aria-hidden="true">&middot;</span>
-                                {{ $activitySummary['suggestion_count'] }} {{ Str::plural('suggestion', $activitySummary['suggestion_count']) }}
+                                {{ $activitySummary['suggestion_count'] }} {{ Str::plural('request', $activitySummary['suggestion_count']) }}
                                 <span aria-hidden="true">&middot;</span>
                                 {{ $activitySummary['published_count'] }} published
                             </span>
-                            <span class="mt-2 block text-sm leading-6 text-slate-400">See where your votes are allocated and track what happened to your suggestions.</span>
+                            <span class="mt-2 block text-sm leading-6 text-slate-400">See where your votes are allocated and track what happened to your requests.</span>
                         @else
                             <span class="mt-1 block text-sm font-semibold text-slate-200">No activity yet</span>
-                            <span class="mt-2 block text-sm leading-6 text-slate-400">Favorite a creator, submit a suggestion, or cast a vote to start building your activity history.</span>
+                            <span class="mt-2 block text-sm leading-6 text-slate-400">Favorite a creator, submit a request, or cast a vote to start building your activity history.</span>
                         @endif
                     </span>
                 </span>
@@ -86,8 +86,8 @@
 
                     <ul class="mt-5 space-y-3 text-sm font-medium text-slate-700 dark:text-slate-200">
                         @foreach ([
-                            'Manage recommendation requests',
-                            'Approve, schedule, pass, or publish suggestions',
+                            'Manage community requests',
+                            'Approve, schedule, pass, or publish requests',
                             'Let your community vote on what matters most',
                             'Customize your creator profile',
                         ] as $benefit)
@@ -132,7 +132,7 @@
                     <ul class="mt-5 space-y-3 text-sm font-medium text-slate-700 dark:text-slate-200">
                         @foreach ([
                             'Favorite creators you follow',
-                            'Submit suggestions',
+                            'Submit requests',
                             'Vote for active ideas',
                             'Track your resources',
                         ] as $benefit)

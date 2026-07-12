@@ -1,4 +1,4 @@
-<div class="relative mx-auto max-w-xl" aria-label="Example ranked creator suggestion board">
+<div class="relative mx-auto max-w-xl" aria-label="Example ranked creator request board">
     <div class="absolute -inset-8 -z-10 bg-[radial-gradient(circle,rgba(99,102,241,0.2),transparent_65%)]" aria-hidden="true"></div>
     <div class="rounded-[2rem] border border-slate-700/80 bg-slate-900/95 p-4 shadow-2xl shadow-indigo-950/40 sm:p-5">
         <div class="flex items-center justify-between border-b border-slate-800 pb-4">

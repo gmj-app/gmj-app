@@ -181,7 +181,7 @@
             @if ($recommendation->isCreatorAdded())
                 <span>Added by creator</span>
             @elseif ($recommendation->submittedBy)
-                <span>Submitted by {{ $recommendation->submittedBy->publicName() }}</span>
+                <span>Suggested by {{ $recommendation->submittedBy->publicName() }}</span>
             @endif
             <span>Submitted {{ $recommendation->created_at->format('M j, Y') }}</span>
         </div>
@@ -200,10 +200,10 @@
                     <button
                         type="button"
                         x-on:click="withdrawOpen = true"
-                        aria-label="Withdraw this suggestion"
+                        aria-label="Withdraw this request"
                         class="text-sm font-semibold text-red-600 transition hover:text-red-500 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:text-red-200"
                     >
-                        Withdraw suggestion
+                        Withdraw request
                     </button>
                 @endif
             </div>
@@ -298,7 +298,7 @@
                 @endif
 
                 @if (! $recommendation->youtube_url)
-                    <span class="font-medium text-slate-500">Topic suggestion</span>
+                    <span class="font-medium text-slate-500">Topic request</span>
                 @endif
             </div>
         @endif
@@ -323,7 +323,7 @@
                                 <button
                                     type="submit"
                                     @disabled($currentUserVotes === 0)
-                                    aria-label="Remove vote from this recommendation"
+                                    aria-label="Remove vote from this request"
                                     class="inline-flex size-11 items-center justify-center rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-offset-slate-950 {{ $currentUserVotes > 0 ? 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300' : 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600' }}"
                                 >
                                     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
@@ -348,7 +348,7 @@
                                 <button
                                     type="submit"
                                     @disabled(! $canAddVote)
-                                    aria-label="Add vote to this recommendation"
+                                    aria-label="Add vote to this request"
                                     class="inline-flex size-11 items-center justify-center rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-offset-slate-950 {{ $canAddVote ? 'border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 dark:border-indigo-400 dark:bg-indigo-500' : 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600' }}"
                                 >
                                     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
@@ -370,7 +370,7 @@
                             </div>
                             <a
                                 href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id]) }}"
-                                aria-label="Add vote to this recommendation"
+                                aria-label="Add vote to this request"
                                 class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-indigo-400 dark:bg-indigo-500 dark:focus-visible:ring-offset-slate-950"
                             >
                                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
@@ -434,7 +434,7 @@
                 >
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <h3 id="withdraw-title-{{ $recommendation->id }}" class="text-lg font-extrabold text-slate-950 dark:text-white">Withdraw this suggestion?</h3>
+                            <h3 id="withdraw-title-{{ $recommendation->id }}" class="text-lg font-extrabold text-slate-950 dark:text-white">Withdraw this request?</h3>
                             <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                                 This removes it from the active list and returns any active votes placed on it.
                             </p>
@@ -452,7 +452,7 @@
                             Cancel
                         </button>
                         <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-500">
-                            Withdraw suggestion
+                            Withdraw request
                         </button>
                     </form>
                 </div>
@@ -483,7 +483,7 @@
                             Know a better version of this request? Share the video link and tell the creator why this version may be a better fit.
                         </p>
                     </div>
-                    <button type="button" x-on:click="alternativeOpen = false" class="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200" aria-label="Close alternative suggestion form">
+                    <button type="button" x-on:click="alternativeOpen = false" class="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200" aria-label="Close alternative request form">
                         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                         </svg>

@@ -84,7 +84,7 @@
                     </div>
 
                     <div>
-                        <x-input-label for="submission_instructions" value="Submission instructions" />
+                        <x-input-label for="submission_instructions" value="Request instructions" />
                         <textarea id="submission_instructions" name="submission_instructions" rows="4" maxlength="2000" placeholder="Tell fans what kinds of ideas, topics, or links you want them to submit." class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500">{{ old('submission_instructions') }}</textarea>
                         <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Tell fans what kinds of ideas, topics, or links you want them to submit.</p>
                         <x-input-error :messages="$errors->get('submission_instructions')" class="mt-2" />
@@ -94,7 +94,7 @@
                         <input type="hidden" name="submissions_open" value="0">
                         <input type="checkbox" name="submissions_open" value="1" @checked(old('submissions_open', true)) class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-950">
                         <span>
-                            <span class="block text-sm font-semibold text-slate-950 dark:text-white">Accept new suggestions</span>
+                            <span class="block text-sm font-semibold text-slate-950 dark:text-white">Accept new requests</span>
                             <span class="mt-1 block text-sm leading-6 text-slate-600 dark:text-slate-300">Your community can submit ideas and links as soon as the page is created.</span>
                         </span>
                     </label>

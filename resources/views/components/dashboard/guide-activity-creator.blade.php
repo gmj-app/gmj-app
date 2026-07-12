@@ -35,7 +35,7 @@
             <span class="mt-1 block text-sm text-slate-600 dark:text-slate-300">
                 {{ $activeVoteCount }} active {{ Str::plural('vote', $activeVoteCount) }}
                 <span aria-hidden="true">&middot;</span>
-                {{ $suggestionCount }} {{ Str::plural('suggestion', $suggestionCount) }}
+                {{ $suggestionCount }} {{ Str::plural('request', $suggestionCount) }}
                 <span aria-hidden="true">&middot;</span>
                 {{ $publishedCount }} published
             </span>
@@ -74,10 +74,10 @@
             </section>
 
             <section aria-labelledby="{{ $detailsId }}-suggestions">
-                <x-subsection-label as="h3" id="{{ $detailsId }}-suggestions">Your suggestions</x-subsection-label>
+                <x-subsection-label as="h3" id="{{ $detailsId }}-suggestions">Your requests</x-subsection-label>
 
                 @if ($suggestions->isEmpty())
-                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">No suggestions submitted to this creator.</p>
+                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">No requests submitted to this creator.</p>
                 @else
                     <ul class="mt-2 divide-y divide-slate-200 dark:divide-slate-800">
                         @foreach ($suggestions as $suggestion)

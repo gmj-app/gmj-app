@@ -254,8 +254,8 @@ class ProfileTest extends TestCase
         $this->actingAs($user)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Submitted by Cher Ree')
-            ->assertDontSee('Submitted by Guide');
+            ->assertSee('Suggested by Cher Ree')
+            ->assertDontSee('Suggested by Guide');
     }
 
     public function test_public_profile_setup_rejects_private_or_reserved_identity_values(): void

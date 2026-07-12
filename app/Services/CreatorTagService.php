@@ -46,7 +46,7 @@ class CreatorTagService
 
         if ($tags->count() > self::MAX_TAGS_PER_RECOMMENDATION) {
             throw ValidationException::withMessages([
-                'tags' => 'Add no more than 5 tags to a recommendation.',
+                'tags' => 'Add no more than 5 tags to a request.',
             ]);
         }
 
@@ -84,7 +84,7 @@ class CreatorTagService
 
         if ($normalized->count() > self::MAX_TAGS_PER_RECOMMENDATION) {
             throw ValidationException::withMessages([
-                'tags' => 'Add no more than 5 tags to a recommendation.',
+                'tags' => 'Add no more than 5 tags to a request.',
             ]);
         }
 

@@ -249,7 +249,7 @@ class RecommendationController extends Controller
     {
         if (! $creator->submissions_open) {
             throw ValidationException::withMessages([
-                'submissions' => 'This creator is not accepting new recommendations right now.',
+                'submissions' => 'This creator is not accepting new requests right now.',
             ]);
         }
 
@@ -286,7 +286,7 @@ class RecommendationController extends Controller
             if (! $user->canSuggestTo($creator)) {
                 throw ValidationException::withMessages([
                     'limit' => $user->suggestionsRemainingFor($creator) === 0
-                        ? "You've used all your suggestions for this creator."
+                        ? "You've used all your requests for this creator."
                         : 'You’ve reached your creator favorite limit. Remove a favorite before suggesting something for this journey.',
                 ]);
             }
@@ -320,8 +320,8 @@ class RecommendationController extends Controller
             ->with(
                 'success',
                 $creator->autoApprovesRecommendations()
-                    ? 'Recommendation submitted and added to the journey.'
-                    : 'Recommendation submitted and waiting for creator review.',
+                    ? 'Request submitted and added to the journey.'
+                    : 'Request submitted and waiting for creator review.',
             );
     }
 
@@ -334,7 +334,7 @@ class RecommendationController extends Controller
 
         if (! $recommendation->canBeWithdrawnBy($request->user())) {
             throw ValidationException::withMessages([
-                'withdraw' => 'This suggestion can no longer be withdrawn.',
+                'withdraw' => 'This request can no longer be withdrawn.',
             ]);
         }
 
@@ -345,7 +345,7 @@ class RecommendationController extends Controller
 
             if (! $lockedRecommendation->canBeWithdrawnBy($request->user())) {
                 throw ValidationException::withMessages([
-                    'withdraw' => 'This suggestion can no longer be withdrawn.',
+                    'withdraw' => 'This request can no longer be withdrawn.',
                 ]);
             }
 
@@ -358,7 +358,7 @@ class RecommendationController extends Controller
 
         return redirect()
             ->route('creator.queue', $creator)
-            ->with('success', 'Your suggestion was withdrawn.');
+            ->with('success', 'Your request was withdrawn.');
     }
 
     public function youtubeMetadata(Request $request, Creator $creator): JsonResponse
@@ -443,7 +443,7 @@ class RecommendationController extends Controller
 
         if (! $recommendation->isVotable()) {
             throw ValidationException::withMessages([
-                'limit' => 'This suggestion is no longer accepting votes.',
+                'limit' => 'This request is no longer accepting votes.',
             ]);
         }
 
@@ -471,7 +471,7 @@ class RecommendationController extends Controller
 
                 if ($user->votesRemainingFor($creator) === 0) {
                     throw ValidationException::withMessages([
-                        'limit' => "You've used all your votes for this creator. You'll get them back when supported recommendations are published or closed.",
+                        'limit' => "You've used all your votes for this creator. You'll get them back when supported requests are published or closed.",
                     ]);
                 }
 
@@ -488,7 +488,7 @@ class RecommendationController extends Controller
 
             if ($user->votesRemainingFor($creator) === 0) {
                 throw ValidationException::withMessages([
-                    'limit' => "You've used all your votes for this creator. You'll get them back when supported recommendations are published or closed.",
+                    'limit' => "You've used all your votes for this creator. You'll get them back when supported requests are published or closed.",
                 ]);
             }
 
@@ -628,8 +628,8 @@ class RecommendationController extends Controller
             return [
                 'type' => 'published',
                 'title' => 'Already published',
-                'body' => $isPlaylist ? 'This playlist has already been published.' : 'This creator has already published something for this recommendation.',
-                'primary_label' => 'View published recommendation',
+                'body' => $isPlaylist ? 'This playlist has already been published.' : 'This creator has already published something for this request.',
+                'primary_label' => 'View published request',
                 'primary_url' => route('creators.published', $creator)."#recommendation-{$recommendation->id}",
                 'secondary_label' => filled($recommendation->published_reaction_url) ? ($isPlaylist ? 'Open published playlist' : 'Open published video') : null,
                 'secondary_url' => filled($recommendation->published_reaction_url) ? $recommendation->published_reaction_url : null,
@@ -641,8 +641,8 @@ class RecommendationController extends Controller
             'title' => 'Already suggested',
             'body' => $recommendation->isYouTubePlaylist()
                 ? 'This playlist has already been suggested.'
-                : 'This URL is already in the active recommendation list for this creator.',
-            'primary_label' => 'View recommendation',
+                : 'This URL is already in the active request list for this creator.',
+            'primary_label' => 'View request',
             'primary_url' => route('creator.queue', $creator)."#recommendation-{$recommendation->id}",
             'secondary_label' => null,
             'secondary_url' => null,

@@ -7,7 +7,7 @@
                 class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
             >
                 @php
-                    $addRecommendationLabel = 'Add Recommendation';
+                    $addRecommendationLabel = 'Add Request';
 
                     if (auth()->check() && $isFavorited && $creator->submissions_open) {
                         $addRecommendationLabel .= " ({$usage['suggestions_remaining']}/{$usage['suggestions_limit']})";
@@ -69,7 +69,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 5.75A1.75 1.75 0 0 1 6.75 4h10.5A1.75 1.75 0 0 1 19 5.75v12.5A1.75 1.75 0 0 1 17.25 20H6.75A1.75 1.75 0 0 1 5 18.25V5.75Z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4" />
                                     </svg>
-                                    Submission guidance
+                                    Request guidance
                                 </button>
                             </div>
                         </div>
@@ -90,11 +90,11 @@
                                     @auth
                                         <a
                                             href="{{ route('recommendations.create', $creator) }}"
-                                            aria-label="Add a recommendation for {{ $creator->display_name }}"
+                                            aria-label="Add a request for {{ $creator->display_name }}"
                                             class="inline-flex min-h-10 items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 {{ $usage['can_suggest'] && $creator->submissions_open ? '' : 'pointer-events-none bg-slate-400 shadow-none' }}"
                                         >
                                             @if (! $creator->submissions_open)
-                                                Recommendations closed
+                                                Requests closed
                                             @else
                                                 {{ $addRecommendationLabel }}
                                             @endif
@@ -102,10 +102,10 @@
                                     @else
                                         <a
                                             href="{{ route('recommendations.create', $creator) }}"
-                                            aria-label="Add a recommendation for {{ $creator->display_name }}"
+                                            aria-label="Add a request for {{ $creator->display_name }}"
                                             class="inline-flex min-h-10 items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500"
                                         >
-                                            Add Recommendation
+                                            Add Request
                                         </a>
                                     @endauth
 
@@ -147,7 +147,7 @@
                                                             formId: $el.id,
                                                             mode: 'confirm',
                                                             title: 'Remove favorite?',
-                                                            body: @js("Unfavoriting removes your active votes from this creator. Suggestions with no other votes may be removed."),
+                                                            body: @js("Unfavoriting removes your active votes from this creator. Requests with no other votes may be removed."),
                                                             resourceLine: @js("Active votes on this creator: {$usage['votes_used']}"),
                                                             confirmLabel: 'Remove favorite and active votes',
                                                             destructive: true,
@@ -180,7 +180,7 @@
                         </div>
 
                         <div class="flex flex-wrap gap-2 text-xs font-medium text-white/90 lg:max-w-xs lg:shrink-0 lg:justify-end">
-                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicRecommendationsCount }} {{ $publicRecommendationsCount === 1 ? 'recommendation' : 'recommendations' }}</span>
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicRecommendationsCount }} {{ Str::plural('request', $publicRecommendationsCount) }}</span>
                             <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $favoritesCount }} {{ $favoritesCount === 1 ? 'follower' : 'followers' }}</span>
                             <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicVotesCount }} {{ Str::plural('vote', $publicVotesCount) }}</span>
                         </div>
@@ -249,7 +249,7 @@
                                         <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5.75A1.75 1.75 0 0 1 5.75 4h12.5A1.75 1.75 0 0 1 20 5.75V19.5l-4-2-4 2-4-2-4 2Z" />
                                         </svg>
-                                        <span>{{ $publicRecommendationsCount }} {{ $publicRecommendationsCount === 1 ? 'recommendation' : 'recommendations' }}</span>
+                                        <span>{{ $publicRecommendationsCount }} {{ Str::plural('request', $publicRecommendationsCount) }}</span>
                                     </div>
 
                                     <div class="flex items-center gap-4">
@@ -282,7 +282,7 @@
                     <button
                         type="button"
                         class="fixed inset-0 cursor-default"
-                        aria-label="Close submission guidance"
+                        aria-label="Close request guidance"
                         x-on:click="submissionGuidanceOpen = false"
                     ></button>
 
@@ -302,7 +302,7 @@
                                 />
 
                                 <div class="min-w-0">
-                                    <h2 id="creator-submission-guidance-title" class="text-xl font-semibold tracking-tight sm:text-2xl">Submission guidance</h2>
+                                    <h2 id="creator-submission-guidance-title" class="text-xl font-semibold tracking-tight sm:text-2xl">Request guidance</h2>
                                     <p class="mt-0.5 truncate text-sm font-medium text-slate-400">A note from {{ $creator->display_name }}</p>
                                 </div>
                             </div>
@@ -310,7 +310,7 @@
                             <button
                                 type="button"
                                 x-on:click="submissionGuidanceOpen = false"
-                                aria-label="Close submission guidance"
+                                aria-label="Close request guidance"
                                 class="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-slate-200 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                             >
                                 <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -328,7 +328,7 @@
                                 </blockquote>
                             @else
                                 <p class="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm font-medium leading-6 text-slate-300 sm:text-base">
-                                    This creator has not added submission guidance yet.
+                                    This creator has not added request guidance yet.
                                 </p>
                             @endif
                         </div>
@@ -355,7 +355,7 @@
                     <p>{{ $message }}</p>
                     @if (str_contains((string) $message, 'used all your votes for this creator'))
                         <p class="mt-1 text-xs font-medium leading-5 text-red-600 dark:text-red-300">
-                            You’ll get votes back when recommendations you supported are published or closed.
+                            You’ll get votes back when requests you supported are published or closed.
                         </p>
                     @endif
                 </div>
@@ -402,7 +402,7 @@
                                 <dl class="grid grid-cols-3 gap-2 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
                                     @foreach ([
                                         ['Favorites left', $usage['reactors_remaining'], $usage['reactors_limit']],
-                                        ['Suggestions left', $usage['suggestions_remaining'], $usage['suggestions_limit']],
+                                        ['Requests left', $usage['suggestions_remaining'], $usage['suggestions_limit']],
                                         ['Votes left', $usage['votes_remaining'], $usage['votes_limit']],
                                     ] as [$label, $remaining, $limit])
                                         <div class="min-w-0 rounded-xl bg-slate-50 px-2 py-2 text-center dark:bg-slate-950/60">
@@ -428,7 +428,7 @@
                                     <dl class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">
                                         @foreach ([
                                             ['Creator favorites remaining', $usage['reactors_remaining'], $usage['reactors_used'], $usage['reactors_limit']],
-                                            ['Suggestions remaining', $usage['suggestions_remaining'], $usage['suggestions_used'], $usage['suggestions_limit']],
+                                            ['Requests remaining', $usage['suggestions_remaining'], $usage['suggestions_used'], $usage['suggestions_limit']],
                                             ['Votes remaining', $usage['votes_remaining'], $usage['votes_used'], $usage['votes_limit']],
                                         ] as [$label, $remaining, $used, $limit])
                                             <div class="rounded-2xl bg-slate-50 px-3 py-2.5 dark:bg-slate-950/60">
@@ -469,7 +469,7 @@
                             <x-subsection-label as="h2" id="recently-published-title">Recently Published</x-subsection-label>
 
                             @if ($recentPublishedRecommendations->isEmpty())
-                                <p class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">No published recommendations yet.</p>
+                                <p class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">No published requests yet.</p>
                             @else
                                 <div class="mt-3 divide-y divide-slate-200/80 dark:divide-slate-700/50">
                                     @foreach ($recentPublishedRecommendations as $publishedRecommendation)
@@ -480,7 +480,7 @@
                                         @endphp
                                         <a
                                             href="{{ route('creators.published', $creator) }}#recommendation-{{ $publishedRecommendation->id }}"
-                                            aria-label="View published recommendation: {{ $publishedDisplay['title'] }}"
+                                            aria-label="View published request: {{ $publishedDisplay['title'] }}"
                                             class="group flex min-w-0 items-start gap-3 rounded-xl px-1 py-4 transition hover:bg-emerald-50/70 focus:outline-none focus-visible:bg-emerald-50/70 focus-visible:ring-2 focus-visible:ring-emerald-500 dark:hover:bg-emerald-950/20 dark:focus-visible:bg-emerald-950/20"
                                         >
                                             <span class="relative flex aspect-video w-[84px] shrink-0 overflow-hidden rounded-lg bg-slate-950 ring-1 ring-slate-200 dark:ring-slate-800">
@@ -544,11 +544,11 @@
                                 x-on:click="open = ! open"
                                 aria-expanded="false"
                                 x-bind:aria-expanded="open.toString()"
-                                x-bind:aria-label="open ? 'Hide filters' : 'Filter suggestions'"
+                                x-bind:aria-label="open ? 'Hide filters' : 'Filter requests'"
                                 aria-controls="creator-queue-filters"
                                 class="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:text-indigo-300 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-200 dark:focus-visible:ring-offset-slate-900"
                             >
-                                <span x-text="open ? 'Hide filters' : 'Filter suggestions'">Filter suggestions</span>
+                                <span x-text="open ? 'Hide filters' : 'Filter requests'">Filter requests</span>
                                 @if ($activeFilterCount > 0)
                                     <span
                                         data-active-filter-count="{{ $activeFilterCount }}"
@@ -586,7 +586,7 @@
                         >
                             <form method="GET" action="{{ route('creator.queue', $creator) }}" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[repeat(14,minmax(0,1fr))] xl:items-end">
                             <div class="md:col-span-2 xl:col-span-4">
-                                <label for="queue-search" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Search recommendations</label>
+                                <label for="queue-search" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Search requests</label>
                                 <input
                                     id="queue-search"
                                     name="q"
@@ -774,15 +774,15 @@
                     @empty
                         <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-slate-900">
                             @if ($publicRecommendationsCount === 0)
-                                <h2 class="text-lg font-semibold text-slate-950 dark:text-white">No recommendations yet. Be the first to suggest something for this journey.</h2>
+                                <h2 class="text-lg font-semibold text-slate-950 dark:text-white">No requests yet. Be the first to suggest something for this journey.</h2>
 
                                 @if ($creator->submissions_open)
                                     <a href="{{ route('recommendations.create', $creator) }}" class="mt-5 inline-flex rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-500">
-                                        Submit recommendation
+                                        Submit request
                                     </a>
                                 @endif
                             @else
-                                <h2 class="text-lg font-semibold text-slate-950 dark:text-white">No recommendations found.</h2>
+                                <h2 class="text-lg font-semibold text-slate-950 dark:text-white">No requests found.</h2>
                                 <a href="{{ route('creator.queue', $creator) }}" class="mt-4 inline-flex text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                                     Clear filters
                                 </a>

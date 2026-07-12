@@ -125,7 +125,7 @@ class CreatorRecommendationController extends Controller
 
         return back()->with(
             'success',
-            $this->statusMessage('Recommendation updated.', $releasedVotes),
+            $this->statusMessage('Request updated.', $releasedVotes),
         );
     }
 
@@ -186,7 +186,7 @@ class CreatorRecommendationController extends Controller
 
         return back()->with(
             'success',
-            $this->statusMessage('Recommendation hidden.', $releasedVotes),
+            $this->statusMessage('Request hidden.', $releasedVotes),
         );
     }
 
@@ -201,7 +201,7 @@ class CreatorRecommendationController extends Controller
 
         return redirect()
             ->route('creators.recommendations.index', $creator)
-            ->with('success', 'Recommendation permanently deleted.');
+            ->with('success', 'Request permanently deleted.');
     }
 
     /**

@@ -8,7 +8,7 @@
                     <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Guide setup</p>
                     <h1 class="mt-3 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">Choose your public guide name</h1>
                     <p class="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                        This is the name other people will see when you suggest, vote, or support recommendations. You can use a nickname, channel name, or community name.
+                        This is the name other people will see when you suggest, vote, or support requests. You can use a nickname, channel name, or community name.
                     </p>
                 </div>
 

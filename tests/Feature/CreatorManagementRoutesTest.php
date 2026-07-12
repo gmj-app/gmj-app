@@ -77,12 +77,12 @@ class CreatorManagementRoutesTest extends TestCase
         $this->actingAs($owner)
             ->get(route('creators.dashboard', $creator))
             ->assertOk()
-            ->assertSee('Recommendations received')
+            ->assertSee('Requests received')
             ->assertSee('Total votes');
 
         $this->get(route('creators.recommendations.index', $creator))
             ->assertOk()
-            ->assertSee('Manage Recommendations')
+            ->assertSee('Manage Requests')
             ->assertSee('Dashboard recommendation')
             ->assertSee('Title')
             ->assertSee('Artist/channel')
@@ -101,7 +101,7 @@ class CreatorManagementRoutesTest extends TestCase
             ->assertSee('Branding')
             ->assertSee('Recommended: square image, at least 512x512.')
             ->assertSee('Recommended: wide image, around 1600x500 or larger.')
-            ->assertSee('Review suggestions before they appear')
+            ->assertSee('Review requests before they appear')
             ->assertSee('On — review first')
             ->assertSee('Off — appear immediately')
             ->assertSee('enctype="multipart/form-data"', false);
@@ -195,7 +195,7 @@ class CreatorManagementRoutesTest extends TestCase
             ->get(route('creators.dashboard', $creator))
             ->assertOk()
             ->assertSeeInOrder([
-                'Recommendations received',
+                'Requests received',
                 '12',
                 'Pending review',
                 '6',
@@ -203,7 +203,7 @@ class CreatorManagementRoutesTest extends TestCase
                 '5',
                 'Followers',
                 '2',
-                'Published recommendations',
+                'Published requests',
                 '1',
             ])
             ->assertSee('Needs action')
@@ -474,13 +474,13 @@ class CreatorManagementRoutesTest extends TestCase
             ])
             ->assertSessionHas(
                 'success',
-                'Recommendation updated. 1 vote is no longer active and returned to Guides.',
+                'Request updated. 1 vote is no longer active and returned to Guides.',
             );
 
         $this->patch(route('creators.recommendations.hide', [$creator, $hiddenRecommendation]))
             ->assertSessionHas(
                 'success',
-                'Recommendation hidden. 1 vote is no longer active and returned to Guides.',
+                'Request hidden. 1 vote is no longer active and returned to Guides.',
             );
 
         $this->assertDatabaseHas('user_picks', [
@@ -618,7 +618,7 @@ class CreatorManagementRoutesTest extends TestCase
                 'tags' => 'One, Two, Three, Four, Five, Six',
             ])
             ->assertSessionHasErrors([
-                'tags' => 'Add no more than 5 tags to a recommendation.',
+                'tags' => 'Add no more than 5 tags to a request.',
             ]);
 
         $this->assertDatabaseCount('creator_tags', 0);

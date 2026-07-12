@@ -96,7 +96,7 @@ class PublicGuideProfileTest extends TestCase
             ->assertSee('Approved')
             ->assertSee('Finished supported recommendation')
             ->assertSee('3 votes contributed')
-            ->assertSee('Currently supporting 1 active recommendation')
+            ->assertSee('Currently supporting 1 active request')
             ->assertSee(route('creators.published', $creator).'#recommendation-'.$published->id, false)
             ->assertSee(route('creator.queue', $creator).'#recommendation-'.$activeSuggestion->id, false)
             ->assertDontSee('Secret active allocation')

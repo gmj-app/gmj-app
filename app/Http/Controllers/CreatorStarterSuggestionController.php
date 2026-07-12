@@ -59,8 +59,8 @@ class CreatorStarterSuggestionController extends Controller
             ->with(
                 'success',
                 $suggestions === []
-                    ? 'No starter suggestions added. You can add them later.'
-                    : 'Starter suggestions added. Your creator page is ready.',
+                    ? 'No starter requests added. You can add them later.'
+                    : 'Starter requests added. Your creator page is ready.',
             );
     }
 
@@ -70,6 +70,6 @@ class CreatorStarterSuggestionController extends Controller
 
         return redirect()
             ->route('creators.dashboard', $creator)
-            ->with('success', 'You can add suggestions later from your dashboard.');
+            ->with('success', 'You can add requests later from your dashboard.');
     }
 }

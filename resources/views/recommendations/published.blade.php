@@ -1,4 +1,4 @@
-<x-public-layout :title="'Published Recommendations | '.$creator->display_name.' | '.config('app.name', 'Guide My Journey')">
+<x-public-layout :title="'Published Requests | '.$creator->display_name.' | '.config('app.name', 'Guide My Journey')">
     <section class="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div
             class="mx-auto min-w-0 max-w-6xl"
@@ -46,7 +46,7 @@
                                 <a href="{{ route('creator.queue', $creator) }}" class="text-sm font-bold text-white/85 drop-shadow hover:text-white">
                                     {{ $creator->display_name }}
                                 </a>
-                                <h1 class="mt-1 max-w-3xl break-words text-2xl font-extrabold leading-tight text-white drop-shadow-sm sm:text-3xl">Published Recommendations</h1>
+                                <h1 class="mt-1 max-w-3xl break-words text-2xl font-extrabold leading-tight text-white drop-shadow-sm sm:text-3xl">Published Requests</h1>
                                 <p class="mt-2 max-w-2xl text-sm font-medium leading-5 text-white/85 drop-shadow">
                                     Ideas this creator has already made, covered, explored, or published.
                                 </p>
@@ -54,8 +54,8 @@
                         </div>
 
                         <div class="flex flex-wrap gap-2 text-xs font-medium text-white/90 lg:max-w-xs lg:shrink-0 lg:justify-end">
-                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publishedRecommendationsCount }} {{ $publishedRecommendationsCount === 1 ? 'published recommendation' : 'published recommendations' }}</span>
-                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">Made from the community's suggestions</span>
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publishedRecommendationsCount }} published {{ Str::plural('request', $publishedRecommendationsCount) }}</span>
+                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">Made from community requests</span>
                         </div>
                     </div>
                 </x-creator-hero-background>
@@ -64,7 +64,7 @@
             <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
                 <form method="GET" action="{{ route('creators.published', $creator) }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <div class="min-w-0 flex-1">
-                        <label for="published-search" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Search published recommendations</label>
+                        <label for="published-search" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Search published requests</label>
                         <input
                             id="published-search"
                             name="q"
@@ -102,14 +102,14 @@
                 >
                     <template x-if="selectedId !== null && ! hasSelectedResult()">
                         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-semibold text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/40 dark:text-amber-100">
-                            The selected published recommendation is not in these search results.
+                            The selected published request is not in these search results.
                         </div>
                     </template>
 
                     @foreach ($publishedRecommendations as $recommendation)
                         <div x-show="selectedId === {{ $recommendation->id }}" x-cloak>
                             <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-                            <x-subsection-label as="h2">Selected published recommendation</x-subsection-label>
+                            <x-subsection-label as="h2">Selected published request</x-subsection-label>
                                 <a href="{{ route('creators.published', $creator) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400" x-on:click="selectedId = null">
                                     View full catalog
                                 </a>
@@ -123,7 +123,7 @@
             <div class="mt-6">
                 @if ($publishedRecommendations->isNotEmpty())
                     <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-                        <x-subsection-label as="h2" x-text="selectedId === null ? 'Published catalog' : 'More published recommendations'">Published catalog</x-subsection-label>
+                        <x-subsection-label as="h2" x-text="selectedId === null ? 'Published catalog' : 'More published requests'">Published catalog</x-subsection-label>
                     </div>
 
                     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -139,10 +139,10 @@
                 @else
                     <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-slate-900">
                         @if ($publishedRecommendationsCount === 0)
-                            <h2 class="text-lg font-bold text-slate-950 dark:text-white">No published recommendations yet.</h2>
-                            <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">When this creator marks recommendations as published, they'll appear here.</p>
+                            <h2 class="text-lg font-bold text-slate-950 dark:text-white">No published requests yet.</h2>
+                            <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">When this creator marks requests as published, they'll appear here.</p>
                         @else
-                            <h2 class="text-lg font-bold text-slate-950 dark:text-white">No published recommendations found.</h2>
+                            <h2 class="text-lg font-bold text-slate-950 dark:text-white">No published requests found.</h2>
                             <a href="{{ route('creators.published', $creator) }}" class="mt-4 inline-flex text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                                 Clear search
                             </a>

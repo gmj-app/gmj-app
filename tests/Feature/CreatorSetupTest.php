@@ -29,7 +29,7 @@ class CreatorSetupTest extends TestCase
             ->assertSee('Set up your creator page')
             ->assertSee('Creator pages are manually created during beta.')
             ->assertDontSee('recommendation_approval_mode', false)
-            ->assertSee('Accept new suggestions')
+            ->assertSee('Accept new requests')
             ->assertSee('action="'.route('creators.store').'"', false);
     }
 

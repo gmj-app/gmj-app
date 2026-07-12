@@ -97,7 +97,7 @@
                 </div>
 
                 <div>
-                    <x-input-label for="submission_instructions" value="Submission instructions" />
+                    <x-input-label for="submission_instructions" value="Request instructions" />
                     <textarea id="submission_instructions" name="submission_instructions" rows="5" maxlength="2000" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500">{{ old('submission_instructions', $creator->submission_instructions) }}</textarea>
                     <x-input-error :messages="$errors->get('submission_instructions')" class="mt-2" />
                 </div>
@@ -105,12 +105,12 @@
                 <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                     <input type="hidden" name="submissions_open" value="0">
                     <input type="checkbox" name="submissions_open" value="1" @checked(old('submissions_open', $creator->submissions_open)) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950">
-                    Accept new recommendations
+                    Accept new requests
                 </label>
 
                 <fieldset class="border-t border-gray-200 pt-8 dark:border-slate-800">
-                    <legend class="text-lg font-semibold text-gray-900 dark:text-slate-50">Review suggestions before they appear</legend>
-                    <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">Choose whether new suggestions need your approval.</p>
+                    <legend class="text-lg font-semibold text-gray-900 dark:text-slate-50">Review requests before they appear</legend>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">Choose whether new requests need your approval.</p>
 
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
                         <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-4 transition hover:border-indigo-300 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/70 dark:border-slate-700 dark:hover:border-indigo-500/70 dark:has-[:checked]:border-indigo-400 dark:has-[:checked]:bg-indigo-950/40">
@@ -123,7 +123,7 @@
                             >
                             <span>
                                 <span class="block text-sm font-semibold text-gray-900 dark:text-slate-100">On — review first</span>
-                                <span class="mt-1 block text-sm leading-6 text-gray-600 dark:text-slate-300">New suggestions remain Pending Review until you approve them.</span>
+                                <span class="mt-1 block text-sm leading-6 text-gray-600 dark:text-slate-300">New requests remain Pending Review until you approve them.</span>
                             </span>
                         </label>
 
@@ -137,7 +137,7 @@
                             >
                             <span>
                                 <span class="block text-sm font-semibold text-gray-900 dark:text-slate-100">Off — appear immediately</span>
-                                <span class="mt-1 block text-sm leading-6 text-gray-600 dark:text-slate-300">New suggestions appear publicly right away. You can still hide, pass, or delete them later.</span>
+                                <span class="mt-1 block text-sm leading-6 text-gray-600 dark:text-slate-300">New requests appear publicly right away. You can still hide, pass, or delete them later.</span>
                             </span>
                         </label>
                     </div>
@@ -151,7 +151,7 @@
             <div class="mt-8 rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-900 dark:bg-red-950/30">
                 <h3 class="font-semibold text-red-900 dark:text-red-200">Danger Zone</h3>
                 <p class="mt-2 text-sm text-red-700 dark:text-red-300">The public page will become unavailable, but its data will remain intact.</p>
-                <form method="POST" action="{{ route('creators.deactivate', $creator) }}" class="mt-4" onsubmit="return confirm('This will hide your creator page and recommendation queue from the public. Existing data will remain stored and may be restored later.')">
+                <form method="POST" action="{{ route('creators.deactivate', $creator) }}" class="mt-4" onsubmit="return confirm('This will hide your creator page and request queue from the public. Existing data will remain stored and may be restored later.')">
                     @csrf
                     @method('PATCH')
                     <button class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500">Deactivate creator page</button>

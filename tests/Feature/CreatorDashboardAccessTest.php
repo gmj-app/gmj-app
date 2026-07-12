@@ -49,7 +49,7 @@ class CreatorDashboardAccessTest extends TestCase
             ->assertOk()
             ->assertSee('Creator Dashboard')
             ->assertSee('JFragment')
-            ->assertSee('Recommendations received');
+            ->assertSee('Requests received');
     }
 
     public function test_non_owner_roles_cannot_access_dashboard_yet(): void

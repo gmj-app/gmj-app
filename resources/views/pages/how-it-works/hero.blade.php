@@ -4,7 +4,7 @@
         <div>
             <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-300">Built for creators and the communities behind them</p>
             <h2 id="product-explanation-title" class="mt-5 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">Turn <span class="bg-gradient-to-r from-sky-400 to-violet-400 bg-clip-text text-transparent">fan requests</span> into a <span class="text-emerald-300">content roadmap.</span></h2>
-            <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-300">Guide My Journey gives every suggestion a place, every fan a voice, and every creator a clear view of what their community wants next.</p>
+            <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-300">Guide My Journey gives every request a place, every fan a voice, and every creator a clear view of what their community wants next.</p>
             <div class="mt-9 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5">
                 <dl class="grid grid-cols-3 gap-3">@foreach (['Guides joined', 'Creator boards', 'Community votes'] as $metric)<div><dd class="text-xl font-black text-white">—</dd><dt class="mt-1 text-xs font-semibold text-slate-400">{{ $metric }}</dt></div>@endforeach</dl>
                 <div class="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-4"><x-how-it-works.demo-avatars /><span class="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-300">Founders —</span><span class="rounded-full border border-slate-600 bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-200">OGs —</span><span class="text-xs text-slate-400">and more…</span></div>

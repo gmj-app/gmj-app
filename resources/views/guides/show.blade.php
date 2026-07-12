@@ -28,7 +28,7 @@
 
                 <dl class="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
                     @foreach ([
-                        ['label' => Str::plural('suggestion', $stats['suggestions']), 'value' => $stats['suggestions']],
+                        ['label' => Str::plural('request', $stats['suggestions']), 'value' => $stats['suggestions']],
                         ['label' => 'published', 'value' => $stats['published']],
                         ['label' => 'votes cast', 'value' => $stats['votes_cast']],
                         ['label' => 'creators supported', 'value' => $stats['creators_supported']],
@@ -41,15 +41,15 @@
                 </dl>
 
                 @if ($activeSupportCount > 0)
-                    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Currently supporting {{ $activeSupportCount }} active {{ Str::plural('recommendation', $activeSupportCount) }}. Active selections and allocations are private.</p>
+                    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Currently supporting {{ $activeSupportCount }} active {{ Str::plural('request', $activeSupportCount) }}. Active selections and allocations are private.</p>
                 @endif
             </section>
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
-                <x-section-header eyebrow="Guide impact" title="Published from their suggestions" />
+                <x-section-header eyebrow="Guide impact" title="Published from their requests" />
 
                 @if ($publishedSuggestions->isEmpty())
-                    <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">None of this Guide’s suggestions have been published yet.</p>
+                    <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">None of this Guide’s requests have been published yet.</p>
                 @else
                     <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach ($publishedSuggestions as $recommendation)
@@ -74,10 +74,10 @@
             </section>
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
-                <x-section-header title="Suggestions" />
+                <x-section-header title="Requests" />
 
                 @if ($suggestions->isEmpty())
-                    <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">This Guide hasn’t submitted any public suggestions yet.</p>
+                    <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">This Guide hasn’t submitted any public requests yet.</p>
                 @else
                     <div class="mt-4 divide-y divide-slate-200 dark:divide-slate-800">
                         @foreach ($suggestions as $recommendation)
@@ -100,7 +100,7 @@
             </section>
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
-                <x-section-header title="Supported recommendations" subtitle="Completed public recommendations this Guide supported. Active support details remain private." />
+                <x-section-header title="Supported requests" subtitle="Completed public requests this Guide supported. Active support details remain private." />
 
                 @if ($supportedRecommendations->isEmpty())
                     <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">This Guide has no public support history yet.</p>

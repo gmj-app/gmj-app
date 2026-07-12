@@ -103,12 +103,12 @@
             @endif
 
             @if (! $recommendation->youtube_url)
-                <span class="font-bold text-slate-500">Topic suggestion</span>
+                <span class="font-bold text-slate-500">Topic request</span>
             @endif
         </div>
 
         <div class="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/70">
-            <x-subsection-label as="h3">Original suggestion</x-subsection-label>
+            <x-subsection-label as="h3">Original request</x-subsection-label>
             <p class="mt-2 break-words text-base font-bold text-slate-900 dark:text-white">{{ $recommendation->title }}</p>
             @if ($originalSource)
                 <p class="mt-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{{ $recommendation->channel_title ? 'from' : 'by' }} {{ $originalSource }}</p>

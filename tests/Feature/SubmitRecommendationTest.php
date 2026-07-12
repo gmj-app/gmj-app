@@ -32,17 +32,17 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get('/jfragment/submit')
             ->assertOk()
-            ->assertSee('Make a recommendation for JFragment')
+            ->assertSee('Submit a request for JFragment')
             ->assertSee('YouTube link')
             ->assertSee('Topic')
             ->assertSee('YouTube URL')
             ->assertSee('Suggest an idea or YouTube link for something this creator could make, cover, explore, or discover.')
-            ->assertSee('Submitting this recommendation will use 1 of your suggestion slots for this creator. Upvoting is separate.')
+            ->assertSee('Submitting this request will use 1 of your request slots for this creator. Voting is separate.')
             ->assertSee('Why should JFragment make, cover, or explore this?')
             ->assertSee('maxlength="1000"', false)
             ->assertSee('Optional, up to 1,000 characters.')
             ->assertSee('0 / 1000')
-            ->assertSee('Submit recommendation');
+            ->assertSee('Submit request');
     }
 
     public function test_submission_form_uses_a_normal_post_and_visible_favorite_notice(): void
@@ -89,7 +89,7 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs($user)
             ->get('/jfragment/submit')
             ->assertOk()
-            ->assertSee('Suggestion limit reached')
+            ->assertSee('Request limit reached')
             ->assertSee('type="submit"', false)
             ->assertSee('form="recommendation-submit"', false)
             ->assertDontSee('disabled', false);
@@ -106,8 +106,8 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get('/jfragment/submit')
             ->assertOk()
-            ->assertSee('This creator is not accepting new recommendations right now.')
-            ->assertDontSee('Submit recommendation');
+            ->assertSee('This creator is not accepting new requests right now.')
+            ->assertDontSee('Submit request');
     }
 
     public function test_closed_submissions_cannot_be_posted_to(): void
@@ -123,7 +123,7 @@ class SubmitRecommendationTest extends TestCase
                 'title' => 'Never Gonna Give You Up',
             ])
             ->assertSessionHasErrors([
-                'submissions' => 'This creator is not accepting new recommendations right now.',
+                'submissions' => 'This creator is not accepting new requests right now.',
             ]);
 
         $this->assertDatabaseCount('recommendations', 0);
@@ -190,7 +190,7 @@ class SubmitRecommendationTest extends TestCase
         ]);
 
         $response->assertRedirect('/jfragment')
-            ->assertSessionHas('success', 'Recommendation submitted and waiting for creator review.');
+            ->assertSessionHas('success', 'Request submitted and waiting for creator review.');
 
         $this->assertDatabaseHas('recommendations', [
             'creator_id' => $creator->id,
@@ -207,7 +207,7 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs($user)
             ->get('/jfragment')
             ->assertOk()
-            ->assertSee('Recommendation submitted and waiting for creator review.')
+            ->assertSee('Request submitted and waiting for creator review.')
             ->assertDontSee('Never Gonna Give You Up');
 
         $this->actingAs($owner)
@@ -236,7 +236,7 @@ class SubmitRecommendationTest extends TestCase
         ]);
 
         $response->assertRedirect('/jfragment')
-            ->assertSessionHas('success', 'Recommendation submitted and added to the journey.');
+            ->assertSessionHas('success', 'Request submitted and added to the journey.');
 
         $this->assertDatabaseHas('recommendations', [
             'creator_id' => $creator->id,
@@ -248,7 +248,7 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs($user)
             ->get('/jfragment')
             ->assertOk()
-            ->assertSee('Recommendation submitted and added to the journey.')
+            ->assertSee('Request submitted and added to the journey.')
             ->assertSee('Auto-approved recommendation');
 
         $this->actingAs($owner)
@@ -490,7 +490,7 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs($suggester)
             ->post(route('recommendations.withdraw', [$creator, $recommendation]))
             ->assertRedirect(route('creator.queue', $creator))
-            ->assertSessionHas('success', 'Your suggestion was withdrawn.');
+            ->assertSessionHas('success', 'Your request was withdrawn.');
 
         $recommendation->refresh();
 
@@ -525,7 +525,7 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs($otherUser)
             ->post(route('recommendations.withdraw', [$creator, $recommendation]))
             ->assertSessionHasErrors([
-                'withdraw' => 'This suggestion can no longer be withdrawn.',
+                'withdraw' => 'This request can no longer be withdrawn.',
             ]);
 
         $recommendation->update(['status' => 'published']);
@@ -533,7 +533,7 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs($suggester)
             ->post(route('recommendations.withdraw', [$creator, $recommendation]))
             ->assertSessionHasErrors([
-                'withdraw' => 'This suggestion can no longer be withdrawn.',
+                'withdraw' => 'This request can no longer be withdrawn.',
             ]);
 
         $this->assertSame('published', $recommendation->fresh()->status);
@@ -555,21 +555,21 @@ class SubmitRecommendationTest extends TestCase
         $this->actingAs($suggester)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Withdraw suggestion')
-            ->assertSee('Withdraw this suggestion?')
+            ->assertSee('Withdraw request')
+            ->assertSee('Withdraw this request?')
             ->assertSee(route('recommendations.withdraw', [$creator, $recommendation]), false);
 
         $this->actingAs($otherUser)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertDontSee('Withdraw suggestion');
+            ->assertDontSee('Withdraw request');
 
         $recommendation->update(['status' => 'published']);
 
         $this->actingAs($suggester)
             ->get(route('creators.published', $creator))
             ->assertOk()
-            ->assertDontSee('Withdraw suggestion');
+            ->assertDontSee('Withdraw request');
     }
 
     public function test_duplicate_active_youtube_url_submission_is_blocked_with_helpful_link(): void
@@ -600,8 +600,8 @@ class SubmitRecommendationTest extends TestCase
         $this->get(route('recommendations.create', $creator))
             ->assertOk()
             ->assertSee('Already suggested')
-            ->assertSee('This URL is already in the active recommendation list for this creator.')
-            ->assertSee('View recommendation');
+            ->assertSee('This URL is already in the active request list for this creator.')
+            ->assertSee('View request');
 
         $this->assertDatabaseMissing('recommendations', [
             'title' => 'Duplicate active URL',
@@ -637,8 +637,8 @@ class SubmitRecommendationTest extends TestCase
         $this->get(route('recommendations.create', $creator))
             ->assertOk()
             ->assertSee('Already published')
-            ->assertSee('This creator has already published something for this recommendation.')
-            ->assertSee('View published recommendation')
+            ->assertSee('This creator has already published something for this request.')
+            ->assertSee('View published request')
             ->assertSee('Open published video');
 
         $this->assertDatabaseMissing('recommendations', [

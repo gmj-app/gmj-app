@@ -56,7 +56,7 @@
                                     <p class="pb-5 text-sm font-semibold text-indigo-600 dark:text-indigo-300">Creator match</p>
                                 @else
                                     <x-subsection-label>
-                                        {{ $matches->count() }} matching {{ Str::plural('recommendation', $matches->count()) }}
+                                        {{ $matches->count() }} matching {{ Str::plural('request', $matches->count()) }}
                                     </x-subsection-label>
 
                                     <div class="mt-3 divide-y divide-slate-200 dark:divide-slate-800">
@@ -68,7 +68,7 @@
                                                     ? route('creators.published', $creator).'#recommendation-'.$recommendation->id
                                                     : route('creator.queue', ['creator' => $creator, 'q' => $query]).'#recommendation-'.$recommendation->id;
                                             @endphp
-                                            <a href="{{ $recommendationUrl }}" class="group/match block py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500" aria-label="Open {{ $recommendationTitle }} for {{ $creator->display_name }}">
+                                            <a href="{{ $recommendationUrl }}" class="group/match block py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500" aria-label="Open request {{ $recommendationTitle }} for {{ $creator->display_name }}">
                                                 <span class="line-clamp-2 text-sm font-semibold leading-5 text-slate-800 group-hover/match:text-indigo-600 dark:text-slate-100 dark:group-hover/match:text-indigo-300">{{ $recommendationTitle }}</span>
                                                 <span class="mt-2 flex flex-wrap items-center gap-2">
                                                     <span class="rounded-full px-2 py-0.5 text-[11px] font-bold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>
