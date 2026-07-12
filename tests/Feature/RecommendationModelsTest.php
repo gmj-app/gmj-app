@@ -55,9 +55,9 @@ class RecommendationModelsTest extends TestCase
         $this->assertSame('unverified', $recommendation->creator->verification_status);
         $this->assertSame('active', $recommendation->creator->status);
         $this->assertTrue($recommendation->creator->submissions_open);
-        $this->assertSame('manual', $recommendation->creator->recommendation_approval_mode);
-        $this->assertFalse($recommendation->creator->autoApprovesRecommendations());
-        $this->assertSame('pending', $recommendation->creator->defaultRecommendationStatus());
+        $this->assertSame('auto', $recommendation->creator->recommendation_approval_mode);
+        $this->assertTrue($recommendation->creator->autoApprovesRecommendations());
+        $this->assertSame('approved', $recommendation->creator->defaultRecommendationStatus());
         $this->assertNull($recommendation->creator->bio);
         $this->assertNull($recommendation->creator->submission_instructions);
         $this->assertNull($recommendation->creator->deactivated_at);

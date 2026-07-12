@@ -584,7 +584,7 @@ class MembershipLimitsTest extends TestCase
         $this->post(route('recommendations.store', $creator), [
             ...$payload,
             'confirm_favorite' => true,
-        ])->assertSessionHas('success', 'Recommendation submitted and waiting for creator review.');
+        ])->assertSessionHas('success', 'Recommendation submitted and added to the journey.');
 
         $this->assertDatabaseHas('creator_favorites', [
             'creator_id' => $creator->id,
@@ -594,6 +594,7 @@ class MembershipLimitsTest extends TestCase
             'creator_id' => $creator->id,
             'submitted_by' => $user->id,
             'title' => 'Participation confirmation',
+            'status' => 'approved',
         ]);
     }
 

@@ -101,9 +101,9 @@ class CreatorManagementRoutesTest extends TestCase
             ->assertSee('Branding')
             ->assertSee('Recommended: square image, at least 512x512.')
             ->assertSee('Recommended: wide image, around 1600x500 or larger.')
-            ->assertSee('Recommendation approval')
-            ->assertSee('Hold for review')
-            ->assertSee('Auto-approve')
+            ->assertSee('Review suggestions before they appear')
+            ->assertSee('On — review first')
+            ->assertSee('Off — appear immediately')
             ->assertSee('enctype="multipart/form-data"', false);
     }
 

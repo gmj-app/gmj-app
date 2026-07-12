@@ -24,8 +24,22 @@ class CreatorFactory extends Factory
             'display_name' => $displayName,
             'channel_url' => fake()->optional()->url(),
             'submissions_open' => true,
-            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_AUTO,
             'status' => 'active',
         ];
+    }
+
+    public function autoApproving(): static
+    {
+        return $this->state(fn (): array => [
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_AUTO,
+        ]);
+    }
+
+    public function moderated(): static
+    {
+        return $this->state(fn (): array => [
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+        ]);
     }
 }

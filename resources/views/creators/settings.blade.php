@@ -109,8 +109,8 @@
                 </label>
 
                 <fieldset class="border-t border-gray-200 pt-8 dark:border-slate-800">
-                    <legend class="text-lg font-semibold text-gray-900 dark:text-slate-50">Recommendation approval</legend>
-                    <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">How should new recommendations be handled?</p>
+                    <legend class="text-lg font-semibold text-gray-900 dark:text-slate-50">Review suggestions before they appear</legend>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">Choose whether new suggestions need your approval.</p>
 
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
                         <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-4 transition hover:border-indigo-300 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/70 dark:border-slate-700 dark:hover:border-indigo-500/70 dark:has-[:checked]:border-indigo-400 dark:has-[:checked]:bg-indigo-950/40">
@@ -122,8 +122,8 @@
                                 class="mt-1 border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-950"
                             >
                             <span>
-                                <span class="block text-sm font-semibold text-gray-900 dark:text-slate-100">Hold for review</span>
-                                <span class="mt-1 block text-sm leading-6 text-gray-600 dark:text-slate-300">New recommendations will appear in your dashboard as Pending Review before they are public.</span>
+                                <span class="block text-sm font-semibold text-gray-900 dark:text-slate-100">On — review first</span>
+                                <span class="mt-1 block text-sm leading-6 text-gray-600 dark:text-slate-300">New suggestions remain Pending Review until you approve them.</span>
                             </span>
                         </label>
 
@@ -136,8 +136,8 @@
                                 class="mt-1 border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-950"
                             >
                             <span>
-                                <span class="block text-sm font-semibold text-gray-900 dark:text-slate-100">Auto-approve</span>
-                                <span class="mt-1 block text-sm leading-6 text-gray-600 dark:text-slate-300">New recommendations will appear publicly right away. You can still hide, pass, or delete them later.</span>
+                                <span class="block text-sm font-semibold text-gray-900 dark:text-slate-100">Off — appear immediately</span>
+                                <span class="mt-1 block text-sm leading-6 text-gray-600 dark:text-slate-300">New suggestions appear publicly right away. You can still hide, pass, or delete them later.</span>
                             </span>
                         </label>
                     </div>

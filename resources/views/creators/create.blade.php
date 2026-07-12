@@ -90,30 +90,6 @@
                         <x-input-error :messages="$errors->get('submission_instructions')" class="mt-2" />
                     </div>
 
-                    <fieldset class="border-t border-slate-200 pt-6 dark:border-slate-800">
-                        <legend class="text-lg font-semibold text-slate-950 dark:text-white">Recommendation approval</legend>
-                        <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Choose when new suggestions become public.</p>
-
-                        <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                            <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-indigo-300 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/70 dark:border-slate-700 dark:hover:border-indigo-500/70 dark:has-[:checked]:border-indigo-400 dark:has-[:checked]:bg-indigo-950/40">
-                                <input type="radio" name="recommendation_approval_mode" value="manual" @checked(old('recommendation_approval_mode', 'manual') === 'manual') class="mt-1 border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-950">
-                                <span>
-                                    <span class="block text-sm font-semibold text-slate-950 dark:text-white">Hold for review</span>
-                                    <span class="mt-1 block text-sm leading-6 text-slate-600 dark:text-slate-300">New suggestions wait for your approval before appearing publicly.</span>
-                                </span>
-                            </label>
-
-                            <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-indigo-300 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/70 dark:border-slate-700 dark:hover:border-indigo-500/70 dark:has-[:checked]:border-indigo-400 dark:has-[:checked]:bg-indigo-950/40">
-                                <input type="radio" name="recommendation_approval_mode" value="auto" @checked(old('recommendation_approval_mode') === 'auto') class="mt-1 border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-950">
-                                <span>
-                                    <span class="block text-sm font-semibold text-slate-950 dark:text-white">Auto-approve</span>
-                                    <span class="mt-1 block text-sm leading-6 text-slate-600 dark:text-slate-300">New suggestions appear publicly right away. You can still hide, pass, or delete them later.</span>
-                                </span>
-                            </label>
-                        </div>
-                        <x-input-error :messages="$errors->get('recommendation_approval_mode')" class="mt-2" />
-                    </fieldset>
-
                     <label class="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
                         <input type="hidden" name="submissions_open" value="0">
                         <input type="checkbox" name="submissions_open" value="1" @checked(old('submissions_open', true)) class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-950">

@@ -172,7 +172,7 @@ class SubmitRecommendationTest extends TestCase
 
     public function test_manual_mode_holds_a_recommendation_for_review_and_hides_it_from_the_public_queue(): void
     {
-        $creator = Creator::factory()->create(['slug' => 'jfragment']);
+        $creator = Creator::factory()->moderated()->create(['slug' => 'jfragment']);
         $user = User::factory()->create();
         $owner = User::factory()->create();
         CreatorOwner::query()->create([

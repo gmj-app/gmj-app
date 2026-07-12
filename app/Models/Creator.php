@@ -31,7 +31,7 @@ class Creator extends Model
 
     protected $attributes = [
         'submissions_open' => true,
-        'recommendation_approval_mode' => self::APPROVAL_MODE_MANUAL,
+        'recommendation_approval_mode' => self::APPROVAL_MODE_AUTO,
         'status' => 'active',
     ];
 

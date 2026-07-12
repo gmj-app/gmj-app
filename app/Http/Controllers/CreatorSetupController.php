@@ -35,10 +35,6 @@ class CreatorSetupController extends Controller
             'youtube_channel_url' => ['required', 'url', 'max:255'],
             'bio' => ['nullable', 'string', 'max:2000'],
             'submission_instructions' => ['nullable', 'string', 'max:2000'],
-            'recommendation_approval_mode' => [
-                'required',
-                Rule::in(Creator::RECOMMENDATION_APPROVAL_MODES),
-            ],
             'submissions_open' => ['required', 'boolean'],
         ], [
             'slug.regex' => 'The page URL may only contain lowercase letters, numbers, and single hyphens.',
@@ -49,6 +45,7 @@ class CreatorSetupController extends Controller
                 ...$validated,
                 'channel_url' => $validated['youtube_channel_url'],
                 'submissions_open' => $request->boolean('submissions_open'),
+                'recommendation_approval_mode' => Creator::APPROVAL_MODE_AUTO,
                 'verification_status' => 'unverified',
                 'status' => 'active',
             ]);

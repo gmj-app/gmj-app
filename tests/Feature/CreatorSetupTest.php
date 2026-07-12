@@ -28,13 +28,12 @@ class CreatorSetupTest extends TestCase
             ->assertOk()
             ->assertSee('Set up your creator page')
             ->assertSee('Creator pages are manually created during beta.')
-            ->assertSee('Hold for review')
-            ->assertSee('Auto-approve')
+            ->assertDontSee('recommendation_approval_mode', false)
             ->assertSee('Accept new suggestions')
             ->assertSee('action="'.route('creators.store').'"', false);
     }
 
-    public function test_user_can_create_a_manual_creator_page_and_become_its_owner(): void
+    public function test_user_can_create_an_auto_approving_creator_page_and_become_its_owner(): void
     {
         $user = User::factory()->create();
 
@@ -54,7 +53,7 @@ class CreatorSetupTest extends TestCase
             'youtube_channel_url' => 'https://www.youtube.com/@russellreacts',
             'bio' => 'Music, movies, and culture from around the world.',
             'submission_instructions' => 'Share thoughtful topics, videos, and links.',
-            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_AUTO,
             'submissions_open' => true,
             'verification_status' => 'unverified',
             'status' => 'active',
@@ -119,6 +118,17 @@ class CreatorSetupTest extends TestCase
         ]);
     }
 
+    public function test_factory_default_matches_production_and_explicit_existing_preferences_are_preserved(): void
+    {
+        $newCreator = Creator::factory()->create();
+        $moderatedCreator = Creator::factory()->moderated()->create();
+        $autoCreator = Creator::factory()->autoApproving()->create();
+
+        $this->assertSame(Creator::APPROVAL_MODE_AUTO, $newCreator->recommendation_approval_mode);
+        $this->assertSame(Creator::APPROVAL_MODE_MANUAL, $moderatedCreator->fresh()->recommendation_approval_mode);
+        $this->assertSame(Creator::APPROVAL_MODE_AUTO, $autoCreator->fresh()->recommendation_approval_mode);
+    }
+
     public function test_creator_setup_validates_required_and_formatted_fields(): void
     {
         $user = User::factory()->create();
@@ -132,7 +142,6 @@ class CreatorSetupTest extends TestCase
                 'youtube_channel_url' => 'not-a-url',
                 'bio' => str_repeat('a', 2001),
                 'submission_instructions' => str_repeat('b', 2001),
-                'recommendation_approval_mode' => 'sometimes',
             ])
             ->assertRedirect(route('creators.create'))
             ->assertSessionHasErrors([
@@ -141,7 +150,6 @@ class CreatorSetupTest extends TestCase
                 'youtube_channel_url',
                 'bio',
                 'submission_instructions',
-                'recommendation_approval_mode',
                 'submissions_open',
             ]);
 
@@ -194,7 +202,6 @@ class CreatorSetupTest extends TestCase
             'youtube_channel_url' => 'https://www.youtube.com/@russellreacts',
             'bio' => 'Music, movies, and culture from around the world.',
             'submission_instructions' => 'Share thoughtful topics, videos, and links.',
-            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
             'submissions_open' => '1',
             ...$overrides,
         ];
