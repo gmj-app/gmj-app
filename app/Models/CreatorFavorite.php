@@ -10,7 +10,14 @@ class CreatorFavorite extends Model
     protected $fillable = [
         'creator_id',
         'user_id',
+        'released_at',
+        'release_reason',
     ];
+
+    protected function casts(): array
+    {
+        return ['released_at' => 'datetime'];
+    }
 
     public function creator(): BelongsTo
     {

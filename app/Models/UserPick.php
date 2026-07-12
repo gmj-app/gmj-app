@@ -18,6 +18,8 @@ class UserPick extends Model
         'recommendation_id',
         'vote_count',
         'rank',
+        'released_at',
+        'release_reason',
     ];
 
     protected function casts(): array
@@ -25,6 +27,7 @@ class UserPick extends Model
         return [
             'rank' => 'integer',
             'vote_count' => 'integer',
+            'released_at' => 'datetime',
         ];
     }
 

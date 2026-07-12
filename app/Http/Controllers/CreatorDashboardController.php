@@ -30,7 +30,7 @@ class CreatorDashboardController extends Controller
             'votes' => $creator->userPicks()
                 ->whereHas('recommendation', fn ($query) => $query->votable())
                 ->sum('vote_count'),
-            'followers' => $creator->creatorFavorites()->count(),
+            'followers' => $creator->creatorFavorites()->whereNull('released_at')->count(),
             'published' => $creator->recommendations()->where('status', 'published')->count(),
         ];
 

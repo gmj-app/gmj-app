@@ -109,6 +109,8 @@ class Recommendation extends Model
         'description',
         'reason',
         'status',
+        'resource_released_at',
+        'resource_release_reason',
         'is_pinned',
         'scheduled_for',
         'published_at',
@@ -141,6 +143,7 @@ class Recommendation extends Model
             'published_metadata' => 'array',
             'source_metadata' => 'array',
             'withdrawn_at' => 'datetime',
+            'resource_released_at' => 'datetime',
         ];
     }
 
@@ -166,7 +169,7 @@ class Recommendation extends Model
 
     public function userPicks(): HasMany
     {
-        return $this->hasMany(UserPick::class);
+        return $this->hasMany(UserPick::class)->whereNull('released_at');
     }
 
     public function alternatives(): HasMany

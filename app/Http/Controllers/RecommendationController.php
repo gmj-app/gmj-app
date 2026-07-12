@@ -158,7 +158,7 @@ class RecommendationController extends Controller
         $usage = $request->user()
             ? $this->usageFor($request->user(), $creator)
             : null;
-        $favoritesCount = $creator->creatorFavorites()->count();
+        $favoritesCount = $creator->creatorFavorites()->whereNull('released_at')->count();
         $isFavorited = $request->user()
             ? $creator->creatorFavorites()->where('user_id', $request->user()->id)->exists()
             : false;
@@ -526,7 +526,7 @@ class RecommendationController extends Controller
             ]);
         }
 
-        if ($creator->creatorFavorites()->where('user_id', $request->user()->id)->exists()) {
+        if ($creator->creatorFavorites()->where('user_id', $request->user()->id)->whereNull('released_at')->exists()) {
             $result = $this->unfavoriteCreator->handle($request->user(), $creator);
 
             return back()->with(

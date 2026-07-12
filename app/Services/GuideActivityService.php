@@ -29,6 +29,7 @@ class GuideActivityService
 
         return [
             'active_vote_count' => (int) $user->userPicks()
+                ->whereNull('released_at')
                 ->whereHas('recommendation', fn ($query) => $query->votable())
                 ->sum('vote_count'),
             'suggestion_count' => (int) ($suggestions?->suggestion_count ?? 0),
@@ -56,12 +57,14 @@ class GuideActivityService
             ->keyBy('creator_id');
 
         $voteStats = $user->userPicks()
+            ->whereNull('released_at')
             ->selectRaw('creator_id, max(updated_at) as latest_at')
             ->groupBy('creator_id')
             ->get()
             ->keyBy('creator_id');
 
         $activeVoteCounts = $user->userPicks()
+            ->whereNull('released_at')
             ->whereHas('recommendation', fn ($query) => $query->votable())
             ->selectRaw('creator_id, sum(vote_count) as active_vote_count, max(updated_at) as latest_at')
             ->groupBy('creator_id')
@@ -110,6 +113,7 @@ class GuideActivityService
 
         $activeVotesByCreator = UserPick::query()
             ->where('user_id', $user->id)
+            ->whereNull('released_at')
             ->whereIn('creator_id', $visibleIds)
             ->whereHas('recommendation', fn ($query) => $query->votable())
             ->with(['recommendation:id,creator_id,title,status,recommendation_type,media_type'])

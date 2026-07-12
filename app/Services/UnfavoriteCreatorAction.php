@@ -22,6 +22,7 @@ class UnfavoriteCreatorAction
             $favorite = CreatorFavorite::query()
                 ->where('creator_id', $creator->id)
                 ->where('user_id', $lockedUser->id)
+                ->whereNull('released_at')
                 ->lockForUpdate()
                 ->first();
 

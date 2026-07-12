@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CreatorLifecycleService;
 use Database\Factories\CreatorFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -65,9 +66,32 @@ class Creator extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::updated(function (Creator $creator): void {
+            if ($creator->wasChanged(['status', 'deactivated_at']) && ! $creator->isAvailableForGuides()) {
+                app(CreatorLifecycleService::class)->releaseResources($creator);
+            }
+        });
+
+        static::deleted(fn (Creator $creator) => app(CreatorLifecycleService::class)->releaseResources($creator));
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'active');
+    }
+
+    public function scopeAvailableForGuides(Builder $query): Builder
+    {
+        return $query->where('status', 'active')->whereNull('deactivated_at');
+    }
+
+    public function isAvailableForGuides(): bool
+    {
+        return ! $this->trashed()
+            && $this->status === 'active'
+            && $this->deactivated_at === null;
     }
 
     public function getInitialsAttribute(): string
@@ -185,6 +209,7 @@ class Creator extends Model
     public function favoritedBy(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'creator_favorites')
+            ->wherePivotNull('released_at')
             ->withTimestamps();
     }
 

@@ -215,6 +215,8 @@ class User extends Authenticatable
     public function favoriteCreators(): BelongsToMany
     {
         return $this->belongsToMany(Creator::class, 'creator_favorites')
+            ->wherePivotNull('released_at')
+            ->availableForGuides()
             ->withTimestamps();
     }
 
@@ -380,7 +382,13 @@ class User extends Authenticatable
 
     public function creatorFavoritesUsed(): int
     {
-        return $this->creatorFavorites()->count();
+        return $this->creatorFavorites()
+            ->join('creators', 'creators.id', '=', 'creator_favorites.creator_id')
+            ->whereNull('released_at')
+            ->whereNull('creators.deleted_at')
+            ->where('creators.status', 'active')
+            ->whereNull('creators.deactivated_at')
+            ->count();
     }
 
     public function creatorFavoritesRemaining(): int
@@ -393,6 +401,7 @@ class User extends Authenticatable
         return $this->recommendationsSubmitted()
             ->where('creator_id', $creator->id)
             ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
+            ->whereNull('resource_released_at')
             ->whereIn('status', Recommendation::suggestionConsumingStatuses())
             ->count();
     }
@@ -408,6 +417,7 @@ class User extends Authenticatable
     public function votesUsedFor(Creator $creator): int
     {
         return (int) $this->userPicks()
+            ->whereNull('released_at')
             ->whereHas('recommendation', fn ($query) => $query
                 ->where('creator_id', $creator->id)
                 ->votable())
@@ -432,6 +442,7 @@ class User extends Authenticatable
     {
         return $this->creatorFavorites()
             ->where('creator_id', $creator->id)
+            ->whereNull('released_at')
             ->exists();
     }
 
@@ -444,6 +455,7 @@ class User extends Authenticatable
     {
         return (int) $this->userPicks()
             ->where('recommendation_id', $recommendation->id)
+            ->whereNull('released_at')
             ->sum('vote_count');
     }
 }

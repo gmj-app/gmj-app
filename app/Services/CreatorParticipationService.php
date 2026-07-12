@@ -21,10 +21,10 @@ class CreatorParticipationService
             ]);
         }
 
-        CreatorFavorite::query()->firstOrCreate([
+        CreatorFavorite::query()->updateOrCreate([
             'creator_id' => $creator->id,
             'user_id' => $user->id,
-        ]);
+        ], ['released_at' => null, 'release_reason' => null]);
     }
 
     public function ensureFavoritedForParticipation(
@@ -55,9 +55,9 @@ class CreatorParticipationService
             ]);
         }
 
-        CreatorFavorite::query()->firstOrCreate([
+        CreatorFavorite::query()->updateOrCreate([
             'creator_id' => $creator->id,
             'user_id' => $user->id,
-        ]);
+        ], ['released_at' => null, 'release_reason' => null]);
     }
 }
