@@ -22,7 +22,7 @@ class SearchController extends Controller
                 $creatorQuery->where(function (Builder $query) use ($like): void {
                     $this->applyCreatorMatch($query, $like)
                         ->orWhereHas('recommendations', function (Builder $query) use ($like): void {
-                            $query->whereIn('status', Recommendation::PUBLIC_STATUSES)
+                            $query->publiclyVisible()
                                 ->where(fn (Builder $query) => $this->applyRecommendationMatch($query, $like));
                         });
                 });
@@ -36,7 +36,7 @@ class SearchController extends Controller
         if ($searchable && $creators->isNotEmpty()) {
             $matchingRecommendations = Recommendation::query()
                 ->whereIn('creator_id', $creators->pluck('id'))
-                ->whereIn('status', Recommendation::PUBLIC_STATUSES)
+                ->publiclyVisible()
                 ->where(fn (Builder $recommendationQuery) => $this->applyRecommendationMatch($recommendationQuery, $like))
                 ->withSum('userPicks as user_picks_count', 'vote_count')
                 ->orderByRaw(

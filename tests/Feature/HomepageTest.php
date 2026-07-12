@@ -353,7 +353,7 @@ class HomepageTest extends TestCase
             ->assertSee('>0</strong> published', false);
     }
 
-    public function test_homepage_shows_the_empty_top_requests_state(): void
+    public function test_homepage_hides_the_top_requests_panel_when_there_are_no_public_open_requests(): void
     {
         Creator::factory()->create([
             'display_name' => 'Creator Without Requests',
@@ -362,8 +362,45 @@ class HomepageTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Top requests')
-            ->assertSee('No open requests yet');
+            ->assertDontSee('Top requests')
+            ->assertDontSee('No open requests yet');
+    }
+
+    public function test_pending_moderated_recommendations_never_leak_into_homepage_tiles_or_totals(): void
+    {
+        $creator = Creator::factory()->moderated()->create([
+            'display_name' => 'Moderated Creator',
+            'slug' => 'moderated-creator',
+        ]);
+        $approved = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Approved public request',
+            'status' => 'approved',
+        ]);
+        $pending = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Private pending request',
+            'status' => 'pending',
+        ]);
+        $this->addVotes($approved, 1);
+        $this->addVotes($pending, 5);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Approved public request')
+            ->assertDontSee('Private pending request')
+            ->assertSee('>1</strong> vote', false)
+            ->assertSee('>1</strong> request', false);
+
+        $approved->update(['status' => 'hidden']);
+        $pending->update(['status' => 'approved']);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('Approved public request')
+            ->assertSee('Private pending request')
+            ->assertSee('>5</strong> votes', false)
+            ->assertSee('>1</strong> request', false);
     }
 
     public function test_homepage_creator_cards_show_description_previews_with_fallbacks(): void

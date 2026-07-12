@@ -423,6 +423,22 @@ class Recommendation extends Model
         return $query->whereIn('status', self::votableStatuses());
     }
 
+    /** @param Builder<Recommendation> $query */
+    public function scopePubliclyVisible(Builder $query): Builder
+    {
+        return $query
+            ->whereIn('status', self::PUBLIC_STATUSES)
+            ->whereHas('creator', fn (Builder $query) => $query->availableForGuides());
+    }
+
+    /** @param Builder<Recommendation> $query */
+    public function scopeActivePubliclyVisible(Builder $query): Builder
+    {
+        return $query
+            ->whereIn('status', self::ACTIVE_PUBLIC_STATUSES)
+            ->whereHas('creator', fn (Builder $query) => $query->availableForGuides());
+    }
+
     public static function unfavoriteRemovableStatuses(): array
     {
         return self::UNFAVORITE_REMOVABLE_STATUSES;
@@ -465,6 +481,12 @@ class Recommendation extends Model
     public function isVotable(): bool
     {
         return $this->consumesUpvotes();
+    }
+
+    public function isPubliclyVisible(): bool
+    {
+        return in_array($this->status, self::PUBLIC_STATUSES, true)
+            && $this->creator?->isAvailableForGuides() === true;
     }
 
     public function isVotingClosed(): bool

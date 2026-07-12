@@ -52,10 +52,10 @@ class RecommendationController extends Controller
             ->value('slug') ?? '';
 
         $publicRecommendationsCount = $creator->recommendations()
-            ->whereIn('status', $activePublicStatuses)
+            ->activePubliclyVisible()
             ->count();
         $publicVotesCount = (int) $creator->userPicks()
-            ->whereHas('recommendation', fn ($query) => $query->votable())
+            ->whereHas('recommendation', fn ($query) => $query->publiclyVisible()->votable())
             ->sum('vote_count');
         $ownsCreator = $request->user()
             ? $creator->creatorOwners()
@@ -64,7 +64,7 @@ class RecommendationController extends Controller
                 ->exists()
             : false;
         $topRequestedId = $creator->recommendations()
-            ->whereIn('status', $activePublicStatuses)
+            ->activePubliclyVisible()
             ->votable()
             ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('user_picks_count')
@@ -74,7 +74,7 @@ class RecommendationController extends Controller
             ?->id;
 
         $categoryOptions = $creator->recommendations()
-            ->whereIn('status', $activePublicStatuses)
+            ->activePubliclyVisible()
             ->whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()
@@ -86,7 +86,7 @@ class RecommendationController extends Controller
             ]);
 
         $recommendationsQuery = $creator->recommendations()
-            ->whereIn('status', $activePublicStatuses)
+            ->activePubliclyVisible()
             ->when($filters['q'] !== '', function ($query) use ($filters): void {
                 $query->where(function ($query) use ($filters): void {
                     $query
@@ -145,7 +145,7 @@ class RecommendationController extends Controller
             ->withQueryString();
         $tagOptions = $creator->creatorTags()
             ->whereHas('recommendations', fn ($query) => $query
-                ->whereIn('recommendations.status', $activePublicStatuses))
+                ->activePubliclyVisible())
             ->get();
         $recentPublishedRecommendations = $creator->recommendations()
             ->where('status', 'published')
@@ -437,7 +437,7 @@ class RecommendationController extends Controller
         $voteAction = $validated['vote_action'] ?? null;
 
         abort_unless(
-            in_array($recommendation->status, Recommendation::PUBLIC_STATUSES, true),
+            $recommendation->isPubliclyVisible(),
             404,
         );
 

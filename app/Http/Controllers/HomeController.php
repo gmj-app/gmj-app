@@ -29,13 +29,13 @@ class HomeController extends Controller
             })
             ->withCount([
                 'recommendations as visible_recommendations_count' => fn ($query) => $query
-                    ->whereIn('status', Recommendation::PUBLIC_STATUSES),
+                    ->publiclyVisible(),
                 'recommendations as published_recommendations_count' => fn ($query) => $query
                     ->where('status', 'published'),
             ])
             ->withSum([
                 'userPicks as total_votes_count' => fn ($query) => $query
-                    ->whereHas('recommendation', fn ($query) => $query->votable()),
+                    ->whereHas('recommendation', fn ($query) => $query->publiclyVisible()->votable()),
             ], 'vote_count')
             ->orderByDesc('total_votes_count')
             ->orderByDesc('visible_recommendations_count')
@@ -46,6 +46,7 @@ class HomeController extends Controller
         $topRequests = Recommendation::query()
             ->select(['id', 'creator_id', 'title', 'is_pinned', 'created_at'])
             ->whereIn('creator_id', $creators->pluck('id'))
+            ->publiclyVisible()
             ->votable()
             ->withSum('userPicks as user_picks_count', 'vote_count')
             ->orderByDesc('user_picks_count')

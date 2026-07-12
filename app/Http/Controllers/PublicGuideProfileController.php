@@ -22,12 +22,12 @@ class PublicGuideProfileController extends Controller
 
         $publicSuggestions = $guide->recommendationsSubmitted()
             ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
-            ->whereIn('status', Recommendation::PUBLIC_STATUSES);
+            ->publiclyVisible();
 
         $completedSupport = UserPick::query()
             ->where('user_id', $guide->id)
             ->whereHas('recommendation', fn (Builder $query) => $query
-                ->whereIn('status', Recommendation::PUBLIC_STATUSES)
+                ->publiclyVisible()
                 ->whereNotIn('status', Recommendation::votableStatuses()));
 
         $stats = [
@@ -40,7 +40,7 @@ class PublicGuideProfileController extends Controller
         $activeSupportCount = UserPick::query()
             ->where('user_id', $guide->id)
             ->whereHas('recommendation', fn (Builder $query) => $query
-                ->whereIn('status', Recommendation::PUBLIC_STATUSES)
+                ->publiclyVisible()
                 ->votable())
             ->count();
 

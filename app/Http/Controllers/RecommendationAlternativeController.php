@@ -127,7 +127,7 @@ class RecommendationAlternativeController extends Controller
     {
         abort_if($creator->status !== 'active', 404);
         abort_unless($recommendation->creator_id === $creator->id, 404);
-        abort_unless(in_array($recommendation->status, Recommendation::PUBLIC_STATUSES, true), 404);
+        abort_unless($recommendation->isPubliclyVisible(), 404);
     }
 
     private function ensureOwnedAlternative(

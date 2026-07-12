@@ -106,14 +106,9 @@
                                     {{ $creator->card_description }}
                                 </p>
 
+                                @if ($creatorTopRequests->isNotEmpty())
                                 <div class="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/60">
                                     <x-subsection-label>Top requests</x-subsection-label>
-
-                                    @if ($creatorTopRequests->isEmpty())
-                                        <p class="mt-3 text-sm font-semibold leading-6 text-slate-700 dark:text-slate-300">
-                                            No open requests yet
-                                        </p>
-                                    @else
                                         <ol class="mt-3 space-y-2.5">
                                             @foreach ($creatorTopRequests as $request)
                                                 <li class="flex min-w-0 items-start gap-2.5">
@@ -126,8 +121,8 @@
                                                 </li>
                                             @endforeach
                                         </ol>
-                                    @endif
                                 </div>
+                                @endif
 
                                 <div class="mt-auto border-t border-slate-200/80 pt-5 dark:border-slate-800">
                                     <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-center text-sm text-slate-500 dark:text-slate-400">
