@@ -41,9 +41,9 @@ class DashboardTest extends TestCase
             ->assertSee("I'm a Guide", false)
             ->assertSee('Favorite creators, suggest ideas or links, and vote for what you want to see next.')
             ->assertSee('Explore creators')
-            ->assertSee('Creator favorites')
-            ->assertSee('Active votes')
-            ->assertSee('Requests submitted')
+            ->assertSee('Favorite creators used')
+            ->assertSee('Votes per creator')
+            ->assertSee('Requests per creator')
             ->assertDontSee('Your resources')
             ->assertDontSee('Link Creator Account')
             ->assertDontSee('Creator setup coming soon')
@@ -78,9 +78,39 @@ class DashboardTest extends TestCase
 
         $response
             ->assertSee('lg:grid-cols-[minmax(0,1fr)_minmax(25rem,1.15fr)]', false)
-            ->assertSee('grid min-w-0 grid-cols-3 divide-x', false)
+            ->assertSee('grid min-w-0 grid-cols-1 divide-y', false)
+            ->assertSee('sm:grid-cols-3 sm:divide-x sm:divide-y-0', false)
             ->assertSee('sm:px-6 sm:py-5', false)
             ->assertDontSee('bg-slate-50/80 p-4', false);
+    }
+
+    public function test_dashboard_resource_rail_uses_plan_capacity_and_accessible_labels(): void
+    {
+        $user = User::factory()->create(['plan_slug' => 'free']);
+        $creators = Creator::factory()->count(2)->create();
+        foreach ($creators as $creator) {
+            CreatorFavorite::query()->create(['creator_id' => $creator->id, 'user_id' => $user->id]);
+        }
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('aria-label="2 of 3 favorite creator slots used"', false)
+            ->assertSee('aria-label="3 votes available per creator"', false)
+            ->assertSee('aria-label="3 requests available per creator"', false)
+            ->assertSee('Favorite creators used')
+            ->assertSee('Votes per creator')
+            ->assertSee('Requests per creator')
+            ->assertDontSee('Requests submitted');
+    }
+
+    public function test_dashboard_resource_rail_reflects_non_free_plan_entitlements(): void
+    {
+        $this->actingAs(User::factory()->create(['plan_slug' => 'pro']))
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('aria-label="10 votes available per creator"', false)
+            ->assertSee('aria-label="10 requests available per creator"', false)
+            ->assertSee('aria-label="0 of 10 favorite creator slots used"', false);
     }
 
     public function test_dashboard_links_a_single_owned_creator_directly_to_its_dashboard(): void
@@ -168,9 +198,10 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSeeInOrder(['1', '/ 3', 'Creator favorites'])
-            ->assertSeeInOrder(['2', 'Active votes'])
-            ->assertSeeInOrder(['2', 'Requests submitted'])
+            ->assertSeeInOrder(['1', '/ 3', 'Favorite creators used'])
+            ->assertSeeInOrder(['3', 'Votes per creator'])
+            ->assertSeeInOrder(['3', 'Requests per creator'])
+            ->assertDontSee('Requests submitted')
             ->assertSee('My Activity')
             ->assertSee('Your votes and requests')
             ->assertSee('2 active votes')

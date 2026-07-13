@@ -14,21 +14,21 @@
                     </p>
                 </div>
 
-                <dl class="grid min-w-0 grid-cols-3 divide-x divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-950/50">
-                    <div class="min-w-0 px-2 py-3 text-center sm:px-4">
+                <dl aria-label="Plan resource capacity" class="grid min-w-0 grid-cols-1 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-950/50 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                    <div aria-label="{{ $resources['creator_favorites_used'] }} of {{ $resources['creator_favorites_limit'] }} favorite creator slots used" class="min-w-0 px-3 py-3 text-center sm:px-4">
                         <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">
                             {{ $resources['creator_favorites_used'] }}
                             <span class="text-sm font-medium text-slate-400">/ {{ $resources['creator_favorites_limit'] }}</span>
                         </dd>
-                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Creator favorites</dt>
+                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Favorite creators used</dt>
                     </div>
-                    <div class="min-w-0 px-2 py-3 text-center sm:px-4">
-                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['active_upvotes'] }}</dd>
-                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Active votes</dt>
+                    <div aria-label="{{ $resources['votes_per_creator'] }} votes available per creator" class="min-w-0 px-3 py-3 text-center sm:px-4">
+                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['votes_per_creator'] }}</dd>
+                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Votes per creator</dt>
                     </div>
-                    <div class="min-w-0 px-2 py-3 text-center sm:px-4">
-                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['suggestions_submitted'] }}</dd>
-                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Requests submitted</dt>
+                    <div aria-label="{{ $resources['requests_per_creator'] }} requests available per creator" class="min-w-0 px-3 py-3 text-center sm:px-4">
+                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['requests_per_creator'] }}</dd>
+                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Requests per creator</dt>
                     </div>
                 </dl>
             </section>
