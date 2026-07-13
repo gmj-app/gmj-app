@@ -95,6 +95,7 @@
                                     @else
                                         <span class="block break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $suggestion->displayTitle() }}</span>
                                     @endif
+                                    <x-requests.owned-request-indicator :recommendation="$suggestion" class="mt-1" />
                                     <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
                                         {{ $suggestion->mediaTypeLabel() }}
                                         <span aria-hidden="true">&middot;</span>
@@ -103,7 +104,7 @@
                                         {{ $suggestion->totalVotes() }} community {{ Str::plural('vote', $suggestion->totalVotes()) }}
                                     </span>
                                 </span>
-                                <span class="shrink-0 text-right"><span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $suggestion->statusBadgeClass() }}">{{ $suggestion->statusLabel() }}</span>@can('updateOwnPresentation', $suggestion)<a href="{{ route('requests.presentation.edit', $suggestion) }}" class="mt-2 block text-xs font-bold text-indigo-600 dark:text-indigo-400">Edit request details</a>@endcan</span>
+                                <span class="shrink-0 text-right"><span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $suggestion->statusBadgeClass() }}">{{ $suggestion->statusLabel() }}</span><x-requests.edit-own-request-action :recommendation="$suggestion" compact class="mt-1 min-h-0 text-xs" /></span>
                             </li>
                         @endforeach
                     </ul>

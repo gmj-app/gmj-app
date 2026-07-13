@@ -424,25 +424,26 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Submitted and voted by current guide')
             ->assertSee('title="You voted here with 2 votes"', false)
             ->assertSee('title="You voted here with 1 vote"', false)
-            ->assertSee('title="You submitted this request"', false)
+            ->assertSee('title="You requested"', false)
             ->assertSee('text-emerald-700', false)
             ->assertSee('text-amber-700', false);
 
         $this->assertSame(4, substr_count($response->getContent(), '<span>You voted</span>'));
-        $this->assertSame(4, substr_count($response->getContent(), '<span>You submitted</span>'));
+        $this->assertSame(4, substr_count($response->getContent(), '<span>You requested</span>'));
+        $this->assertSame(2, substr_count($response->getContent(), 'Edit request details'));
 
         $this->actingAs(User::factory()->create())
             ->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertDontSee('You voted')
-            ->assertDontSee('You submitted');
+            ->assertDontSee('You requested');
 
         auth()->logout();
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertDontSee('You voted')
-            ->assertDontSee('You submitted');
+            ->assertDontSee('You requested');
     }
 
     public function test_collapsed_rows_hide_avatar_stacks_while_expanded_support_keeps_them(): void

@@ -24,7 +24,6 @@
     $votesRemaining = (int) ($usage['votes_remaining'] ?? 0);
     $canAddVote = ! auth()->check() || $votesRemaining > 0;
     $canWithdraw = $recommendation->canBeWithdrawnBy(auth()->user());
-    $canEditPresentation = auth()->user()?->can('updateOwnPresentation', $recommendation) === true;
 @endphp
 
 <article
@@ -189,6 +188,8 @@
 
         @auth
             <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <x-requests.edit-own-request-action :recommendation="$recommendation" />
+
                 <button
                     type="button"
                     x-on:click="alternativeOpen = true"
@@ -196,10 +197,6 @@
                 >
                     Suggest alternative
                 </button>
-
-                @if ($canEditPresentation)
-                    <a href="{{ route('requests.presentation.edit', $recommendation) }}" class="text-sm font-semibold text-indigo-600 transition hover:text-indigo-500 dark:text-indigo-400">Edit request details</a>
-                @endif
 
                 @if ($canWithdraw)
                     <button

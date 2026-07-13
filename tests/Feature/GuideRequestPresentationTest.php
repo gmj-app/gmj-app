@@ -92,6 +92,51 @@ class GuideRequestPresentationTest extends TestCase
         $this->actingAs($guide)->get('/requests/'.$request->id.'/presentation/edit')->assertNotFound();
     }
 
+    public function test_shared_edit_action_renders_for_owner_across_public_activity_and_profile_surfaces(): void
+    {
+        [$guide, $request] = $this->guideRequest(['title' => 'Owned approved request']);
+        $guide->update(['public_profile_enabled' => true]);
+        $other = User::factory()->create();
+
+        foreach ([
+            route('creator.queue', $request->creator),
+            route('activity.index'),
+            route('guides.show', ['handle' => $guide->public_handle]),
+        ] as $url) {
+            $this->actingAs($guide)->get($url)
+                ->assertOk()
+                ->assertSee('You requested', escape: false)
+                ->assertSee(route('requests.presentation.edit', $request), escape: false);
+        }
+
+        $this->actingAs($other)->get(route('creator.queue', $request->creator))
+            ->assertOk()
+            ->assertDontSee('You requested')
+            ->assertDontSee(route('requests.presentation.edit', $request), escape: false);
+    }
+
+    public function test_pending_request_uses_shared_activity_cta_but_terminal_and_creator_added_requests_do_not(): void
+    {
+        [$guide, $request] = $this->guideRequest(['status' => 'pending', 'title' => 'Pending owned request']);
+
+        $this->actingAs($guide)->get(route('activity.index'))
+            ->assertOk()
+            ->assertSee(route('requests.presentation.edit', $request), escape: false);
+
+        foreach (['published', 'passed', 'already_seen'] as $status) {
+            $request->update(['status' => $status]);
+            $this->actingAs($guide)->get(route('activity.index'))
+                ->assertOk()
+                ->assertDontSee(route('requests.presentation.edit', $request), escape: false);
+        }
+
+        $request->update(['status' => 'approved', 'submission_source' => Recommendation::SUBMISSION_SOURCE_CREATOR]);
+        $this->actingAs($guide)->get(route('creator.queue', $request->creator))
+            ->assertOk()
+            ->assertDontSee('You requested')
+            ->assertDontSee(route('requests.presentation.edit', $request), escape: false);
+    }
+
     public function test_no_revision_is_created_when_normalized_values_are_unchanged(): void
     {
         [$guide, $request] = $this->guideRequest(['display_title_override' => 'Same title', 'request_context' => 'Same context']);

@@ -462,6 +462,12 @@ class Recommendation extends Model
             && (int) $this->submitted_by === (int) $user->id;
     }
 
+    public function requestedByCurrentUser(?User $user): bool
+    {
+        return $this->submittedByCurrentUser($user)
+            && $this->submission_source === self::SUBMISSION_SOURCE_FAN;
+    }
+
     public static function upvoteConsumingStatuses(): array
     {
         return self::UPVOTE_CONSUMING_STATUSES;
