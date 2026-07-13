@@ -11,6 +11,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\MyActivityController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicGuideProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorContro
 use App\Http\Controllers\SuperAdmin\CreatorRequestController as SuperAdminCreatorRequestController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\HomepageAdvertisementController;
+use App\Http\Controllers\SuperAdmin\TestNotificationController;
 use App\Http\Controllers\ToolsAdminController;
 use App\Http\Controllers\YoutubeToolsController;
 use App\Http\Middleware\EnsurePublicProfileIsComplete;
@@ -50,6 +52,11 @@ Route::get('/dashboard', [DashboardController::class, '__invoke'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::get('/notifications/{notification}/open', [NotificationController::class, 'open'])->name('notifications.open');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/{notification}/unread', [NotificationController::class, 'markUnread'])->name('notifications.unread');
     Route::get('/my-activity', [MyActivityController::class, 'index'])->name('activity.index');
     Route::get('/profile/setup', [ProfileController::class, 'setup'])->name('profile.setup');
     Route::post('/profile/setup', [ProfileController::class, 'completeSetup'])->name('profile.setup.store');
@@ -147,6 +154,8 @@ require __DIR__.'/auth.php';
 
 Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verified', 'super-admin'])->group(function () {
     Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
+    Route::get('/notifications/test', [TestNotificationController::class, 'index'])->name('notifications.test');
+    Route::post('/notifications/test', [TestNotificationController::class, 'store'])->middleware('throttle:10,1')->name('notifications.test.store');
     Route::get('/creators', [SuperAdminCreatorController::class, 'index'])->name('creators.index');
     Route::get('/creators/{creator}/assist', [SuperAdminCreatorController::class, 'assist'])->name('creators.assist');
     Route::put('/creators/{creator}', [SuperAdminCreatorController::class, 'update'])->name('creators.update');

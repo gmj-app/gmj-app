@@ -1,0 +1,16 @@
+@php
+    $notificationUser = auth()->user();
+    $notificationUnreadCount = $notificationUser->unreadNotifications()->count();
+    $notificationItems = $notificationUser->notifications()->latest()->limit(10)->get()->map(fn ($item) => new \App\Presenters\NotificationPresenter($item));
+@endphp
+<div class="relative" @click.outside="notificationsOpen = false">
+    <button type="button" @click="notificationsOpen = !notificationsOpen; accountOpen = false" :aria-expanded="notificationsOpen.toString()" aria-controls="notification-dropdown" aria-label="Notifications{{ $notificationUnreadCount ? ', '.$notificationUnreadCount.' unread' : '' }}" class="relative inline-flex size-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7M10 20h4"/></svg>
+        @if($notificationUnreadCount)<span class="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white"><span class="sr-only">{{ $notificationUnreadCount }} unread notifications</span><span aria-hidden="true">{{ $notificationUnreadCount > 99 ? '99+' : $notificationUnreadCount }}</span></span>@endif
+    </button>
+    <div id="notification-dropdown" role="region" aria-labelledby="notification-dropdown-title" x-show="notificationsOpen" x-cloak x-transition.origin.top.right class="fixed left-3 right-3 top-16 z-50 max-h-[75vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-96">
+        <div class="flex items-center justify-between border-b border-slate-200 p-4 dark:border-slate-800"><div><h2 id="notification-dropdown-title" class="font-extrabold">Notifications</h2><p class="text-xs text-slate-500">{{ $notificationUnreadCount }} unread</p></div>@if($notificationUnreadCount)<form method="POST" action="{{ route('notifications.read-all') }}">@csrf<button class="text-sm font-bold text-indigo-600 dark:text-indigo-300">Mark all read</button></form>@endif</div>
+        @forelse($notificationItems as $item)<a href="{{ route('notifications.open', $item->id()) }}" class="block border-b border-slate-100 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"><x-notifications.item :item="$item" compact /></a>@empty<div class="p-8 text-center"><p class="font-bold">You’re all caught up.</p><p class="mt-1 text-sm text-slate-500">New updates will appear here.</p></div>@endforelse
+        <a href="{{ route('notifications.index') }}" class="block p-4 text-center text-sm font-bold text-indigo-600 dark:text-indigo-300">View all notifications</a>
+    </div>
+</div>

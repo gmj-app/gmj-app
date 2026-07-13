@@ -2,6 +2,7 @@
     x-data="{
         open: false,
         accountOpen: false,
+        notificationsOpen: false,
         dark: document.documentElement.classList.contains('dark'),
         toggleTheme() {
             this.dark = ! this.dark;
@@ -9,7 +10,7 @@
             localStorage.setItem('theme', this.dark ? 'dark' : 'light');
         },
     }"
-    @keydown.escape.window="open = false; accountOpen = false"
+    @keydown.escape.window="open = false; accountOpen = false; notificationsOpen = false"
     class="sticky top-0 z-40 border-b border-white/70 bg-white/85 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/85"
 >
     @php
@@ -38,10 +39,11 @@
         <div class="flex shrink-0 items-center justify-end gap-2">
             @auth
                 @php($accountUser = auth()->user())
+                <x-notifications.bell />
                 <div class="relative" @click.outside="accountOpen = false">
                     <button
                         type="button"
-                        @click="accountOpen = ! accountOpen"
+                        @click="accountOpen = ! accountOpen; notificationsOpen = false"
                         class="inline-flex size-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-sm font-extrabold text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-200 dark:hover:border-indigo-500 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-950"
                         aria-haspopup="menu"
                         aria-controls="account-menu"
