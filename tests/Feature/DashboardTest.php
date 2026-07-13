@@ -123,7 +123,9 @@ class DashboardTest extends TestCase
         $creators->each(fn (Creator $creator) => CreatorFavorite::query()->create(['creator_id' => $creator->id, 'user_id' => $user->id]));
 
         $response = $this->actingAs($user)->get(route('dashboard'))->assertOk();
-        $response->assertSee('Your creators')->assertSee('Favorite creators')
+        $response->assertSee('data-my-hub-section="favorite-creators"', false)
+            ->assertSee('Your creators')->assertSee('Favorite creators')
+            ->assertSee('Find more creators')
             ->assertSee('aria-label="2 of 3 favorite creator slots used"', false)
             ->assertSee('aria-label="Open Alpha Creator creator page"', false)
             ->assertSee('aria-label="Open Beta Creator creator page"', false)
@@ -156,7 +158,9 @@ class DashboardTest extends TestCase
     {
         $free = User::factory()->create(['plan_slug' => 'free']);
         Creator::factory()->count(3)->create()->each(fn (Creator $creator) => CreatorFavorite::query()->create(['creator_id' => $creator->id, 'user_id' => $free->id]));
-        $this->actingAs($free)->get(route('dashboard'))->assertOk()->assertDontSee('Find another creator')->assertDontSee('Find more creators');
+        $this->actingAs($free)->get(route('dashboard'))->assertOk()
+            ->assertDontSee('Find another creator')
+            ->assertSee('Find more creators');
 
         $pro = User::factory()->create(['plan_slug' => 'pro']);
         Creator::factory()->count(5)->create()->each(fn (Creator $creator) => CreatorFavorite::query()->create(['creator_id' => $creator->id, 'user_id' => $pro->id]));
@@ -168,10 +172,47 @@ class DashboardTest extends TestCase
 
     public function test_dashboard_favorite_creators_has_a_useful_empty_state(): void
     {
-        $this->actingAs(User::factory()->create())->get(route('dashboard'))->assertOk()
+        $response = $this->actingAs(User::factory()->create())->get(route('dashboard'))->assertOk()
             ->assertSee('No favorite creators yet.')
             ->assertSee('Favorite creators to reach their request pages quickly from My Hub.')
             ->assertSee('Find creators');
+
+        $html = $response->getContent();
+        $sectionStart = strpos($html, '<section data-my-hub-section="favorite-creators"');
+        $sectionEnd = strpos($html, '</section>', $sectionStart);
+
+        $this->assertNotFalse($sectionStart);
+        $this->assertNotFalse($sectionEnd);
+        $section = substr($html, $sectionStart, $sectionEnd - $sectionStart);
+        $this->assertStringContainsString('Your creators', $section);
+        $this->assertStringContainsString('Favorite creators', $section);
+        $this->assertStringContainsString('No favorite creators yet.', $section);
+        $this->assertStringContainsString('Find creators', $section);
+    }
+
+    public function test_dashboard_favorite_creator_header_actions_and_tiles_share_one_section_boundary(): void
+    {
+        $user = User::factory()->create(['plan_slug' => 'free']);
+        $creator = Creator::factory()->create(['display_name' => 'Boundary Creator']);
+        CreatorFavorite::query()->create(['creator_id' => $creator->id, 'user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'))->assertOk()
+            ->assertSee('rounded-2xl border border-slate-200 bg-white p-5 shadow-sm', false)
+            ->assertSee('mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3', false);
+
+        $html = $response->getContent();
+        $sectionStart = strpos($html, '<section data-my-hub-section="favorite-creators"');
+        $sectionEnd = strpos($html, '</section>', $sectionStart);
+
+        $this->assertNotFalse($sectionStart);
+        $this->assertNotFalse($sectionEnd);
+        $section = substr($html, $sectionStart, $sectionEnd - $sectionStart);
+        $this->assertStringContainsString('Your creators', $section);
+        $this->assertStringContainsString('<h2 id="favorite-creators-title"', $section);
+        $this->assertStringContainsString('Find more creators', $section);
+        $this->assertStringContainsString('Open Boundary Creator creator page', $section);
+        $this->assertStringContainsString('Find another creator', $section);
+        $this->assertSame(1, substr_count($html, 'id="favorite-creators-title"'));
     }
 
     public function test_dashboard_links_a_single_owned_creator_directly_to_its_dashboard(): void

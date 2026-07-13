@@ -33,25 +33,23 @@
                 </dl>
             </section>
 
-            <section class="mt-6" aria-labelledby="favorite-creators-title">
-                <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <section data-my-hub-section="favorite-creators" class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6" aria-labelledby="favorite-creators-title">
+                <header class="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Your creators</p>
                         <h2 id="favorite-creators-title" class="mt-1 text-xl font-extrabold text-slate-950 dark:text-white">Favorite creators</h2>
                     </div>
-                    @if ($resources['creator_favorites_used'] < $resources['creator_favorites_limit'])
-                        <a href="{{ route('home') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-300">Find more creators</a>
-                    @endif
-                </div>
+                    <a href="{{ route('home') }}" class="inline-flex min-h-10 items-center text-sm font-bold text-indigo-600 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-300">Find more creators</a>
+                </header>
 
                 @if ($favoriteCreators->isEmpty())
-                    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                    <div class="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
                         <p class="font-bold text-slate-950 dark:text-white">No favorite creators yet.</p>
                         <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Favorite creators to reach their request pages quickly from My Hub.</p>
                         <a href="{{ route('home') }}" class="mt-4 inline-flex min-h-10 items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Find creators</a>
                     </div>
                 @else
-                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach ($favoriteCreators as $favoriteCreator)
                             <x-dashboard.favorite-creator-tile :creator="$favoriteCreator" />
                         @endforeach
