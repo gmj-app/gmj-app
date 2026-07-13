@@ -9,17 +9,25 @@
     $betaFeedbackUser = auth()->user();
     $isAdminFeedbackViewer = $betaFeedbackUser?->canViewBetaFeedbackInbox() ?? false;
     $adminFeedbackItems = collect();
+    $adminSpamFeedbackItems = collect();
     $adminUnreadFeedbackCount = 0;
     $betaChangelog = app(\App\Services\ChangelogService::class)->get();
 
     if ($isAdminFeedbackViewer) {
         $adminFeedbackItems = \App\Models\BetaFeedback::query()
+            ->notSpam()
             ->with('user')
             ->latest('created_at')
             ->latest('id')
             ->limit(25)
             ->get();
-        $adminUnreadFeedbackCount = \App\Models\BetaFeedback::query()->whereNull('read_at')->count();
+        $adminSpamFeedbackItems = \App\Models\BetaFeedback::query()
+            ->spam()
+            ->with(['user', 'spamBy'])
+            ->latest('spam_at')
+            ->limit(25)
+            ->get();
+        $adminUnreadFeedbackCount = \App\Models\BetaFeedback::query()->unread()->count();
     }
 
     $feedbackInitials = function (?string $name, ?string $email): string {
@@ -39,8 +47,14 @@
     x-data="{
         open: false,
         activeTab: 'inbox',
+        inboxView: 'inbox',
+        inboxCount: {{ $adminFeedbackItems->count() }},
+        spamCount: {{ $adminSpamFeedbackItems->count() }},
         unreadCount: {{ $adminUnreadFeedbackCount }},
+        notice: '',
         markReadUrlTemplate: @js(route('internal.beta-feedback.mark-read', ['feedback' => '__FEEDBACK_ID__'], false)),
+        spamUrlTemplate: @js(route('internal.beta-feedback.spam', ['feedback' => '__FEEDBACK_ID__'], false)),
+        restoreUrlTemplate: @js(route('internal.beta-feedback.restore', ['feedback' => '__FEEDBACK_ID__'], false)),
         markRead(id, setRead) {
             fetch(this.markReadUrlTemplate.replace('__FEEDBACK_ID__', id), {
                 method: 'POST',
@@ -62,6 +76,35 @@
                     this.unreadCount = data.unread_count ?? Math.max(0, this.unreadCount - 1);
                 })
                 .catch(() => {});
+        },
+        moderate(url, successMessage, onSuccess) {
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']')?.content || '',
+                },
+                body: JSON.stringify({}),
+            }).then(async response => {
+                const data = await response.json().catch(() => ({}));
+                if (! response.ok) throw new Error(data.message || 'Feedback could not be updated.');
+                this.unreadCount = data.unread_count ?? this.unreadCount;
+                this.notice = data.message || successMessage;
+                onSuccess();
+                window.setTimeout(() => this.notice = '', 3000);
+            }).catch(() => {});
+        },
+        markSpam(id, wasUnread, hide) {
+            if (! window.confirm('Mark as spam?\n\nThis item will be removed from the Feedback Inbox but preserved for review.')) return;
+            this.moderate(this.spamUrlTemplate.replace('__FEEDBACK_ID__', id), 'Feedback marked as spam.', () => {
+                hide(); this.inboxCount = Math.max(0, this.inboxCount - 1); this.spamCount++;
+            });
+        },
+        restoreSpam(id, hide) {
+            this.moderate(this.restoreUrlTemplate.replace('__FEEDBACK_ID__', id), 'Feedback restored to inbox.', () => {
+                hide(); this.spamCount = Math.max(0, this.spamCount - 1); this.inboxCount++;
+            });
         },
         openModal() {
             this.activeTab = 'inbox';
@@ -150,14 +193,18 @@
                 </div>
 
                 <div id="beta-admin-inbox-panel" role="tabpanel" aria-labelledby="beta-admin-inbox-tab" x-show="activeTab === 'inbox'" class="mt-5">
+                    <div class="mb-4 flex gap-2" role="tablist" aria-label="Feedback inbox filters">
+                        <button type="button" x-on:click="inboxView='inbox'" x-bind:aria-selected="(inboxView==='inbox').toString()" class="rounded-full px-4 py-2 text-sm font-bold" x-bind:class="inboxView==='inbox' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'">Inbox (<span x-text="inboxCount"></span>)</button>
+                        <button type="button" x-on:click="inboxView='spam'" x-bind:aria-selected="(inboxView==='spam').toString()" class="rounded-full px-4 py-2 text-sm font-bold" x-bind:class="inboxView==='spam' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'">Spam (<span x-text="spamCount"></span>)</button>
+                    </div>
+                    <p x-show="notice" x-cloak x-text="notice" role="status" aria-live="polite" class="mb-4 rounded-xl bg-emerald-100 p-3 text-sm font-bold text-emerald-800"></p>
+                    <div x-show="inboxView === 'inbox'">
                     <div class="flex items-center justify-between gap-3 border-y border-slate-100 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
                         <span>Showing latest 25</span>
                         <span x-show="unreadCount > 0" x-cloak><strong x-text="unreadCount"></strong> unread</span>
                     </div>
 
-                    @if ($adminFeedbackItems->isEmpty())
-                        <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center text-sm font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">No feedback yet.</div>
-                    @else
+                    @if ($adminFeedbackItems->isNotEmpty())
                     <div class="mt-5 max-h-[62vh] space-y-4 overflow-y-auto pr-1">
                         @foreach ($adminFeedbackItems as $feedback)
                             @php
@@ -169,7 +216,8 @@
                             @endphp
 
                             <article
-                                x-data="{ readAt: @js($feedback->read_at?->toIso8601String()) }"
+                                x-data="{ readAt: @js($feedback->read_at?->toIso8601String()), removed: false }"
+                                x-show="! removed"
                                 x-bind:class="readAt ? 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/70' : 'border-indigo-300 bg-indigo-50/70 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/30 dark:ring-indigo-800/60'"
                                 class="rounded-2xl border p-4 transition"
                             >
@@ -230,6 +278,7 @@
                                             <span x-show="readAt" class="text-xs font-bold text-slate-500 dark:text-slate-400">
                                                 Read
                                             </span>
+                                            <button type="button" x-on:click="markSpam({{ $feedback->id }}, ! readAt, () => removed = true)" aria-label="Mark feedback from {{ $feedbackName }} as spam" class="inline-flex min-h-10 items-center justify-center rounded-full border border-red-300 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40">Mark as spam</button>
                                         </div>
                                     </div>
                                 </div>
@@ -237,6 +286,26 @@
                         @endforeach
                     </div>
                     @endif
+                    <div x-show="inboxCount === 0" x-cloak class="mt-5 rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center text-sm font-semibold text-slate-500">No feedback yet.</div>
+                    </div>
+
+                    <div x-show="inboxView === 'spam'" x-cloak>
+                        <div class="flex items-center justify-between border-y border-slate-100 py-3 text-sm text-slate-500 dark:border-slate-800"><span>Latest 25 spam items</span><span x-text="spamCount + ' retained'"></span></div>
+                        @if ($adminSpamFeedbackItems->isNotEmpty())
+                            <div class="mt-5 max-h-[62vh] space-y-4 overflow-y-auto pr-1">
+                            @foreach($adminSpamFeedbackItems as $feedback)
+                                @php($spamName = $feedback->name ?: $feedback->user?->publicName() ?: 'Guest tester')
+                                <article x-data="{ removed: false }" x-show="! removed" class="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+                                    <div class="flex flex-wrap items-center gap-2"><h3 class="font-extrabold">{{ $spamName }}</h3><span class="text-xs text-slate-500">{{ $feedback->email }}</span><span class="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-900">Spam</span></div>
+                                    <div class="mt-1 text-xs text-slate-500">Submitted {{ $feedback->created_at?->format('M j, Y g:i A') }} · Marked {{ $feedback->spam_at?->format('M j, Y g:i A') }} by {{ $feedback->spamBy?->name ?: 'Former admin' }}</div>
+                                    <p class="mt-3 whitespace-pre-line break-words text-sm">{{ $feedback->message }}</p>
+                                    <button type="button" x-on:click="restoreSpam({{ $feedback->id }}, () => removed = true)" aria-label="Restore feedback from {{ $spamName }} to inbox" class="mt-4 inline-flex min-h-10 items-center rounded-full bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">Restore to inbox</button>
+                                </article>
+                            @endforeach
+                            </div>
+                        @endif
+                        <div x-show="spamCount === 0" x-cloak class="mt-5 rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center text-sm font-semibold text-slate-500">No spam feedback.</div>
+                    </div>
                 </div>
 
                 <div id="beta-admin-changelog-panel" role="tabpanel" aria-labelledby="beta-admin-changelog-tab" x-show="activeTab === 'changelog'" x-cloak class="mt-5">

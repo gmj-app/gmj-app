@@ -40,6 +40,10 @@ Route::post('/internal/beta-feedback/{feedback}/read', [BetaFeedbackController::
     ->name('internal.beta-feedback.mark-read');
 Route::post('/internal/beta-feedback/{feedback}/unread', [BetaFeedbackController::class, 'markUnread'])
     ->name('internal.beta-feedback.mark-unread');
+Route::post('/internal/beta-feedback/{feedback}/spam', [BetaFeedbackController::class, 'spam'])
+    ->name('internal.beta-feedback.spam');
+Route::post('/internal/beta-feedback/{feedback}/restore', [BetaFeedbackController::class, 'restore'])
+    ->name('internal.beta-feedback.restore');
 
 Route::get('/dashboard', [DashboardController::class, '__invoke'])
     ->middleware(['auth', 'verified', EnsurePublicProfileIsComplete::class])

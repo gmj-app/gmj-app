@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\BetaFeedbackSubmitted;
 use App\Models\BetaFeedback;
 use App\Models\User;
+use App\Services\SuperAdminAuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,11 +15,14 @@ use Throwable;
 
 class BetaFeedbackController extends Controller
 {
+    public function __construct(private readonly SuperAdminAuditService $audit) {}
+
     public function index(Request $request): JsonResponse
     {
         $this->authorizeInbox($request);
 
         $feedback = BetaFeedback::query()
+            ->notSpam()
             ->with(['user', 'readBy'])
             ->latest('created_at')
             ->latest('id')
@@ -26,7 +30,7 @@ class BetaFeedbackController extends Controller
             ->get();
 
         return response()->json([
-            'unread_count' => BetaFeedback::query()->whereNull('read_at')->count(),
+            'unread_count' => BetaFeedback::query()->unread()->count(),
             'feedback' => $feedback->map(fn (BetaFeedback $item): array => [
                 'id' => $item->id,
                 'name' => $item->name,
@@ -122,7 +126,7 @@ class BetaFeedbackController extends Controller
             'success' => true,
             'read_at' => $feedback->read_at?->toIso8601String(),
             'read_by' => $user->name,
-            'unread_count' => BetaFeedback::query()->whereNull('read_at')->count(),
+            'unread_count' => BetaFeedback::query()->unread()->count(),
         ]);
     }
 
@@ -137,8 +141,37 @@ class BetaFeedbackController extends Controller
 
         return response()->json([
             'success' => true,
-            'unread_count' => BetaFeedback::query()->whereNull('read_at')->count(),
+            'unread_count' => BetaFeedback::query()->unread()->count(),
         ]);
+    }
+
+    public function spam(Request $request, BetaFeedback $feedback): JsonResponse
+    {
+        $user = $this->authorizeInbox($request);
+        $validated = $request->validate([
+            'spam_reason' => ['nullable', Rule::in(['unsolicited_sales', 'automated_spam', 'abusive', 'irrelevant', 'other'])],
+        ]);
+        $before = ['spam_at' => $feedback->spam_at?->toIso8601String(), 'spam_by_user_id' => $feedback->spam_by_user_id, 'spam_reason' => $feedback->spam_reason];
+
+        if (! $feedback->isSpam()) {
+            $feedback->forceFill(['spam_at' => now(), 'spam_by_user_id' => $user->id, 'spam_reason' => $validated['spam_reason'] ?? null])->save();
+            $this->audit->record($user, $feedback, 'beta_feedback.marked_spam', 'Testing feedback marked as spam.', $before, ['spam_at' => $feedback->spam_at?->toIso8601String(), 'spam_by_user_id' => $user->id, 'spam_reason' => $feedback->spam_reason], ['sender_email' => $feedback->email], $request);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Feedback marked as spam.', 'unread_count' => BetaFeedback::query()->unread()->count()]);
+    }
+
+    public function restore(Request $request, BetaFeedback $feedback): JsonResponse
+    {
+        $user = $this->authorizeInbox($request);
+        $before = ['spam_at' => $feedback->spam_at?->toIso8601String(), 'spam_by_user_id' => $feedback->spam_by_user_id, 'spam_reason' => $feedback->spam_reason];
+
+        if ($feedback->isSpam()) {
+            $feedback->forceFill(['spam_at' => null, 'spam_by_user_id' => null, 'spam_reason' => null])->save();
+            $this->audit->record($user, $feedback, 'beta_feedback.restored_from_spam', 'Testing feedback restored from spam.', $before, ['spam_at' => null, 'spam_by_user_id' => null, 'spam_reason' => null], ['sender_email' => $feedback->email], $request);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Feedback restored to inbox.', 'unread_count' => BetaFeedback::query()->unread()->count()]);
     }
 
     private function authorizeInbox(Request $request): User

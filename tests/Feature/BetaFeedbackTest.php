@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\BetaFeedbackSubmitted;
 use App\Models\BetaFeedback;
+use App\Models\SuperAdminAuditLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
@@ -85,6 +86,8 @@ class BetaFeedbackTest extends TestCase
             ->assertSee('Screenshot link.')
             ->assertSee('Unread')
             ->assertSee('Mark read')
+            ->assertSee('Mark as spam')
+            ->assertSee('Spam (')
             ->assertSee('Showing latest 25')
             ->assertSee('Feedback Inbox')
             ->assertSee('Change Log')
@@ -226,6 +229,63 @@ class BetaFeedbackTest extends TestCase
 
         $this->assertNotNull($newer->fresh()->read_at);
         $this->assertSame($admin->id, $newer->fresh()->read_by_user_id);
+    }
+
+    public function test_admin_can_mark_feedback_as_spam_and_it_leaves_inbox_and_unread_count(): void
+    {
+        config(['gmj.beta_feedback_enabled' => true, 'gmj.admin_emails' => ['admin@example.test']]);
+        $admin = User::factory()->create(['name' => 'Spam Moderator', 'email' => 'admin@example.test']);
+        $spam = BetaFeedback::query()->create(['name' => 'Sales Bot', 'email' => 'sales@example.test', 'type' => 'Other', 'message' => 'Buy our service.']);
+        $legitimate = BetaFeedback::query()->create(['name' => 'Real Tester', 'email' => 'real@example.test', 'type' => 'Bug', 'message' => 'A real bug.']);
+
+        $this->actingAs($admin)->postJson(route('internal.beta-feedback.spam', $spam), ['spam_reason' => 'unsolicited_sales'])
+            ->assertOk()->assertJsonPath('unread_count', 1)->assertJsonPath('message', 'Feedback marked as spam.');
+
+        $spam->refresh();
+        $this->assertTrue($spam->isSpam());
+        $this->assertSame($admin->id, $spam->spam_by_user_id);
+        $this->assertSame('unsolicited_sales', $spam->spam_reason);
+        $this->assertNull($spam->read_at);
+        $this->getJson(route('internal.beta-feedback.index'))->assertOk()
+            ->assertJsonMissing(['id' => $spam->id])->assertJsonFragment(['id' => $legitimate->id])->assertJsonPath('unread_count', 1);
+        $this->assertDatabaseHas('beta_feedback', ['id' => $spam->id]);
+        $this->assertDatabaseHas('super_admin_audit_logs', ['action' => 'beta_feedback.marked_spam', 'auditable_id' => $spam->id]);
+    }
+
+    public function test_spam_can_be_reviewed_and_restored_without_changing_read_state(): void
+    {
+        config(['gmj.beta_feedback_enabled' => true, 'gmj.admin_emails' => ['admin@example.test']]);
+        $admin = User::factory()->create(['email' => 'admin@example.test']);
+        $readAt = now()->subHour();
+        $feedback = BetaFeedback::query()->create(['name' => 'Gemma Marshall', 'email' => 'gemma@example.test', 'type' => 'Bug', 'message' => 'Review me.', 'read_at' => $readAt, 'spam_at' => now(), 'spam_by_user_id' => $admin->id]);
+
+        $this->actingAs($admin)->get('/')->assertOk()->assertSee('Review me.')->assertSee('Restore to inbox')->assertSee('Marked');
+        $this->postJson(route('internal.beta-feedback.restore', $feedback))->assertOk()->assertJsonPath('message', 'Feedback restored to inbox.');
+
+        $feedback->refresh();
+        $this->assertFalse($feedback->isSpam());
+        $this->assertSame($readAt->format('Y-m-d H:i:s'), $feedback->read_at->format('Y-m-d H:i:s'));
+        $this->getJson(route('internal.beta-feedback.index'))->assertJsonFragment(['id' => $feedback->id]);
+        $this->assertDatabaseHas('super_admin_audit_logs', ['action' => 'beta_feedback.restored_from_spam', 'auditable_id' => $feedback->id]);
+    }
+
+    public function test_spam_actions_are_idempotent_and_hidden_from_non_admins(): void
+    {
+        config(['gmj.beta_feedback_enabled' => true, 'gmj.admin_emails' => ['admin@example.test']]);
+        $admin = User::factory()->create(['email' => 'admin@example.test']);
+        $feedback = BetaFeedback::query()->create(['name' => 'Tester', 'type' => 'Other', 'message' => 'Message']);
+
+        $this->postJson(route('internal.beta-feedback.spam', $feedback))->assertNotFound();
+        $this->actingAs(User::factory()->create())->postJson(route('internal.beta-feedback.spam', $feedback))->assertNotFound();
+        $this->actingAs($admin)->postJson(route('internal.beta-feedback.spam', $feedback))->assertOk();
+        $firstSpamAt = $feedback->fresh()->spam_at;
+        $this->postJson(route('internal.beta-feedback.spam', $feedback))->assertOk();
+        $this->assertTrue($feedback->fresh()->spam_at->equalTo($firstSpamAt));
+        $this->assertSame(1, SuperAdminAuditLog::query()->where('action', 'beta_feedback.marked_spam')->count());
+
+        $this->postJson(route('internal.beta-feedback.restore', $feedback))->assertOk();
+        $this->postJson(route('internal.beta-feedback.restore', $feedback))->assertOk();
+        $this->assertSame(1, SuperAdminAuditLog::query()->where('action', 'beta_feedback.restored_from_spam')->count());
     }
 
     public function test_feedback_modal_uses_direct_open_state_and_posts_to_feedback_route(): void
