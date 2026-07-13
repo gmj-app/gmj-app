@@ -1,0 +1,29 @@
+<x-super-admin-layout title="Creators">
+    <div class="mb-6"><h2 class="text-2xl font-extrabold">Creators</h2><p class="text-sm text-slate-500">Manage public creator spaces without accessing private account credentials.</p></div>
+    <form method="GET" class="mb-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 md:grid-cols-4">
+        <input name="q" value="{{ $search }}" placeholder="Name, handle, owner, YouTube…" class="rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-950 md:col-span-2">
+        <select name="filter" class="rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-950">
+            @foreach(['' => 'All current', 'active' => 'Active', 'disabled' => 'Disabled', 'soft_deleted' => 'Soft Deleted', 'incomplete' => 'Incomplete Setup', 'moderation_enabled' => 'Moderation Enabled', 'moderation_disabled' => 'Moderation Disabled', 'recent' => 'Created Recently'] as $value => $label)<option value="{{ $value }}" @selected($filter === $value)>{{ $label }}</option>@endforeach
+        </select>
+        <select name="sort" class="rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-950">
+            @foreach(['newest' => 'Newest', 'oldest' => 'Oldest', 'name' => 'Name', 'most_followers' => 'Most followers', 'most_requests' => 'Most requests', 'least_complete' => 'Least complete', 'recently_updated' => 'Recently updated'] as $value => $label)<option value="{{ $value }}" @selected($sort === $value)>{{ $label }}</option>@endforeach
+        </select>
+        <button class="rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white">Search and filter</button>
+    </form>
+    <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+        <table class="min-w-full text-left text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-950"><tr><th class="p-4">Creator / owner</th><th class="p-4">Status</th><th class="p-4">Setup</th><th class="p-4">Activity</th><th class="p-4">Dates</th><th class="p-4">Actions</th></tr></thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+        @forelse($creators as $creator) @php($owner = $creator->creatorOwners->first()?->user)
+            <tr><td class="p-4"><div class="flex gap-3">@if($creator->avatar_url)<img src="{{ $creator->avatar_url }}" class="size-11 rounded-full object-cover" alt="">@endif<div><div class="font-bold">{{ $creator->display_name }}</div><div class="text-slate-500">/{{ $creator->slug }}</div><div>{{ $owner?->public_display_name ?: $owner?->name ?: 'No owner' }}</div><div class="text-slate-500">{{ $owner?->email }}</div>@if($creator->youtube_channel_title || $creator->youtube_channel_url)<div class="max-w-xs truncate text-slate-500">{{ $creator->youtube_channel_title ?: $creator->youtube_channel_url }}</div>@endif</div></div></td>
+            <td class="p-4"><span class="rounded-full px-2 py-1 text-xs font-bold {{ $creator->trashed() || !$creator->isAvailableForGuides() ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">{{ $creator->trashed() ? 'Soft Deleted' : ($creator->isAvailableForGuides() ? 'Active' : 'Disabled') }}</span><div class="mt-2 text-xs">{{ $creator->recommendation_approval_mode === 'manual' ? 'Moderation enabled' : 'Moderation disabled' }}</div></td>
+            <td class="p-4"><div class="font-bold">{{ $creator->setup['percentage'] }}%</div>@if($creator->setup['missing'])<div class="max-w-xs text-xs text-slate-500">Missing: {{ implode(', ', $creator->setup['missing']) }}</div>@endif</td>
+            <td class="p-4">{{ $creator->request_count }} requests<br>{{ $creator->follower_count }} followers<br>{{ $creator->published_count }} published</td>
+            <td class="p-4 text-xs">Created {{ $creator->created_at?->format('M j, Y') }}<br>Updated {{ $creator->updated_at?->format('M j, Y') }}</td>
+            <td class="p-4"><div class="flex min-w-40 flex-col items-start gap-2">@unless($creator->trashed())<a class="font-bold text-indigo-600" href="{{ route('super-admin.creators.assist', $creator) }}">Assist Setup</a><a class="font-bold text-indigo-600" href="{{ route('super-admin.creators.preview', $creator) }}">Preview</a>
+            @if($creator->isAvailableForGuides())<form method="POST" action="{{ route('super-admin.creators.disable', $creator) }}" onsubmit="return confirm('Disable this creator and release active Guide resources?')">@csrf @method('PATCH')<button class="font-bold text-amber-600">Disable creator</button></form>@else<form method="POST" action="{{ route('super-admin.creators.enable', $creator) }}" onsubmit="return confirm('Enable this creator? Previous Guide allocations will remain released.')">@csrf @method('PATCH')<button class="font-bold text-emerald-600">Enable creator</button></form>@endif
+            <form method="POST" action="{{ route('super-admin.creators.destroy', $creator) }}" onsubmit="return confirm('Soft delete this creator? It will disappear publicly; favorite slots, active votes, and request capacity will be released. Historical data is preserved.')">@csrf @method('DELETE')<button class="font-bold text-red-600">Soft delete creator</button></form>
+            @else<form method="POST" action="{{ route('super-admin.creators.restore', $creator->id) }}" onsubmit="return confirm('Restore this creator? Previous Guide resource allocations will not be restored.')">@csrf @method('PATCH')<button class="font-bold text-emerald-600">Restore creator</button></form>@endunless</div></td></tr>
+        @empty<tr><td colspan="6" class="p-8 text-center text-slate-500">No creators matched.</td></tr>@endforelse
+        </tbody></table>
+    </div><div class="mt-6">{{ $creators->links() }}</div>
+</x-super-admin-layout>

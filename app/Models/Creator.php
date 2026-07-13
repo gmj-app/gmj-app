@@ -206,6 +206,11 @@ class Creator extends Model
         return $this->hasMany(CreatorFavorite::class);
     }
 
+    public function adminAuditLogs()
+    {
+        return $this->morphMany(SuperAdminAuditLog::class, 'auditable');
+    }
+
     public function favoritedBy(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'creator_favorites')

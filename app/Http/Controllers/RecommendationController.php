@@ -30,7 +30,7 @@ class RecommendationController extends Controller
 
     public function showCreatorQueue(Request $request, Creator $creator): View
     {
-        abort_if($creator->status !== 'active', 404);
+        abort_if($creator->status !== 'active' && ! $request->user()?->isSuperAdmin(), 404);
 
         $filters = [
             'q' => trim((string) $request->query('q', '')),

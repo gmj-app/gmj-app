@@ -16,6 +16,7 @@ use App\Http\Controllers\PublicGuideProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\HomepageAdvertisementController;
 use App\Http\Controllers\ToolsAdminController;
@@ -141,6 +142,15 @@ require __DIR__.'/auth.php';
 
 Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verified', 'super-admin'])->group(function () {
     Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
+    Route::get('/creators', [SuperAdminCreatorController::class, 'index'])->name('creators.index');
+    Route::get('/creators/{creator}/assist', [SuperAdminCreatorController::class, 'assist'])->name('creators.assist');
+    Route::put('/creators/{creator}', [SuperAdminCreatorController::class, 'update'])->name('creators.update');
+    Route::post('/creators/{creator}/starter-requests', [SuperAdminCreatorController::class, 'starter'])->name('creators.starter');
+    Route::get('/creators/{creator}/preview', [SuperAdminCreatorController::class, 'preview'])->name('creators.preview');
+    Route::patch('/creators/{creator}/disable', [SuperAdminCreatorController::class, 'disable'])->name('creators.disable');
+    Route::patch('/creators/{creator}/enable', [SuperAdminCreatorController::class, 'enable'])->name('creators.enable');
+    Route::delete('/creators/{creator}', [SuperAdminCreatorController::class, 'destroy'])->name('creators.destroy');
+    Route::patch('/creators/{creator}/restore', [SuperAdminCreatorController::class, 'restore'])->whereNumber('creator')->name('creators.restore');
     Route::patch('/ads/{advertisement}/toggle', [HomepageAdvertisementController::class, 'toggle'])->name('ads.toggle');
     Route::resource('ads', HomepageAdvertisementController::class)->parameters(['ads' => 'advertisement'])->except('show');
 });
