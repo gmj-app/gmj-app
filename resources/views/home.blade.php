@@ -116,7 +116,8 @@
                                                         {{ $loop->iteration }}
                                                     </span>
                                                     <span class="line-clamp-2 min-w-0 text-sm font-medium leading-5 text-slate-700 dark:text-slate-100">
-                                                        {{ $request->title }}
+                                                        {{ $request->displayTitle() }}
+                                                        <x-requests.requested-by-you-badge :recommendation="$request" class="mt-1" />
                                                     </span>
                                                 </li>
                                             @endforeach

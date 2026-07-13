@@ -44,7 +44,7 @@ class HomeController extends Controller
             ->withQueryString();
 
         $topRequests = Recommendation::query()
-            ->select(['id', 'creator_id', 'title', 'is_pinned', 'created_at'])
+            ->select(['id', 'creator_id', 'submitted_by', 'submission_source', 'title', 'source_title', 'display_title_override', 'is_pinned', 'created_at'])
             ->whereIn('creator_id', $creators->pluck('id'))
             ->publiclyVisible()
             ->votable()

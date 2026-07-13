@@ -117,7 +117,7 @@
                                 <div class="min-w-0">
                                     <a href="{{ $url }}" class="break-words font-bold text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">{{ $recommendation->displayTitle() }}</a>
                                     <x-requests.edit-own-request-action :recommendation="$recommendation" compact class="ml-2 min-h-0 text-xs" />
-                                    <x-requests.owned-request-indicator :recommendation="$recommendation" class="mt-1" />
+                                    <x-requests.requested-by-you-badge :recommendation="$recommendation" class="mt-1" />
                                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $recommendation->creator->display_name }} · {{ $recommendation->mediaTypeLabel() }} · {{ $recommendation->created_at->format('M j, Y') }} · {{ $recommendation->totalVotes() }} {{ Str::plural('vote', $recommendation->totalVotes()) }}</p>
                                 </div>
                                 <span class="w-fit shrink-0 rounded-full px-2.5 py-1 text-xs font-bold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>

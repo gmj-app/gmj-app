@@ -115,7 +115,7 @@ class GuideRequestPresentationTest extends TestCase
             ->assertDontSee(route('requests.presentation.edit', $request), escape: false);
     }
 
-    public function test_pending_request_uses_shared_activity_cta_but_terminal_and_creator_added_requests_do_not(): void
+    public function test_pending_request_uses_shared_activity_cta_but_terminal_and_creator_origin_requests_do_not_get_edit_cta(): void
     {
         [$guide, $request] = $this->guideRequest(['status' => 'pending', 'title' => 'Pending owned request']);
 
@@ -133,7 +133,7 @@ class GuideRequestPresentationTest extends TestCase
         $request->update(['status' => 'approved', 'submission_source' => Recommendation::SUBMISSION_SOURCE_CREATOR]);
         $this->actingAs($guide)->get(route('creator.queue', $request->creator))
             ->assertOk()
-            ->assertDontSee('You requested')
+            ->assertSee('You requested')
             ->assertDontSee(route('requests.presentation.edit', $request), escape: false);
     }
 

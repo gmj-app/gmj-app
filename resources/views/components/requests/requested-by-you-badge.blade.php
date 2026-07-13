@@ -1,6 +1,6 @@
 @props(['recommendation'])
 
-@if ($recommendation->requestedByCurrentUser(auth()->user()))
+@if ($recommendation->isRequestedBy(auth()->user()))
     <span
         title="You requested"
         {{ $attributes->class('inline-flex items-center gap-1 rounded-full border border-amber-300/70 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200') }}

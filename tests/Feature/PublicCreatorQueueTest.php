@@ -446,6 +446,24 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('You requested');
     }
 
+    public function test_historical_creator_origin_row_preserves_requester_badge_in_folded_and_expanded_cards(): void
+    {
+        $creator = Creator::factory()->create();
+        $guide = User::factory()->create();
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $guide->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_CREATOR,
+            'title' => 'Historical preserved requester',
+            'status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($guide)->get(route('creator.queue', $creator))->assertOk();
+
+        $this->assertSame(2, substr_count($response->getContent(), '<span>You requested</span>'));
+        $response->assertSee('Suggested by')->assertSee($guide->publicName());
+    }
+
     public function test_collapsed_rows_hide_avatar_stacks_while_expanded_support_keeps_them(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);

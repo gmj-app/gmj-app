@@ -95,7 +95,7 @@
                                     @else
                                         <span class="block break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $suggestion->displayTitle() }}</span>
                                     @endif
-                                    <x-requests.owned-request-indicator :recommendation="$suggestion" class="mt-1" />
+                                    <x-requests.requested-by-you-badge :recommendation="$suggestion" class="mt-1" />
                                     <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
                                         {{ $suggestion->mediaTypeLabel() }}
                                         <span aria-hidden="true">&middot;</span>

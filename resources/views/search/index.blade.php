@@ -70,6 +70,7 @@
                                             @endphp
                                             <a href="{{ $recommendationUrl }}" class="group/match block py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500" aria-label="Open request {{ $recommendationTitle }} for {{ $creator->display_name }}">
                                                 <span class="line-clamp-2 text-sm font-semibold leading-5 text-slate-800 group-hover/match:text-indigo-600 dark:text-slate-100 dark:group-hover/match:text-indigo-300">{{ $recommendationTitle }}</span>
+                                                <x-requests.requested-by-you-badge :recommendation="$recommendation" class="mt-1" />
                                                 <span class="mt-2 flex flex-wrap items-center gap-2">
                                                     <span class="rounded-full px-2 py-0.5 text-[11px] font-bold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>
                                                     <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ $recommendation->mediaTypeLabel() }}</span>

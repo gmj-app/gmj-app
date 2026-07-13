@@ -25,6 +25,6 @@
             </span>
         @endif
 
-        <x-requests.owned-request-indicator :recommendation="$recommendation" />
+        <x-requests.requested-by-you-badge :recommendation="$recommendation" />
     </span>
 @endif

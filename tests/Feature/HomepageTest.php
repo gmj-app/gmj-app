@@ -202,6 +202,23 @@ class HomepageTest extends TestCase
             ]);
     }
 
+    public function test_requester_badge_is_consistent_on_homepage_and_search_results(): void
+    {
+        $guide = User::factory()->create();
+        $creator = Creator::factory()->create(['display_name' => 'Badge Search Creator']);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $guide->id,
+            'submission_source' => Recommendation::SUBMISSION_SOURCE_CREATOR,
+            'title' => 'Historical Badge Needle',
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($guide)->get(route('home'))->assertOk()->assertSee('You requested');
+        $this->actingAs($guide)->get(route('search.index', ['q' => 'Badge Needle']))->assertOk()->assertSee('You requested');
+        $this->actingAs(User::factory()->create())->get(route('search.index', ['q' => 'Badge Needle']))->assertOk()->assertDontSee('You requested');
+    }
+
     public function test_homepage_shows_up_to_three_top_public_requests_per_creator(): void
     {
         $creator = Creator::factory()->create([
