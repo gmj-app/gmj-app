@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RequestCreated;
 use App\Http\Requests\StoreRecommendationRequest;
 use App\Models\Creator;
 use App\Models\Recommendation;
@@ -15,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
@@ -272,7 +274,7 @@ class RecommendationController extends Controller
             ? $this->playlistMetadata->fetch($normalized['youtube_playlist_id'])
             : null;
 
-        DB::transaction(function () use ($creator, $request, $validated, $normalized, $playlistMetadata): void {
+        $createdRequestId = DB::transaction(function () use ($creator, $request, $validated, $normalized, $playlistMetadata): int {
             /** @var User $user */
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
 
@@ -291,7 +293,7 @@ class RecommendationController extends Controller
                 ]);
             }
 
-            $creator->recommendations()->create([
+            $createdRequest = $creator->recommendations()->create([
                 ...$validated,
                 'submitted_by' => $user->id,
                 'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN,
@@ -313,7 +315,26 @@ class RecommendationController extends Controller
                 'title' => filled($playlistMetadata['title'] ?? null) ? $playlistMetadata['title'] : $validated['title'],
                 'status' => $creator->defaultRecommendationStatus(),
             ]);
+
+            return $createdRequest->id;
         });
+
+        try {
+            RequestCreated::dispatch(
+                $createdRequestId,
+                $creator->id,
+                $request->user()->id,
+                $creator->defaultRecommendationStatus(),
+                $request->user()->id,
+                'guide',
+            );
+        } catch (Throwable $exception) {
+            Log::error('Unable to queue new request notification.', [
+                'request_id' => $createdRequestId,
+                'creator_id' => $creator->id,
+                'exception' => $exception,
+            ]);
+        }
 
         return redirect()
             ->route('creator.queue', $creator)

@@ -111,7 +111,7 @@
 
                         <tbody class="divide-y divide-gray-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
                             @forelse ($recommendations as $recommendation)
-                                <tr class="align-top">
+                                <tr id="request-{{ $recommendation->id }}" class="align-top scroll-mt-20">
                                     <td class="px-3 py-4">
                                         <div class="flex items-start gap-3">
                                             @if ($recommendation->youtubeThumbnailUrl())

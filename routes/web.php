@@ -17,6 +17,7 @@ use App\Http\Controllers\PublicGuideProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SuperAdmin\AnnouncementController;
 use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorController;
 use App\Http\Controllers\SuperAdmin\CreatorRequestController as SuperAdminCreatorRequestController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
@@ -156,6 +157,10 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verifie
     Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
     Route::get('/notifications/test', [TestNotificationController::class, 'index'])->name('notifications.test');
     Route::post('/notifications/test', [TestNotificationController::class, 'store'])->middleware('throttle:10,1')->name('notifications.test.store');
+    Route::post('/announcements/{announcement}/publish', [AnnouncementController::class, 'publish'])->name('announcements.publish');
+    Route::post('/announcements/{announcement}/cancel', [AnnouncementController::class, 'cancel'])->name('announcements.cancel');
+    Route::post('/announcements/{announcement}/duplicate', [AnnouncementController::class, 'duplicate'])->name('announcements.duplicate');
+    Route::resource('announcements', AnnouncementController::class)->except('show');
     Route::get('/creators', [SuperAdminCreatorController::class, 'index'])->name('creators.index');
     Route::get('/creators/{creator}/assist', [SuperAdminCreatorController::class, 'assist'])->name('creators.assist');
     Route::put('/creators/{creator}', [SuperAdminCreatorController::class, 'update'])->name('creators.update');

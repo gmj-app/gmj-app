@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Events\RequestPublished;
 use App\Models\Recommendation;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -55,8 +57,33 @@ class RecommendationStatusTransitionService
             return ['recommendation' => $locked->fresh(), 'released_votes' => $releasedVotes, 'affected_guides' => $affectedGuides, 'before' => $before, 'after' => $locked->fresh()->only(array_keys($before))];
         });
         Cache::flush();
+        $this->dispatchPublicationIfNew($result['recommendation'], (string) $result['before']['status'], $actor, $actorContext);
 
         return $result;
+    }
+
+    public function dispatchPublicationIfNew(Recommendation $recommendation, string $previousStatus, User $actor, string $actorContext): void
+    {
+        if ($previousStatus === 'published' || $recommendation->status !== 'published') {
+            return;
+        }
+
+        try {
+            RequestPublished::dispatch(
+                $recommendation->id,
+                $recommendation->creator_id,
+                $recommendation->submitted_by,
+                $actor->id,
+                $actorContext,
+                ($recommendation->published_at ?? now())->toIso8601String(),
+            );
+        } catch (Throwable $exception) {
+            Log::error('Unable to queue request publication notifications.', [
+                'request_id' => $recommendation->id,
+                'actor_id' => $actor->id,
+                'exception' => $exception,
+            ]);
+        }
     }
 
     private function publishedAttributes(?string $url): array

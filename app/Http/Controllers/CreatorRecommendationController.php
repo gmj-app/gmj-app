@@ -78,6 +78,7 @@ class CreatorRecommendationController extends Controller
     public function update(Request $request, Creator $creator, Recommendation $recommendation): RedirectResponse
     {
         Gate::authorize('manage', $creator);
+        $previousStatus = (string) $recommendation->status;
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -124,6 +125,8 @@ class CreatorRecommendationController extends Controller
 
             return $releasedVotes;
         });
+        $recommendation->refresh();
+        $this->transitions->dispatchPublicationIfNew($recommendation, $previousStatus, $request->user(), 'creator');
 
         return back()->with(
             'success',

@@ -1,6 +1,6 @@
 # In-app notifications
 
-Phase 1 uses Laravel database notifications and gives every `User` one inbox, regardless of whether the user acts as a Guide, Creator, or both.
+Laravel database notifications give every `User` one inbox, regardless of whether the user acts as a Guide, Creator, or both.
 
 ## Creating a notification
 
@@ -24,29 +24,61 @@ creator_id, request_id, metadata
 
 Taxonomies and display labels live in `config/notifications.php`. Action destinations must be internal relative paths and are resolved by `NotificationUrlResolver`.
 
-## Future domain events
+## Product event integrations
 
-Later phases should follow this pattern without changing the inbox:
+Phase 2 uses this pattern without changing the inbox:
 
 ```text
 Domain event:       RequestPublished
-Listener:           SendRequestPublishedNotifications
-Notification class: RequestPublishedNotification
+Listeners:          NotifyRequestSubmitterOfPublication
+                    NotifyRequestSupportersOfPublication
+Notifications:      GuideRequestPublishedNotification
+                    SupportedRequestPublishedNotification
 Delivery:           NotificationDispatchService
 ```
 
-The same pattern applies to new creator requests, achievements, milestones, announcements, account updates, and billing events. Audience resolution and announcement fan-out belong in listeners/services, not controllers or notification views.
+`RequestCreated` independently queues the creator-owner notification. Both request events are dispatched only after their database mutation commits. Queued listeners reload models by stable ID, and notification failures are logged without rolling back request creation or publication.
 
-Email, preferences, archive/dismiss, push, and real-time badge refresh are intentionally not part of Phase 1. A future retention policy can keep general notifications for 12 months, retain account/billing records longer, and keep achievements indefinitely; no automatic deletion is currently scheduled.
+Historical supporters are resolved from `user_picks`, including rows whose capacity was released for normal lifecycle reasons. Support removed with `request_removed`, soft-deleted users, and the original submitter are excluded.
+
+## Announcements
+
+Super Admin announcements support `all` and `creators` audiences. `AnnouncementAudienceResolver` uses one indexed query; active creator ownership is resolved through `creator_owners` and active creators without per-user queries.
+
+Publishing follows this pipeline:
+
+```text
+AnnouncementPublished event
+  -> DistributeAnnouncementNotifications listener
+  -> announcement_deliveries rows in chunks of 250
+  -> DispatchAnnouncementChunk jobs
+  -> SiteAnnouncementNotification or CreatorAnnouncementNotification
+```
+
+Each delivery row and notification has recipient-level uniqueness. A retry that finds an existing notification is recorded as delivered rather than duplicated. Recipient, delivered, and failed counts are stored on the announcement. Recipient-facing fields lock after publication is queued.
+
+Scheduled announcements are claimed idempotently by:
+
+```shell
+php artisan announcements:publish-due
+```
+
+Laravel's scheduler invokes this command every minute. Cancelled or expired announcements are not delivered.
+
+## Future phases
+
+The same domain-event/listener pattern can add achievements, milestones, account updates, billing events, and other audiences. Audience resolution belongs in resolvers and fan-out services, not controllers or notification views.
+
+Email, preferences, archive/dismiss, push, failed-delivery retry controls, and real-time badge refresh are intentionally not included. A future retention policy can keep general notifications for 12 months, retain account/billing records longer, and keep achievements indefinitely; no automatic deletion is currently scheduled.
 
 ## Queue operation
 
-Phase 1 database notifications are synchronous so a missing worker cannot block local or initial production delivery. The base class uses Laravel's `Queueable` trait. A future concrete notification can implement `Illuminate\Contracts\Queue\ShouldQueue` when workers are deployed.
+Local tests use the `sync` queue. Phase 2 request listeners and announcement fan-out are queued in production, while the normalized notification classes continue to use only Laravel's database channel.
 
 For the configured database queue, production needs the queue tables migrated and a supervised worker such as:
 
 ```shell
-php artisan queue:work --queue=default --tries=3
+php artisan queue:work --queue=default --sleep=3 --tries=3 --timeout=90
 ```
 
 Restart long-running workers after deployments with `php artisan queue:restart`.
@@ -61,3 +93,5 @@ npm run build
 ```
 
 The notification migration creates the Laravel-compatible table plus unread/recent composite indexes and recipient-scoped deduplication uniqueness. It does not purge existing data.
+
+The Phase 2 migration adds `announcements` and `announcement_deliveries`. Laravel Cloud must run one queue worker and invoke `php artisan schedule:run` every minute (or use its managed scheduler) so due announcements are claimed.
