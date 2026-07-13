@@ -11,7 +11,7 @@ class CreatorNewRequestNotification extends BaseDatabaseNotification
     {
         $awaitingReview = $request->status === 'pending';
         $guideName = $request->submittedBy?->publicName() ?: 'A Guide';
-        $requestTitle = filled($request->title) ? $request->title : 'a request';
+        $requestTitle = $request->displayTitle();
         $destination = $awaitingReview
             ? route('creators.recommendations.index', $request->creator, absolute: false).'#request-'.$request->id
             : route('creator.queue', $request->creator, absolute: false).'#recommendation-'.$request->id;

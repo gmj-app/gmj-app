@@ -96,6 +96,8 @@ class RecommendationController extends Controller
                 $query->where(function ($query) use ($filters): void {
                     $query
                         ->where('title', 'like', "%{$filters['q']}%")
+                        ->orWhere('display_title_override', 'like', "%{$filters['q']}%")
+                        ->orWhere('source_title', 'like', "%{$filters['q']}%")
                         ->orWhere('artist', 'like', "%{$filters['q']}%")
                         ->orWhere('channel_title', 'like', "%{$filters['q']}%")
                         ->orWhere('youtube_url', 'like', "%{$filters['q']}%");
@@ -202,6 +204,8 @@ class RecommendationController extends Controller
                 $query->where(function ($query) use ($creator, $filters): void {
                     $query
                         ->where('title', 'like', "%{$filters['q']}%")
+                        ->orWhere('display_title_override', 'like', "%{$filters['q']}%")
+                        ->orWhere('source_title', 'like', "%{$filters['q']}%")
                         ->orWhere('artist', 'like', "%{$filters['q']}%")
                         ->orWhere('channel_title', 'like', "%{$filters['q']}%")
                         ->orWhere('description', 'like', "%{$filters['q']}%")

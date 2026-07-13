@@ -14,7 +14,7 @@ class SupportedRequestPublishedNotification extends BaseDatabaseNotification
             : ($request->creator?->slug ?: 'A creator');
         $requestTitle = filled($request->published_title)
             ? $request->published_title
-            : (filled($request->title) ? $request->title : 'A request');
+            : $request->displayTitle();
         $destination = $request->creator
             ? route('creators.published', $request->creator, absolute: false).'#recommendation-'.$request->id
             : route('notifications.index', absolute: false);

@@ -64,7 +64,7 @@
                         @foreach ($activeVotes as $vote)
                             <li class="flex min-w-0 items-center justify-between gap-3 py-2.5">
                                 <a href="{{ route('creator.queue', $creator).'#recommendation-'.$vote->recommendation_id }}" class="min-w-0 break-words text-sm font-semibold text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">
-                                    {{ $vote->recommendation->title }}
+                                    {{ $vote->recommendation->displayTitle() }}
                                 </a>
                                 <span class="shrink-0 text-sm font-bold text-slate-700 dark:text-slate-200">{{ $vote->vote_count }} {{ Str::plural('vote', $vote->vote_count) }}</span>
                             </li>
@@ -91,9 +91,9 @@
                             <li class="flex min-w-0 items-center justify-between gap-3 py-2.5">
                                 <span class="min-w-0">
                                     @if ($suggestionUrl)
-                                        <a href="{{ $suggestionUrl }}" class="break-words text-sm font-semibold text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">{{ $suggestion->title }}</a>
+                                        <a href="{{ $suggestionUrl }}" class="break-words text-sm font-semibold text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">{{ $suggestion->displayTitle() }}</a>
                                     @else
-                                        <span class="block break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $suggestion->title }}</span>
+                                        <span class="block break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $suggestion->displayTitle() }}</span>
                                     @endif
                                     <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
                                         {{ $suggestion->mediaTypeLabel() }}
@@ -103,7 +103,7 @@
                                         {{ $suggestion->totalVotes() }} community {{ Str::plural('vote', $suggestion->totalVotes()) }}
                                     </span>
                                 </span>
-                                <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold {{ $suggestion->statusBadgeClass() }}">{{ $suggestion->statusLabel() }}</span>
+                                <span class="shrink-0 text-right"><span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $suggestion->statusBadgeClass() }}">{{ $suggestion->statusLabel() }}</span>@can('updateOwnPresentation', $suggestion)<a href="{{ route('requests.presentation.edit', $suggestion) }}" class="mt-2 block text-xs font-bold text-indigo-600 dark:text-indigo-400">Edit request details</a>@endcan</span>
                             </li>
                         @endforeach
                     </ul>

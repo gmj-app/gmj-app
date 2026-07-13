@@ -63,7 +63,7 @@
                                         @foreach ($visibleMatches as $recommendation)
                                             @php
                                                 $isPublished = $recommendation->status === 'published';
-                                                $recommendationTitle = $isPublished ? $recommendation->displayPublishedTitle() : $recommendation->title;
+                                                $recommendationTitle = $isPublished ? $recommendation->displayPublishedTitle() : $recommendation->displayTitle();
                                                 $recommendationUrl = $isPublished
                                                     ? route('creators.published', $creator).'#recommendation-'.$recommendation->id
                                                     : route('creator.queue', ['creator' => $creator, 'q' => $query]).'#recommendation-'.$recommendation->id;

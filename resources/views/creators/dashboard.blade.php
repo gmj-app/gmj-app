@@ -110,7 +110,7 @@
                             <article class="p-5 sm:p-6">
                                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                     <div class="min-w-0">
-                                        <h4 class="truncate font-semibold text-gray-900 dark:text-slate-50">{{ $recommendation->title }}</h4>
+                                        <h4 class="truncate font-semibold text-gray-900 dark:text-slate-50">{{ $recommendation->displayTitle() }}</h4>
 
                                         @if ($recommendation->channel_title || $recommendation->artist)
                                             <p class="mt-1 text-sm text-gray-600 dark:text-slate-300">

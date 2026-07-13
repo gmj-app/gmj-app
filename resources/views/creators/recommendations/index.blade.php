@@ -118,7 +118,7 @@
                                                 <span class="relative block h-11 w-16 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 xl:h-12 xl:w-20 dark:border-slate-700 dark:bg-slate-950">
                                                     <img
                                                         src="{{ $recommendation->youtubeThumbnailUrl() }}"
-                                                        alt="Thumbnail for {{ $recommendation->title }}"
+                                                        alt="Thumbnail for {{ $recommendation->displayTitle() }}"
                                                         loading="lazy"
                                                         class="h-full w-full object-cover"
                                                         onerror="this.parentElement.remove()"
@@ -132,7 +132,18 @@
                                             @endif
 
                                             <div class="min-w-0">
-                                                <p class="break-words font-semibold leading-5 text-gray-900 dark:text-slate-50">{{ $recommendation->title }}</p>
+                                                <p class="break-words font-semibold leading-5 text-gray-900 dark:text-slate-50">{{ $recommendation->displayTitle() }}</p>
+                                                @if ($recommendation->display_title_override)
+                                                    <p class="mt-1 text-xs text-slate-500">Canonical: {{ $recommendation->canonicalDisplayTitle() }}</p>
+                                                    <form method="POST" action="{{ route('creators.recommendations.presentation.clear', [$creator, $recommendation]) }}" class="mt-1">@csrf @method('DELETE')<button class="text-xs font-bold text-red-600">Clear Guide presentation</button></form>
+                                                @endif
+                                                @if ($recommendation->request_context)<p class="mt-1 text-xs text-slate-600 dark:text-slate-300">Guide context: {{ Str::limit($recommendation->request_context, 120) }}</p>@endif
+                                                @if ($recommendation->presentationRevisions->isNotEmpty())
+                                                    <details class="mt-1 text-[11px] text-slate-500"><summary class="cursor-pointer font-semibold">{{ $recommendation->presentationRevisions->count() }} recent presentation {{ Str::plural('revision', $recommendation->presentationRevisions->count()) }}</summary><ul class="mt-1 space-y-2">@foreach($recommendation->presentationRevisions as $revision)<li>{{ str($revision->action)->replace('_', ' ')->title() }} by {{ $revision->actor?->name ?: 'Former user' }} · {{ $revision->created_at->format('M j, Y') }}<form method="POST" action="{{ route('creators.recommendations.presentation.revert', [$creator, $recommendation, $revision]) }}">@csrf<button class="font-bold text-indigo-600">Revert to earlier values</button></form></li>@endforeach</ul></details>
+                                                @endif
+                                                @if ($recommendation->identityCorrections->isNotEmpty())
+                                                    <details class="mt-1 text-xs text-amber-800 dark:text-amber-200"><summary class="cursor-pointer font-bold">{{ $recommendation->identityCorrections->count() }} pending identity {{ Str::plural('correction', $recommendation->identityCorrections->count()) }}</summary>@foreach($recommendation->identityCorrections as $correction)<div class="mt-2 rounded-lg border border-amber-200 p-2 dark:border-amber-800"><div class="break-all font-semibold">{{ $correction->proposed_url ?: $correction->proposed_topic }}</div><p class="mt-1 whitespace-pre-line">{{ $correction->explanation }}</p><p class="mt-1 text-[11px]">From {{ $correction->requester?->name }}. If replacement is needed, create it separately; votes cannot transfer.</p></div>@endforeach</details>
+                                                @endif
                                                 @if ($recommendation->isCreatorAdded())
                                                     <span class="mt-1 inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Creator-added</span>
                                                 @endif
@@ -246,7 +257,7 @@
                                                     <div class="flex items-start justify-between gap-4">
                                                         <div>
                                                             <h3 id="edit-title-{{ $recommendation->id }}" class="text-lg font-semibold text-gray-900 dark:text-slate-50">Edit request</h3>
-                                                            <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">{{ $recommendation->title }}</p>
+                                                            <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">{{ $recommendation->displayTitle() }}</p>
                                                         </div>
                                                         <button type="button" @click="editing = false" class="rounded-md px-2 py-1 text-sm font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Close</button>
                                                     </div>

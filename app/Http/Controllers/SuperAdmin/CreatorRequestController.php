@@ -9,8 +9,10 @@ use App\Http\Requests\SuperAdminTransitionRecommendationRequest;
 use App\Http\Requests\SuperAdminUpdateRecommendationRequest;
 use App\Models\Creator;
 use App\Models\Recommendation;
+use App\Models\RequestPresentationRevision;
 use App\Services\CreatorTagService;
 use App\Services\RecommendationStatusTransitionService;
+use App\Services\RequestPresentationService;
 use App\Services\SuperAdminAuditService;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\RedirectResponse;
@@ -37,7 +39,7 @@ class CreatorRequestController extends Controller
         }
         $query->when($filters['q'] ?? null, function ($query, $search): void {
             $query->where(function ($query) use ($search): void {
-                $query->where('title', 'like', "%{$search}%")->orWhere('youtube_url', 'like', "%{$search}%")->orWhere('published_title', 'like', "%{$search}%")->orWhere('published_reaction_url', 'like', "%{$search}%")->orWhere('channel_title', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%")->orWhere('id', $search)
+                $query->where('title', 'like', "%{$search}%")->orWhere('source_title', 'like', "%{$search}%")->orWhere('display_title_override', 'like', "%{$search}%")->orWhere('youtube_url', 'like', "%{$search}%")->orWhere('published_title', 'like', "%{$search}%")->orWhere('published_reaction_url', 'like', "%{$search}%")->orWhere('channel_title', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%")->orWhere('id', $search)
                     ->orWhereHas('submittedBy', fn ($q) => $q->where('public_display_name', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"))
                     ->orWhereHas('creatorTags', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             });
@@ -53,7 +55,7 @@ class CreatorRequestController extends Controller
 
     public function edit(Creator $creator, int $recommendation): View
     {
-        $item = $this->owned($creator, $recommendation, true)->load(['submittedBy:id,name,public_display_name,email', 'creatorTags', 'allUserPicks']);
+        $item = $this->owned($creator, $recommendation, true)->load(['submittedBy:id,name,public_display_name,email', 'creatorTags', 'allUserPicks', 'presentationRevisions.actor:id,name,email', 'identityCorrections.requester:id,name,email']);
         $history = $item->adminAuditLogs()->with('admin:id,name')->latest()->limit(20)->get();
 
         return view('super-admin.creators.requests.edit', ['creator' => $creator, 'recommendation' => $item, 'history' => $history, 'categories' => Recommendation::CATEGORY_OPTIONS]);
@@ -125,6 +127,24 @@ class CreatorRequestController extends Controller
         $this->audit->record($request->user(), $item, 'request.restored', 'Request restored without reactivating released resources.', ['deleted_at' => $item->deleted_at], ['status' => $item->status, 'deleted_at' => null], ['creator_id' => $creator->id], $request);
 
         return redirect()->route('super-admin.creators.requests.edit', [$creator, $item])->with('success', 'Request restored. Previous votes and request capacity remain released.');
+    }
+
+    public function clearPresentation(Request $request, Creator $creator, int $recommendation, RequestPresentationService $service): RedirectResponse
+    {
+        $item = $this->owned($creator, $recommendation);
+        $service->update($item, $request->user(), ['display_title_override' => null, 'request_context' => null], 'super_admin', 'request.display_title_override_cleared');
+        $this->audit->record($request->user(), $item, 'request.display_title_override_cleared', 'Guide presentation override cleared.', [], ['display_title_override' => null, 'request_context' => null], ['creator_id' => $creator->id], $request);
+
+        return back()->with('success', 'Guide presentation override cleared.');
+    }
+
+    public function revertPresentation(Request $request, Creator $creator, int $recommendation, RequestPresentationRevision $revision, RequestPresentationService $service): RedirectResponse
+    {
+        $item = $this->owned($creator, $recommendation);
+        $service->revert($item, $revision, $request->user(), 'super_admin');
+        $this->audit->record($request->user(), $item, 'request.display_title_override_reverted', 'Guide presentation reverted to an earlier revision.', [], $item->fresh()->only(['display_title_override', 'request_context']), ['creator_id' => $creator->id, 'revision_id' => $revision->id], $request);
+
+        return back()->with('success', 'Presentation reverted.');
     }
 
     private function owned(Creator $creator, int $id, bool $withTrashed = false): Recommendation

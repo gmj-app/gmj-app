@@ -41,8 +41,8 @@ class SearchController extends Controller
                 ->withSum('userPicks as user_picks_count', 'vote_count')
                 ->orderByRaw(
                     'case
-                        when lower(title) = ? then 1
-                        when lower(title) like ? or lower(coalesce(artist, ?)) like ? or lower(coalesce(channel_title, ?)) like ? then 2
+                        when lower(coalesce(display_title_override, title)) = ? then 1
+                        when lower(coalesce(display_title_override, title)) like ? or lower(coalesce(artist, ?)) like ? or lower(coalesce(channel_title, ?)) like ? then 2
                         when lower(coalesce(published_title, ?)) like ? or lower(coalesce(published_channel, ?)) like ? then 3
                         when lower(coalesce(category, ?)) like ? then 4
                         when lower(coalesce(description, ?)) like ? or lower(coalesce(reason, ?)) like ? then 5
@@ -76,6 +76,7 @@ class SearchController extends Controller
     {
         return $query
             ->whereRaw('lower(title) like ? escape ?', [$like, '\\'])
+            ->orWhereRaw("lower(coalesce(display_title_override, '')) like ? escape ?", [$like, '\\'])
             ->orWhereRaw("lower(coalesce(artist, '')) like ? escape ?", [$like, '\\'])
             ->orWhereRaw("lower(coalesce(channel_title, '')) like ? escape ?", [$like, '\\'])
             ->orWhereRaw("lower(coalesce(source_title, '')) like ? escape ?", [$like, '\\'])

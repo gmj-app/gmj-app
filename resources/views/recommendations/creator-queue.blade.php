@@ -741,7 +741,7 @@
 
                                 <span class="min-w-0 flex-1">
                                     <span class="block break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
-                                        {{ $recommendation->title }}
+                                        {{ $recommendation->displayTitle() }}
                                     </span>
                                     <x-recommendation-user-indicators
                                         :recommendation="$recommendation"

@@ -11,6 +11,7 @@ use App\Http\Controllers\CreatorStarterSuggestionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuideAccoladeController;
 use App\Http\Controllers\GuideAccoladeIndexController;
+use App\Http\Controllers\GuideRequestPresentationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\MyActivityController;
@@ -76,6 +77,10 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(function () {
+    Route::get('/requests/{recommendation}/presentation/edit', [GuideRequestPresentationController::class, 'edit'])->name('requests.presentation.edit');
+    Route::patch('/requests/{recommendation}/presentation', [GuideRequestPresentationController::class, 'update'])->name('requests.presentation.update');
+    Route::post('/requests/{recommendation}/corrections', [GuideRequestPresentationController::class, 'correction'])->name('requests.corrections.store');
+    Route::post('/requests/{recommendation}/corrections/{correction}/cancel', [GuideRequestPresentationController::class, 'cancel'])->name('requests.corrections.cancel');
     Route::get('/creator/create', [CreatorSetupController::class, 'create'])
         ->name('creators.create');
     Route::post('/creator', [CreatorSetupController::class, 'store'])
@@ -106,6 +111,11 @@ Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(functio
                 ->name('recommendations.destroy');
             Route::patch('/recommendations/{recommendation}/hide', [CreatorRecommendationController::class, 'hide'])
                 ->name('recommendations.hide');
+            Route::delete('/recommendations/{recommendation}/presentation', [CreatorRecommendationController::class, 'clearPresentation'])
+                ->name('recommendations.presentation.clear');
+            Route::post('/recommendations/{recommendation}/presentation/{revision}/revert', [CreatorRecommendationController::class, 'revertPresentation'])
+                ->whereNumber('revision')
+                ->name('recommendations.presentation.revert');
             Route::get('/followers', [CreatorDashboardController::class, 'followers'])
                 ->name('followers');
             Route::get('/settings', [CreatorSettingsController::class, 'edit'])
@@ -189,6 +199,8 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verifie
     Route::post('/creators/{creator}/requests/{recommendation}/status', [SuperAdminCreatorRequestController::class, 'status'])->whereNumber('recommendation')->name('creators.requests.status');
     Route::delete('/creators/{creator}/requests/{recommendation}', [SuperAdminCreatorRequestController::class, 'destroy'])->whereNumber('recommendation')->name('creators.requests.destroy');
     Route::post('/creators/{creator}/requests/{recommendation}/restore', [SuperAdminCreatorRequestController::class, 'restore'])->whereNumber('recommendation')->name('creators.requests.restore');
+    Route::delete('/creators/{creator}/requests/{recommendation}/presentation', [SuperAdminCreatorRequestController::class, 'clearPresentation'])->whereNumber('recommendation')->name('creators.requests.presentation.clear');
+    Route::post('/creators/{creator}/requests/{recommendation}/presentation/{revision}/revert', [SuperAdminCreatorRequestController::class, 'revertPresentation'])->whereNumber(['recommendation', 'revision'])->name('creators.requests.presentation.revert');
     Route::patch('/ads/{advertisement}/toggle', [HomepageAdvertisementController::class, 'toggle'])->name('ads.toggle');
     Route::resource('ads', HomepageAdvertisementController::class)->parameters(['ads' => 'advertisement'])->except('show');
 });

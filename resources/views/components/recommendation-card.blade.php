@@ -24,6 +24,7 @@
     $votesRemaining = (int) ($usage['votes_remaining'] ?? 0);
     $canAddVote = ! auth()->check() || $votesRemaining > 0;
     $canWithdraw = $recommendation->canBeWithdrawnBy(auth()->user());
+    $canEditPresentation = auth()->user()?->can('updateOwnPresentation', $recommendation) === true;
 @endphp
 
 <article
@@ -60,7 +61,7 @@
             target="_blank"
             rel="noopener noreferrer nofollow ugc"
             class="relative block aspect-video overflow-hidden bg-slate-950"
-            aria-label="Watch {{ $recommendation->title }} on YouTube"
+            aria-label="Watch {{ $recommendation->displayTitle() }} on YouTube"
         >
             <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
                 <div class="text-center">
@@ -72,7 +73,7 @@
             </div>
             <img
                 src="{{ $recommendation->youtubeThumbnailUrl() }}"
-                alt="Thumbnail for {{ $recommendation->title }}"
+                alt="Thumbnail for {{ $recommendation->displayTitle() }}"
                 loading="lazy"
                 onerror="this.hidden = true"
                 class="relative h-full w-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-90"
@@ -89,7 +90,7 @@
             target="_blank"
             rel="noopener noreferrer nofollow ugc"
             class="flex aspect-video items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 transition hover:from-slate-200 hover:to-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:from-slate-800 dark:to-slate-950 dark:hover:from-slate-800/80 dark:hover:to-slate-900"
-            aria-label="Open original link for {{ $recommendation->title }}"
+            aria-label="Open original link for {{ $recommendation->displayTitle() }}"
         >
             <span class="text-center">
                 <span class="mx-auto flex h-16 w-20 items-center justify-center rounded-2xl bg-slate-700 text-white shadow-lg dark:bg-slate-600">
@@ -119,7 +120,7 @@
                     <svg class="mt-0.5 size-6 shrink-0 text-cyan-700 dark:text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 18.25 4 20v-4.5A8 8 0 1 1 7.5 18.25Z" />
                     </svg>
-                    <h3 class="min-w-0 break-words text-2xl font-semibold leading-tight text-cyan-800 dark:text-cyan-200 sm:text-[1.65rem]">{{ $recommendation->title }}</h3>
+                    <h3 class="min-w-0 break-words text-2xl font-semibold leading-tight text-cyan-800 dark:text-cyan-200 sm:text-[1.65rem]">{{ $recommendation->displayTitle() }}</h3>
                 </div>
             </div>
         @endif
@@ -163,7 +164,7 @@
         @endif
 
         @unless ($recommendation->isTopicOnly())
-            <h3 class="mt-5 break-words text-xl font-semibold leading-7 text-slate-950 dark:text-white sm:text-2xl">{{ $recommendation->title }}</h3>
+            <h3 class="mt-5 break-words text-xl font-semibold leading-7 text-slate-950 dark:text-white sm:text-2xl">{{ $recommendation->displayTitle() }}</h3>
         @endunless
 
         <x-recommendation-user-indicators
@@ -195,6 +196,10 @@
                 >
                     Suggest alternative
                 </button>
+
+                @if ($canEditPresentation)
+                    <a href="{{ route('requests.presentation.edit', $recommendation) }}" class="text-sm font-semibold text-indigo-600 transition hover:text-indigo-500 dark:text-indigo-400">Edit request details</a>
+                @endif
 
                 @if ($canWithdraw)
                     <button
@@ -275,6 +280,10 @@
 
         @if ($recommendation->reason)
             <x-plain-expandable-text :text="$recommendation->reason" label="Why this was suggested" />
+        @endif
+
+        @if ($recommendation->request_context)
+            <x-plain-expandable-text :text="$recommendation->request_context" label="Guide context" />
         @endif
 
         @if ($recommendation->status === 'scheduled' && $recommendation->scheduled_for)

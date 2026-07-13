@@ -116,7 +116,7 @@ class GuideActivityService
             ->whereNull('released_at')
             ->whereIn('creator_id', $visibleIds)
             ->whereHas('recommendation', fn ($query) => $query->votable())
-            ->with(['recommendation:id,creator_id,title,status,recommendation_type,media_type'])
+            ->with(['recommendation:id,creator_id,title,source_title,display_title_override,status,recommendation_type,media_type'])
             ->orderByDesc('updated_at')
             ->limit(self::CREATOR_LIMIT * self::VOTE_LIMIT_PER_CREATOR)
             ->get()

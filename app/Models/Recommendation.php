@@ -59,6 +59,14 @@ class Recommendation extends Model
         'approved',
     ];
 
+    public const GUIDE_PRESENTATION_EDITABLE_STATUSES = [
+        'pending',
+        'approved',
+        'coming_soon',
+        'scheduled',
+        'recorded',
+    ];
+
     public const VISIBLE_STATUSES = self::PUBLIC_STATUSES;
 
     public const SUBMISSION_SOURCE_FAN = 'fan';
@@ -101,6 +109,7 @@ class Recommendation extends Model
         'channel_title',
         'thumbnail_url',
         'source_title',
+        'display_title_override',
         'source_channel',
         'source_item_count',
         'source_metadata',
@@ -109,6 +118,7 @@ class Recommendation extends Model
         'category',
         'description',
         'reason',
+        'request_context',
         'status',
         'resource_released_at',
         'resource_release_reason',
@@ -185,6 +195,21 @@ class Recommendation extends Model
         return $this->hasMany(RecommendationAlternative::class);
     }
 
+    public function presentationRevisions(): HasMany
+    {
+        return $this->hasMany(RequestPresentationRevision::class);
+    }
+
+    public function revisions(): HasMany
+    {
+        return $this->presentationRevisions();
+    }
+
+    public function identityCorrections(): HasMany
+    {
+        return $this->hasMany(RequestIdentityCorrection::class);
+    }
+
     public function adminAuditLogs()
     {
         return $this->morphMany(SuperAdminAuditLog::class, 'auditable');
@@ -231,7 +256,27 @@ class Recommendation extends Model
 
     public function displaySourceTitle(): string
     {
-        return filled($this->source_title) ? (string) $this->source_title : (string) $this->title;
+        return $this->displayTitle();
+    }
+
+    public function canonicalDisplayTitle(): string
+    {
+        return filled($this->source_title) ? (string) $this->source_title : (filled($this->title) ? (string) $this->title : 'Untitled request');
+    }
+
+    public function displayTitle(): string
+    {
+        return filled($this->display_title_override)
+            ? (string) $this->display_title_override
+            : $this->canonicalDisplayTitle();
+    }
+
+    public function canGuideEditPresentation(): bool
+    {
+        return $this->submission_source === self::SUBMISSION_SOURCE_FAN
+            && in_array($this->status, self::GUIDE_PRESENTATION_EDITABLE_STATUSES, true)
+            && $this->moderation_status !== 'removed'
+            && ! $this->trashed();
     }
 
     public function displaySourceChannel(): ?string

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Creator;
 use App\Models\Recommendation;
+use App\Models\RequestPresentationRevision;
 use App\Services\CreatorTagService;
 use App\Services\RecommendationStatusTransitionService;
+use App\Services\RequestPresentationService;
 use App\Services\YouTubePlaylistMetadataService;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\RedirectResponse;
@@ -44,12 +46,14 @@ class CreatorRecommendationController extends Controller
         $sort = $filters['sort'] ?? 'newest';
 
         $recommendations = $creator->recommendations()
-            ->with(['submittedBy:id,name,email', 'creatorTags:id,creator_id,name,slug'])
+            ->with(['submittedBy:id,name,email', 'creatorTags:id,creator_id,name,slug', 'presentationRevisions' => fn ($query) => $query->with('actor:id,name')->latest()->limit(5), 'identityCorrections' => fn ($query) => $query->where('status', 'pending')->with('requester:id,name,email')->latest()])
             ->withSum('userPicks as user_picks_count', 'vote_count')
             ->when($filters['q'] ?? null, function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
                         ->where('title', 'like', "%{$search}%")
+                        ->orWhere('display_title_override', 'like', "%{$search}%")
+                        ->orWhere('source_title', 'like', "%{$search}%")
                         ->orWhere('artist', 'like', "%{$search}%")
                         ->orWhere('channel_title', 'like', "%{$search}%")
                         ->orWhere('youtube_url', 'like', "%{$search}%");
@@ -191,6 +195,24 @@ class CreatorRecommendationController extends Controller
         return redirect()
             ->route('creators.recommendations.index', $creator)
             ->with('success', 'Request permanently deleted.');
+    }
+
+    public function clearPresentation(Request $request, Creator $creator, Recommendation $recommendation, RequestPresentationService $service): RedirectResponse
+    {
+        Gate::authorize('manage', $creator);
+        abort_unless((int) $recommendation->creator_id === (int) $creator->id, 404);
+        $service->update($recommendation, $request->user(), ['display_title_override' => null, 'request_context' => null], 'creator', 'request.display_title_override_cleared');
+
+        return back()->with('success', 'Guide presentation override cleared. Canonical request content is now shown.');
+    }
+
+    public function revertPresentation(Request $request, Creator $creator, Recommendation $recommendation, RequestPresentationRevision $revision, RequestPresentationService $service): RedirectResponse
+    {
+        Gate::authorize('manage', $creator);
+        abort_unless((int) $recommendation->creator_id === (int) $creator->id, 404);
+        $service->revert($recommendation, $revision, $request->user(), 'creator');
+
+        return back()->with('success', 'Guide presentation reverted to the selected revision.');
     }
 
     /**
