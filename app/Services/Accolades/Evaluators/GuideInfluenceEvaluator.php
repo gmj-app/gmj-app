@@ -19,10 +19,10 @@ class GuideInfluenceEvaluator implements TrackEvaluator
             ->where(fn (Builder $query) => $query->whereNull('release_reason')->orWhere('release_reason', '!=', 'request_removed'));
 
         $ids = DB::query()->fromSub($submitted->union($supported), 'influenced')->select('id')->distinct();
-        $value = DB::table('recommendations')->whereIn('id', $ids)->where('status', 'published')
+        $recordIds = DB::table('recommendations')->whereIn('id', $ids)->where('status', 'published')
             ->whereNull('deleted_at')->where(fn (Builder $query) => $query->whereNull('moderation_status')->orWhere('moderation_status', '!=', 'removed'))
-            ->count();
+            ->orderBy('id')->pluck('id')->map(fn ($id) => (int) $id)->all();
 
-        return new TrackMetric($value, ['metric' => 'distinct_published_requests_influenced'], now());
+        return new TrackMetric(count($recordIds), ['metric' => 'distinct_published_requests_influenced'], now(), $recordIds);
     }
 }

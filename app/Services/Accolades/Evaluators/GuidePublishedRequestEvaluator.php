@@ -17,6 +17,8 @@ class GuidePublishedRequestEvaluator implements TrackEvaluator
         $query = DB::table('recommendations')->where('submitted_by', $subjectId)
             ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN);
 
-        return new TrackMetric($this->eligible($query, 'published')->count(), ['metric' => 'published_guide_requests'], now());
+        $ids = $this->eligible($query, 'published')->pluck('recommendations.id')->map(fn ($id) => (int) $id)->all();
+
+        return new TrackMetric(count($ids), ['metric' => 'published_guide_requests'], now(), $ids);
     }
 }

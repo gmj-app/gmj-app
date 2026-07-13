@@ -16,13 +16,14 @@ class CreatorConsistencyEvaluator implements TrackEvaluator
             ? "strftime('%Y-%m', published_at)"
             : "DATE_FORMAT(CONVERT_TZ(published_at, '+00:00', '".$this->timezoneOffset()."'), '%Y-%m')";
 
-        $value = DB::table('recommendations')->where('creator_id', $subjectId)
+        $query = DB::table('recommendations')->where('creator_id', $subjectId)
             ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)->whereNotNull('submitted_by')
             ->where('status', 'published')->whereNotNull('published_at')->whereNull('deleted_at')
-            ->where(fn (Builder $query) => $query->whereNull('moderation_status')->orWhere('moderation_status', '!=', 'removed'))
-            ->distinct()->count(DB::raw($expression));
+            ->where(fn (Builder $query) => $query->whereNull('moderation_status')->orWhere('moderation_status', '!=', 'removed'));
+        $months = (clone $query)->selectRaw("{$expression} as publication_month")->distinct()->orderBy('publication_month')->pluck('publication_month')->all();
+        $ids = $query->orderBy('id')->pluck('id')->map(fn ($id) => (int) $id)->all();
 
-        return new TrackMetric($value, ['metric' => 'distinct_publication_calendar_months', 'timezone' => config('app.timezone')], now());
+        return new TrackMetric(count($months), ['metric' => 'distinct_publication_calendar_months', 'timezone' => config('app.timezone'), 'qualifying_months' => $months], now(), $ids);
     }
 
     private function timezoneOffset(): string

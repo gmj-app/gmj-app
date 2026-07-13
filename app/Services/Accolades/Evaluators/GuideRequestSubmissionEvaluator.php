@@ -18,6 +18,8 @@ class GuideRequestSubmissionEvaluator implements TrackEvaluator
             ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
             ->whereNotIn('status', ['withdrawn', 'hidden']);
 
-        return new TrackMetric($this->eligible($query)->count(), ['metric' => 'valid_guide_requests_submitted'], now());
+        $ids = $this->eligible($query)->pluck('recommendations.id')->map(fn ($id) => (int) $id)->all();
+
+        return new TrackMetric(count($ids), ['metric' => 'valid_guide_requests_submitted'], now(), $ids);
     }
 }

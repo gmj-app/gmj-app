@@ -67,10 +67,12 @@ class AccoladeAwardService
 
         if ($created) {
             Cache::forget("accolades:{$subjectType}:{$subjectId}");
-            AccoladeAwarded::dispatch(
-                $award->id, $award->accolade_key, $award->user_id, $award->subject_type,
-                $award->subject_id, $award->track, $award->level, $award->awarded_at->toIso8601String(), $source,
-            );
+            if (! ($source['suppress_notifications'] ?? false)) {
+                AccoladeAwarded::dispatch(
+                    $award->id, $award->accolade_key, $award->user_id, $award->subject_type,
+                    $award->subject_id, $award->track, $award->level, $award->awarded_at->toIso8601String(), $source,
+                );
+            }
         }
 
         return compact('award', 'created');

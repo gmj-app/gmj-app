@@ -15,6 +15,7 @@ use App\Services\Accolades\AccoladeEvaluationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class PhaseThreeAccoladeTest extends TestCase
@@ -56,7 +57,7 @@ class PhaseThreeAccoladeTest extends TestCase
         Event::assertDispatched(AccoladeAwarded::class);
     }
 
-    public function test_accolade_awarded_event_is_dispatched_once_for_a_new_unique_award(): void
+    public function test_duplicate_evaluation_retry_dispatches_accolade_awarded_once_for_a_unique_award(): void
     {
         Event::fake([AccoladeAwarded::class]);
         $guide = User::factory()->create();
@@ -129,6 +130,8 @@ class PhaseThreeAccoladeTest extends TestCase
     {
         $guide = User::factory()->create();
         Recommendation::factory()->create(['submitted_by' => $guide->id, 'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN, 'status' => 'approved']);
+        Notification::fake();
+        Event::fake([AccoladeAwarded::class]);
 
         $this->artisan("accolades:backfill --subject=guides --user={$guide->id} --dry-run")->assertSuccessful();
         $this->assertSame(0, UserAccolade::count());
@@ -136,6 +139,8 @@ class PhaseThreeAccoladeTest extends TestCase
         $this->artisan("accolades:backfill --subject=guides --user={$guide->id} --apply")->assertSuccessful();
         $this->artisan("accolades:backfill --subject=guides --user={$guide->id} --apply")->assertSuccessful();
         $this->assertSame(1, UserAccolade::where('accolade_key', 'guide.requests_submitted.tenderfoot')->count());
+        Notification::assertNothingSent();
+        Event::assertNotDispatched(AccoladeAwarded::class);
     }
 
     public function test_guide_can_feature_only_an_owned_public_guide_accolade(): void

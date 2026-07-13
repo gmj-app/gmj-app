@@ -11,7 +11,7 @@ class GuideSupportedPublicationEvaluator implements TrackEvaluator
 {
     public function evaluate(int $subjectId): TrackMetric
     {
-        $value = DB::table('user_picks')
+        $ids = DB::table('user_picks')
             ->join('recommendations', 'recommendations.id', '=', 'user_picks.recommendation_id')
             ->where('user_picks.user_id', $subjectId)
             ->where('user_picks.vote_count', '>', 0)
@@ -20,9 +20,8 @@ class GuideSupportedPublicationEvaluator implements TrackEvaluator
             ->where(fn (Builder $query) => $query->whereNull('recommendations.moderation_status')->orWhere('recommendations.moderation_status', '!=', 'removed'))
             ->where(fn (Builder $query) => $query->whereNull('user_picks.release_reason')->orWhere('user_picks.release_reason', '!=', 'request_removed'))
             ->where(fn (Builder $query) => $query->whereNull('recommendations.submitted_by')->orWhere('recommendations.submitted_by', '!=', $subjectId))
-            ->distinct()
-            ->count('recommendations.id');
+            ->distinct()->orderBy('recommendations.id')->pluck('recommendations.id')->map(fn ($id) => (int) $id)->all();
 
-        return new TrackMetric($value, ['metric' => 'distinct_supported_publications', 'vote_quantity_ignored' => true], now());
+        return new TrackMetric(count($ids), ['metric' => 'distinct_supported_publications', 'vote_quantity_ignored' => true], now(), $ids);
     }
 }

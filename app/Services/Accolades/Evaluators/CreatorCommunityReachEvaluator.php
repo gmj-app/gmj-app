@@ -12,6 +12,8 @@ class CreatorCommunityReachEvaluator implements TrackEvaluator
 
     public function evaluate(int $subjectId): TrackMetric
     {
-        return new TrackMetric($this->reach->countFor($subjectId), ['metric' => 'unique_valid_guides_reached'], now());
+        $ids = $this->reach->guideIdsFor($subjectId);
+
+        return new TrackMetric(count($ids), ['metric' => 'unique_valid_guides_reached', 'record_type' => 'user'], now(), $ids);
     }
 }

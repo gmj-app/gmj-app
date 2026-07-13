@@ -82,7 +82,8 @@ class AccoladeEvaluationService
             }
 
             $trackResults[$track] = ['current_value' => $metric->value, 'existing' => $existingKeys->all(),
-                'would_award' => $eligible->pluck('key')->all(), 'next_accolade_key' => $next['key'] ?? null, 'metadata' => $metric->metadata];
+                'would_award' => $eligible->pluck('key')->all(), 'next_accolade_key' => $next['key'] ?? null,
+                'qualifying_record_ids' => $metric->qualifyingRecordIds, 'metadata' => $metric->metadata];
         }
 
         return new AccoladeEvaluationResult($subjectType, $subjectId, $newAwards, $trackResults);

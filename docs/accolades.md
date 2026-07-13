@@ -10,7 +10,7 @@ Founding Guide and OG Guide remain driven by the existing stable `guide_number` 
 
 ## Event and notification boundary
 
-Request creation/publication, favorite addition, and vote allocation queue idempotent evaluations after commit. `AccoladeAwarded` is dispatched once for each newly inserted earned row and carries the earned record ID, stable key, owner user ID, subject type/ID, track, level, timestamp, and source context. Phase 3A intentionally registers no notification listener. Phase 3B can consume the event; backfill events include `source=backfill` and `suppress_notifications=true`.
+Request creation/publication, favorite addition, and vote allocation queue idempotent evaluations after commit. `AccoladeAwarded` is dispatched once for each newly inserted earned row and carries the earned record ID, stable key, owner user ID, subject type/ID, track, level, timestamp, and source context. Phase 3A intentionally registers no notification listener. Phase 3B can consume the event. Backfill and `accolades:test-subject --evaluate` set `suppress_notifications=true`, which prevents the award event from being dispatched at all.
 
 ## Operations
 

@@ -10,6 +10,12 @@ class CreatorReachQueryService
 {
     public function countFor(int $creatorId): int
     {
+        return count($this->guideIdsFor($creatorId));
+    }
+
+    /** @return array<int, int> */
+    public function guideIdsFor(int $creatorId): array
+    {
         $submissions = DB::table('recommendations')->select('submitted_by as user_id')
             ->where('creator_id', $creatorId)->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
             ->whereNotNull('submitted_by')->whereNull('deleted_at')
@@ -35,6 +41,7 @@ class CreatorReachQueryService
             ->leftJoin('creator_owners', function ($join) use ($creatorId): void {
                 $join->on('creator_owners.user_id', '=', 'reach.user_id')->where('creator_owners.creator_id', $creatorId);
             })
-            ->whereNull('users.deleted_at')->whereNull('creator_owners.id')->count();
+            ->whereNull('users.deleted_at')->whereNull('creator_owners.id')->orderBy('reach.user_id')
+            ->pluck('reach.user_id')->map(fn ($id) => (int) $id)->all();
     }
 }
