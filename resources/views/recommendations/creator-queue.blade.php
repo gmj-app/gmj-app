@@ -2,8 +2,8 @@
     <section class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         <div class="mx-auto min-w-0 max-w-5xl">
             <div
-                x-data="{ creatorMenuOpen: false, biographyOpen: false, submissionGuidanceOpen: false }"
-                x-on:keydown.escape.window="biographyOpen || submissionGuidanceOpen ? (biographyOpen = false, submissionGuidanceOpen = false) : creatorMenuOpen = false"
+                x-data="{ creatorMenuOpen: false, biographyOpen: false, submissionGuidanceOpen: false, accoladeOpen: false }"
+                x-on:keydown.escape.window="biographyOpen || submissionGuidanceOpen || accoladeOpen ? (biographyOpen = false, submissionGuidanceOpen = false, accoladeOpen = false) : creatorMenuOpen = false"
                 class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
             >
                 @php
@@ -85,6 +85,13 @@
 
                             <div class="min-w-0 flex-1">
                                 <h1 class="max-w-3xl break-words text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl">{{ $creator->display_name }}</h1>
+                                @if ($creatorAccolades['featured']->isNotEmpty())
+                                    <button type="button" x-on:click="accoladeOpen = true" class="mt-2 flex flex-wrap gap-1.5 text-left" aria-label="View {{ $creator->display_name }} accolades">
+                                        @foreach ($creatorAccolades['featured']->take(3) as $item)
+                                            <x-accolade-badge :definition="$item['definition']" size="sm" />
+                                        @endforeach
+                                    </button>
+                                @endif
 
                                 <div class="mt-3 flex flex-wrap gap-2">
                                     @auth
@@ -335,6 +342,17 @@
                     </div>
                 </div>
 
+                @if ($creatorAccolades['awards']->isNotEmpty())
+                    <div x-show="accoladeOpen" x-cloak class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/65 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="creator-accolades-title" x-on:click.self="accoladeOpen = false">
+                        <div class="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+                            <div class="flex items-start justify-between gap-4">
+                                <div><p class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">Community milestones</p><h2 id="creator-accolades-title" class="mt-1 text-2xl font-extrabold">{{ $creator->display_name }} accolades</h2></div>
+                                <button type="button" x-on:click="accoladeOpen = false" class="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Close accolades">&#10005;</button>
+                            </div>
+                            <div class="mt-6"><x-accolade-track-list :showcase="$creatorAccolades" /></div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </section>

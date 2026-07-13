@@ -14,7 +14,7 @@ class CreatorPolicy
 
     public function manage(User $user, Creator $creator): bool
     {
-        return $creator->creatorOwners()
+        return $user->isSuperAdmin() || $creator->creatorOwners()
             ->where('user_id', $user->id)
             ->where('role', 'owner')
             ->exists();

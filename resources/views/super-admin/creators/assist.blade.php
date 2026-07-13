@@ -25,6 +25,17 @@
         </div>
         <aside class="space-y-6">
             <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h3 class="font-extrabold">Setup checklist</h3>@if($setup['missing'])<ul class="mt-3 list-disc space-y-1 pl-5 text-sm">@foreach($setup['missing'] as $item)<li>{{ $item }}</li>@endforeach</ul>@else<p class="mt-2 text-sm text-emerald-600">All required setup items are complete.</p>@endif</section>
+            @if($creatorAccolades['awards']->isNotEmpty())
+                <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                    <h3 class="font-extrabold">Featured accolades</h3><p class="mt-1 text-sm text-slate-500">Select up to three earned public accolades in display order.</p>
+                    <form method="POST" action="{{ route('super-admin.creators.accolades.update', $creator) }}" class="mt-4 space-y-3">@csrf @method('PATCH')
+                        @foreach($creatorAccolades['awards'] as $item)
+                            <label class="flex items-center gap-2"><input type="checkbox" name="accolade_ids[]" value="{{ $item['award']->id }}" @checked($item['award']->is_featured) class="rounded border-slate-300 text-indigo-600"><x-accolade-badge :definition="$item['definition']" size="sm" /></label>
+                        @endforeach
+                        <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Update featured accolades</button>
+                    </form>
+                </section>
+            @endif
             <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h3 class="font-extrabold">Add starter requests</h3><p class="mt-1 text-sm text-slate-500">Added as creator-origin content and attributed to the creator owner, not the Super Admin Guide.</p><form method="POST" action="{{ route('super-admin.creators.starter',$creator) }}" class="mt-4 space-y-3">@csrf<input name="suggestions[0][title]" placeholder="Request title" class="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"><input name="suggestions[0][url]" type="url" placeholder="Optional link" class="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"><select name="suggestions[0][category]" class="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"><option value="">No category</option>@foreach($categories as $category)<option value="{{ $category }}">{{ ucfirst($category) }}</option>@endforeach</select><textarea name="suggestions[0][note]" placeholder="Optional context" class="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"></textarea><button class="rounded-lg bg-indigo-600 px-4 py-2 font-bold text-white">Add starter request</button></form></section>
             <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h3 class="font-extrabold">Recent admin activity</h3><div class="mt-3 space-y-3 text-sm">@forelse($history as $entry)<div><div class="font-semibold">{{ $entry->description }}</div><div class="text-xs text-slate-500">{{ $entry->created_at->format('M j, Y g:i A') }} by {{ $entry->admin?->name ?: 'Former admin' }}</div></div>@empty<p class="text-slate-500">No administrative changes recorded yet.</p>@endforelse</div></section>
         </aside>

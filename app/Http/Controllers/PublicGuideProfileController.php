@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserPick;
+use App\Services\Accolades\AccoladeShowcaseService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PublicGuideProfileController extends Controller
 {
-    public function __invoke(Request $request, string $handle): View
+    public function __invoke(Request $request, string $handle, AccoladeShowcaseService $showcase): View
     {
         $guide = User::query()
             ->where('public_handle', strtolower($handle))
@@ -66,9 +67,11 @@ class PublicGuideProfileController extends Controller
             ->latest()
             ->paginate(10, ['*'], 'support_page')
             ->withQueryString();
+        $accoladeShowcase = $showcase->forSubject('guide', $guide->id);
 
         return view('guides.show', compact(
             'activeSupportCount',
+            'accoladeShowcase',
             'guide',
             'publishedSuggestions',
             'stats',

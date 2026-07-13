@@ -13,6 +13,23 @@
                 <div class="mt-6 rounded-md bg-green-50 p-4 text-sm font-medium text-green-800 ring-1 ring-green-200 dark:bg-emerald-950 dark:text-emerald-200 dark:ring-emerald-900">{{ session('success') }}</div>
             @endif
 
+            @if ($creatorAccolades['awards']->isNotEmpty())
+                <form method="POST" action="{{ route('creators.settings.accolades.update', $creator) }}" class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    @csrf @method('PATCH')
+                    <h2 class="text-lg font-extrabold text-slate-950 dark:text-white">Featured accolades</h2>
+                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Choose up to three trust signals for the public Requests header. Selection order is preserved.</p>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                        @foreach ($creatorAccolades['awards'] as $item)
+                            <label class="flex items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                                <input type="checkbox" name="accolade_ids[]" value="{{ $item['award']->id }}" @checked($item['award']->is_featured) class="rounded border-slate-300 text-indigo-600">
+                                <x-accolade-badge :definition="$item['definition']" size="sm" />
+                            </label>
+                        @endforeach
+                    </div>
+                    <button class="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Save featured accolades</button>
+                </form>
+            @endif
+
             <form method="POST" action="{{ route('creators.settings.update', $creator) }}" enctype="multipart/form-data" class="mt-6 space-y-8 rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200 dark:bg-slate-900 dark:ring-slate-800">
                 @csrf
                 @method('PATCH')

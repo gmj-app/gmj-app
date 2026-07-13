@@ -3,5 +3,8 @@
         <a href="{{ route('super-admin.ads.index') }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <p class="text-sm font-bold text-slate-500">Homepage advertisements</p><p class="mt-2 text-4xl font-extrabold">{{ $advertisementCount }}</p><p class="mt-4 text-sm text-indigo-600 dark:text-indigo-300">Manage advertisements →</p>
         </a>
+        <a href="{{ route('super-admin.accolades.index') }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p class="text-sm font-bold text-slate-500">Accolade engine</p><p class="mt-2 text-4xl font-extrabold">Inspect</p><p class="mt-4 text-sm text-indigo-600 dark:text-indigo-300">Evaluate and rebuild progress &rarr;</p>
+        </a>
     </div>
 </x-super-admin-layout>

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\FavoriteCreatorAdded;
 use App\Models\Creator;
 use App\Models\CreatorFavorite;
 use App\Models\User;
@@ -25,6 +26,7 @@ class CreatorParticipationService
             'creator_id' => $creator->id,
             'user_id' => $user->id,
         ], ['released_at' => null, 'release_reason' => null]);
+        FavoriteCreatorAdded::dispatch($user->id, $creator->id);
     }
 
     public function ensureFavoritedForParticipation(
@@ -59,5 +61,6 @@ class CreatorParticipationService
             'creator_id' => $creator->id,
             'user_id' => $user->id,
         ], ['released_at' => null, 'release_reason' => null]);
+        FavoriteCreatorAdded::dispatch($user->id, $creator->id);
     }
 }

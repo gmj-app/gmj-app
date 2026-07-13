@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateCreatorProfileRequest;
 use App\Models\Creator;
+use App\Services\Accolades\AccoladeShowcaseService;
 use App\Services\CreatorProfileUpdateService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,11 +15,13 @@ class CreatorSettingsController extends Controller
 {
     public function __construct(private readonly CreatorProfileUpdateService $profiles) {}
 
-    public function edit(Request $request, Creator $creator): View
+    public function edit(Request $request, Creator $creator, AccoladeShowcaseService $showcase): View
     {
         Gate::authorize('manage', $creator);
 
-        return view('creators.settings', compact('creator'));
+        $creatorAccolades = $showcase->forSubject('creator', $creator->id);
+
+        return view('creators.settings', compact('creator', 'creatorAccolades'));
     }
 
     public function update(UpdateCreatorProfileRequest $request, Creator $creator): RedirectResponse

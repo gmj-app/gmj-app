@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\AdvertisementClickController;
 use App\Http\Controllers\BetaFeedbackController;
+use App\Http\Controllers\CreatorAccoladeController;
 use App\Http\Controllers\CreatorDashboardController;
 use App\Http\Controllers\CreatorRecommendationController;
 use App\Http\Controllers\CreatorSettingsController;
 use App\Http\Controllers\CreatorSetupController;
 use App\Http\Controllers\CreatorStarterSuggestionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GuideAccoladeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\MyActivityController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\PublicGuideProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SuperAdmin\AccoladeController as SuperAdminAccoladeController;
 use App\Http\Controllers\SuperAdmin\AnnouncementController;
 use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorController;
 use App\Http\Controllers\SuperAdmin\CreatorRequestController as SuperAdminCreatorRequestController;
@@ -67,6 +70,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/display-name', [ProfileController::class, 'updateDisplayNamePrompt'])->name('profile.display-name.update');
     Route::post('/profile/display-name-prompt/dismiss', [ProfileController::class, 'dismissDisplayNamePrompt'])->name('profile.display-name-prompt.dismiss');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile/accolades/featured', [GuideAccoladeController::class, 'feature'])->name('profile.accolades.featured');
 });
 
 Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(function () {
@@ -106,6 +110,8 @@ Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(functio
                 ->name('settings.edit');
             Route::patch('/settings', [CreatorSettingsController::class, 'update'])
                 ->name('settings.update');
+            Route::patch('/settings/accolades', [CreatorAccoladeController::class, 'update'])
+                ->name('settings.accolades.update');
             Route::patch('/deactivate', [CreatorSettingsController::class, 'deactivate'])
                 ->name('deactivate');
         });
@@ -156,6 +162,10 @@ require __DIR__.'/auth.php';
 Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verified', 'super-admin'])->group(function () {
     Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
     Route::get('/notifications/test', [TestNotificationController::class, 'index'])->name('notifications.test');
+    Route::get('/accolades', [SuperAdminAccoladeController::class, 'index'])->name('accolades.index');
+    Route::post('/accolades/guides/{user}/evaluate', [SuperAdminAccoladeController::class, 'evaluateGuide'])->name('accolades.guides.evaluate');
+    Route::post('/accolades/creators/{creator}/evaluate', [SuperAdminAccoladeController::class, 'evaluateCreator'])->name('accolades.creators.evaluate');
+    Route::post('/accolades/rebuild', [SuperAdminAccoladeController::class, 'rebuild'])->name('accolades.rebuild');
     Route::post('/notifications/test', [TestNotificationController::class, 'store'])->middleware('throttle:10,1')->name('notifications.test.store');
     Route::post('/announcements/{announcement}/publish', [AnnouncementController::class, 'publish'])->name('announcements.publish');
     Route::post('/announcements/{announcement}/cancel', [AnnouncementController::class, 'cancel'])->name('announcements.cancel');
@@ -163,6 +173,7 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verifie
     Route::resource('announcements', AnnouncementController::class)->except('show');
     Route::get('/creators', [SuperAdminCreatorController::class, 'index'])->name('creators.index');
     Route::get('/creators/{creator}/assist', [SuperAdminCreatorController::class, 'assist'])->name('creators.assist');
+    Route::patch('/creators/{creator}/accolades', [CreatorAccoladeController::class, 'update'])->name('creators.accolades.update');
     Route::put('/creators/{creator}', [SuperAdminCreatorController::class, 'update'])->name('creators.update');
     Route::post('/creators/{creator}/starter-requests', [SuperAdminCreatorController::class, 'starter'])->name('creators.starter');
     Route::get('/creators/{creator}/preview', [SuperAdminCreatorController::class, 'preview'])->name('creators.preview');

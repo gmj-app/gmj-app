@@ -6,16 +6,14 @@ use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class RequestPublished implements ShouldDispatchAfterCommit
+class VoteAllocated implements ShouldDispatchAfterCommit
 {
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly int $requestId,
+        public readonly int $userId,
         public readonly int $creatorId,
-        public readonly ?int $submitterUserId,
-        public readonly ?int $actorUserId,
-        public readonly string $actorContext,
-        public readonly string $publishedAt,
+        public readonly int $requestId,
+        public readonly int $quantity,
     ) {}
 }

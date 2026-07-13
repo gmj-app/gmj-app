@@ -78,7 +78,7 @@ class RecommendationStatusTransitionService
                 ($recommendation->published_at ?? now())->toIso8601String(),
             );
         } catch (Throwable $exception) {
-            Log::error('Unable to queue request publication notifications.', [
+            Log::error('Unable to queue request publication workflows.', [
                 'request_id' => $recommendation->id,
                 'actor_id' => $actor->id,
                 'exception' => $exception,

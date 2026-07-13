@@ -7,6 +7,7 @@ use App\Http\Requests\StoreStarterSuggestionsRequest;
 use App\Http\Requests\UpdateCreatorProfileRequest;
 use App\Models\Creator;
 use App\Models\Recommendation;
+use App\Services\Accolades\AccoladeShowcaseService;
 use App\Services\CreatorLifecycleService;
 use App\Services\CreatorProfileUpdateService;
 use App\Services\CreatorSetupCompletenessService;
@@ -66,12 +67,12 @@ class CreatorController extends Controller
         return view('super-admin.creators.index', compact('creators', 'filter', 'search', 'sort'));
     }
 
-    public function assist(Creator $creator): View
+    public function assist(Creator $creator, AccoladeShowcaseService $showcase): View
     {
         $creator->load(['creatorOwners.user:id,name,public_display_name,email', 'creatorTags']);
         $history = $creator->adminAuditLogs()->with('admin:id,name')->latest()->limit(10)->get();
 
-        return view('super-admin.creators.assist', ['creator' => $creator, 'setup' => $this->completeness->evaluate($creator), 'history' => $history, 'categories' => Recommendation::CATEGORY_OPTIONS]);
+        return view('super-admin.creators.assist', ['creator' => $creator, 'setup' => $this->completeness->evaluate($creator), 'history' => $history, 'categories' => Recommendation::CATEGORY_OPTIONS, 'creatorAccolades' => $showcase->forSubject('creator', $creator->id)]);
     }
 
     public function update(UpdateCreatorProfileRequest $request, Creator $creator): RedirectResponse

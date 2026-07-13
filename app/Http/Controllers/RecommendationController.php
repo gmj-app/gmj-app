@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Events\RequestCreated;
+use App\Events\VoteAllocated;
 use App\Http\Requests\StoreRecommendationRequest;
 use App\Models\Creator;
 use App\Models\Recommendation;
 use App\Models\User;
+use App\Services\Accolades\AccoladeShowcaseService;
 use App\Services\CreatorParticipationService;
 use App\Services\UnfavoriteCreatorAction;
 use App\Services\YouTubePlaylistMetadataService;
@@ -28,6 +30,7 @@ class RecommendationController extends Controller
         private readonly UnfavoriteCreatorAction $unfavoriteCreator,
         private readonly YouTubeUrlService $youtubeUrls,
         private readonly YouTubePlaylistMetadataService $playlistMetadata,
+        private readonly AccoladeShowcaseService $accoladeShowcase,
     ) {}
 
     public function showCreatorQueue(Request $request, Creator $creator): View
@@ -164,10 +167,12 @@ class RecommendationController extends Controller
         $isFavorited = $request->user()
             ? $creator->creatorFavorites()->where('user_id', $request->user()->id)->exists()
             : false;
+        $creatorAccolades = $this->accoladeShowcase->forSubject('creator', $creator->id);
 
         return view('recommendations.creator-queue', compact(
             'categoryOptions',
             'creator',
+            'creatorAccolades',
             'filters',
             'favoritesCount',
             'isFavorited',
@@ -231,9 +236,11 @@ class RecommendationController extends Controller
         $publishedRecommendationsCount = $creator->recommendations()
             ->where('status', 'published')
             ->count();
+        $creatorAccolades = $this->accoladeShowcase->forSubject('creator', $creator->id);
 
         return view('recommendations.published', compact(
             'creator',
+            'creatorAccolades',
             'filters',
             'publishedRecommendations',
             'publishedRecommendationsCount',
@@ -329,7 +336,7 @@ class RecommendationController extends Controller
                 'guide',
             );
         } catch (Throwable $exception) {
-            Log::error('Unable to queue new request notification.', [
+            Log::error('Unable to queue new request workflows.', [
                 'request_id' => $createdRequestId,
                 'creator_id' => $creator->id,
                 'exception' => $exception,
@@ -522,6 +529,10 @@ class RecommendationController extends Controller
 
             return false;
         });
+
+        if (! $removed) {
+            VoteAllocated::dispatch($request->user()->id, $creator->id, $recommendation->id, 1);
+        }
 
         return redirect()
             ->to(route('creator.queue', $creator)."#recommendation-{$recommendation->id}")

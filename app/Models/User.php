@@ -227,6 +227,21 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function earnedAccolades(): HasMany
+    {
+        return $this->hasMany(UserAccolade::class);
+    }
+
+    public function guideEarnedAccolades(): HasMany
+    {
+        return $this->earnedAccolades()->where('subject_type', 'guide')->whereColumn('subject_id', 'user_id');
+    }
+
+    public function accoladeProgress(): HasMany
+    {
+        return $this->hasMany(AccoladeProgress::class, 'subject_id')->where('subject_type', 'guide');
+    }
+
     public function activeGuideAccolades(): BelongsToMany
     {
         $now = now();

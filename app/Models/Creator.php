@@ -206,6 +206,16 @@ class Creator extends Model
         return $this->hasMany(CreatorFavorite::class);
     }
 
+    public function earnedAccolades(): HasMany
+    {
+        return $this->hasMany(UserAccolade::class, 'subject_id')->where('subject_type', 'creator');
+    }
+
+    public function accoladeProgress(): HasMany
+    {
+        return $this->hasMany(AccoladeProgress::class, 'subject_id')->where('subject_type', 'creator');
+    }
+
     public function adminAuditLogs()
     {
         return $this->morphMany(SuperAdminAuditLog::class, 'auditable');

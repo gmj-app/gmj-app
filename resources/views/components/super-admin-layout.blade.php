@@ -8,6 +8,7 @@
                 <a href="{{ route('super-admin.creators.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.creators.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Creators</a>
                 <a href="{{ route('super-admin.ads.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.ads.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Advertisements</a>
                 <a href="{{ route('super-admin.announcements.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.announcements.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Announcements</a>
+                <a href="{{ route('super-admin.accolades.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.accolades.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Accolades</a>
                 <a href="{{ route('super-admin.notifications.test') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.notifications.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Notifications</a>
             </nav>
         </div>
