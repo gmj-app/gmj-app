@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('request_identity_corrections', 'replacement_recommendation_id')) {
+            return;
+        }
+
         Schema::table('request_identity_corrections', function (Blueprint $table): void {
             $table->foreignId('replacement_recommendation_id')->nullable()->constrained('recommendations')->nullOnDelete();
         });
@@ -15,8 +19,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('request_identity_corrections', function (Blueprint $table): void {
-            $table->dropConstrainedForeignId('replacement_recommendation_id');
-        });
+        // This compatibility migration may encounter a column created by an
+        // earlier deployed version of the table-creation migration. It cannot
+        // safely claim ownership of that column during rollback.
     }
 };
