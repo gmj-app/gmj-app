@@ -13,6 +13,7 @@ use App\Services\CreatorParticipationService;
 use App\Services\UnfavoriteCreatorAction;
 use App\Services\YouTubePlaylistMetadataService;
 use App\Services\YouTubeUrlService;
+use App\ViewModels\CreatorPageHeaderViewModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ class RecommendationController extends Controller
         private readonly YouTubeUrlService $youtubeUrls,
         private readonly YouTubePlaylistMetadataService $playlistMetadata,
         private readonly AccoladeShowcaseService $accoladeShowcase,
+        private readonly CreatorPageHeaderViewModel $creatorPageHeader,
     ) {}
 
     public function showCreatorQueue(Request $request, Creator $creator): View
@@ -56,18 +58,9 @@ class RecommendationController extends Controller
             ->where('slug', $filters['tag'])
             ->value('slug') ?? '';
 
-        $publicRecommendationsCount = $creator->recommendations()
-            ->activePubliclyVisible()
-            ->count();
-        $publicVotesCount = (int) $creator->userPicks()
-            ->whereHas('recommendation', fn ($query) => $query->publiclyVisible()->votable())
-            ->sum('vote_count');
-        $ownsCreator = $request->user()
-            ? $creator->creatorOwners()
-                ->where('user_id', $request->user()->id)
-                ->where('role', 'owner')
-                ->exists()
-            : false;
+        $header = $this->creatorPageHeader->forCreator($creator, $request->user());
+        $publicRecommendationsCount = $header['metrics'][0]['value'];
+        $ownsCreator = $header['context']['is_creator_owner'];
         $topRequestedId = $creator->recommendations()
             ->activePubliclyVisible()
             ->votable()
@@ -159,25 +152,19 @@ class RecommendationController extends Controller
             ->limit(4)
             ->get();
 
-        $usage = $request->user()
-            ? $this->usageFor($request->user(), $creator)
-            : null;
-        $favoritesCount = $creator->creatorFavorites()->whereNull('released_at')->count();
-        $isFavorited = $request->user()
-            ? $creator->creatorFavorites()->where('user_id', $request->user()->id)->exists()
-            : false;
-        $creatorAccolades = $this->accoladeShowcase->forSubject('creator', $creator->id);
+        $usage = $header['guide_activity'];
+        $isFavorited = $header['actions']['favorite_state'];
+        $creatorAccolades = $header['accolade_showcase'];
 
         return view('recommendations.creator-queue', compact(
             'categoryOptions',
             'creator',
             'creatorAccolades',
             'filters',
-            'favoritesCount',
+            'header',
             'isFavorited',
             'ownsCreator',
             'publicRecommendationsCount',
-            'publicVotesCount',
             'recentPublishedRecommendations',
             'recommendations',
             'statusOptions',

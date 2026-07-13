@@ -6,193 +6,8 @@
                 x-on:keydown.escape.window="biographyOpen || submissionGuidanceOpen || accoladeOpen ? (biographyOpen = false, submissionGuidanceOpen = false, accoladeOpen = false) : creatorMenuOpen = false"
                 class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
             >
-                @php
-                    $addRecommendationLabel = 'Add Request';
+                <x-creator.hero :creator="$creator" :header="$header" />
 
-                    if (auth()->check() && $isFavorited && $creator->submissions_open) {
-                        $addRecommendationLabel .= " ({$usage['suggestions_remaining']}/{$usage['suggestions_limit']})";
-                    }
-                @endphp
-
-                <x-creator-hero-background :creator="$creator" class="min-h-48 sm:min-h-40 lg:min-h-44">
-                    <div class="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
-                        <div class="relative" x-on:click.outside="creatorMenuOpen = false">
-                            <button
-                                type="button"
-                                x-on:click="creatorMenuOpen = ! creatorMenuOpen"
-                                aria-label="Open creator actions"
-                                aria-haspopup="menu"
-                                aria-expanded="false"
-                                x-bind:aria-expanded="creatorMenuOpen.toString()"
-                                class="inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/20 transition hover:bg-black/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-                            >
-                                <svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    <circle cx="5" cy="12" r="1.8" />
-                                    <circle cx="12" cy="12" r="1.8" />
-                                    <circle cx="19" cy="12" r="1.8" />
-                                </svg>
-                            </button>
-
-                            <div
-                                x-show="creatorMenuOpen"
-                                x-cloak
-                                x-transition:enter="transition ease-out duration-150"
-                                x-transition:enter-start="opacity-0 scale-95"
-                                x-transition:enter-end="opacity-100 scale-100"
-                                x-transition:leave="transition ease-in duration-100"
-                                x-transition:leave-start="opacity-100 scale-100"
-                                x-transition:leave-end="opacity-0 scale-95"
-                                role="menu"
-                                class="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-white/10 bg-slate-950/95 py-1.5 text-sm font-semibold text-white shadow-2xl backdrop-blur"
-                            >
-                                <button
-                                    type="button"
-                                    role="menuitem"
-                                    x-on:click="biographyOpen = true; creatorMenuOpen = false"
-                                    class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-white/10 focus:bg-white/10 focus:outline-none"
-                                >
-                                    <svg class="size-5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                        <circle cx="12" cy="12" r="9" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10.75v5.5" />
-                                        <path stroke-linecap="round" d="M12 7.75h.01" />
-                                    </svg>
-                                    Biography
-                                </button>
-
-                                <button
-                                    type="button"
-                                    role="menuitem"
-                                    x-on:click="submissionGuidanceOpen = true; creatorMenuOpen = false"
-                                    class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-white/10 focus:bg-white/10 focus:outline-none"
-                                >
-                                    <svg class="size-5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 5.75A1.75 1.75 0 0 1 6.75 4h10.5A1.75 1.75 0 0 1 19 5.75v12.5A1.75 1.75 0 0 1 17.25 20H6.75A1.75 1.75 0 0 1 5 18.25V5.75Z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4" />
-                                    </svg>
-                                    Request guidance
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="relative z-10 flex min-h-48 flex-col justify-center gap-4 px-4 pb-4 pt-14 sm:min-h-40 sm:px-5 sm:py-5 sm:pr-16 lg:min-h-44 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-6">
-                        <div class="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-                            <x-creator-avatar
-                                :creator="$creator"
-                                size="xl"
-                                class="size-16 shrink-0 border-2 border-white/50 shadow-xl ring-4 ring-slate-950/25 sm:size-20 sm:text-2xl lg:text-3xl"
-                            />
-
-                            <div class="min-w-0 flex-1">
-                                <h1 class="max-w-3xl break-words text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl">{{ $creator->display_name }}</h1>
-                                @if ($creatorAccolades['featured']->isNotEmpty())
-                                    <button type="button" x-on:click="accoladeOpen = true" class="mt-2 flex flex-wrap gap-1.5 text-left" aria-label="View {{ $creator->display_name }} accolades">
-                                        @foreach ($creatorAccolades['featured']->take(3) as $item)
-                                            <x-accolade-badge :definition="$item['definition']" size="sm" />
-                                        @endforeach
-                                    </button>
-                                @endif
-
-                                <div class="mt-3 flex flex-wrap gap-2">
-                                    @auth
-                                        <a
-                                            href="{{ route('recommendations.create', $creator) }}"
-                                            aria-label="Add a request for {{ $creator->display_name }}"
-                                            class="inline-flex min-h-10 items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 {{ $usage['can_suggest'] && $creator->submissions_open ? '' : 'pointer-events-none bg-slate-400 shadow-none' }}"
-                                        >
-                                            @if (! $creator->submissions_open)
-                                                Requests closed
-                                            @else
-                                                {{ $addRecommendationLabel }}
-                                            @endif
-                                        </a>
-                                    @else
-                                        <a
-                                            href="{{ route('recommendations.create', $creator) }}"
-                                            aria-label="Add a request for {{ $creator->display_name }}"
-                                            class="inline-flex min-h-10 items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500"
-                                        >
-                                            Add Request
-                                        </a>
-                                    @endauth
-
-                                    @if ($creator->youtube_channel_url ?? $creator->channel_url)
-                                        <a
-                                            href="{{ $creator->youtube_channel_url ?? $creator->channel_url }}"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            aria-label="Visit {{ $creator->display_name }}'s YouTube channel"
-                                            class="inline-flex min-h-10 items-center justify-center rounded-full border border-white/30 bg-white/95 px-4 py-2 text-center text-sm font-medium text-slate-800 shadow-sm hover:bg-white hover:text-red-600 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-100 dark:hover:text-red-300"
-                                        >
-                                            Visit Channel
-                                        </a>
-                                    @endif
-
-                                    @if ($ownsCreator)
-                                        <a
-                                            href="{{ route('creators.dashboard', $creator) }}"
-                                            aria-label="Open settings for {{ $creator->display_name }}"
-                                            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-white/30 bg-white/95 px-4 py-2 text-center text-sm font-medium text-slate-800 shadow-sm transition hover:bg-white hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-100 dark:hover:text-indigo-300"
-                                        >
-                                            <x-icons.cog-6-tooth class="size-5 shrink-0" />
-                                            Settings
-                                        </a>
-                                    @endif
-
-                                    @if (! $ownsCreator)
-                                        @auth
-                                            <form
-                                                id="creator-favorite-toggle"
-                                                method="POST"
-                                                action="{{ route('creator.favorite', $creator) }}"
-                                                class="sm:w-auto"
-                                                @if ($isFavorited && $usage['votes_used'] > 0)
-                                                    x-on:submit="
-                                                        if ($el.dataset.participationConfirmed === '1') return;
-                                                        $event.preventDefault();
-                                                        $dispatch('request-participation-confirmation', {
-                                                            formId: $el.id,
-                                                            mode: 'confirm',
-                                                            title: 'Remove favorite?',
-                                                            body: @js("Unfavoriting removes your active votes from this creator. Requests with no other votes may be removed."),
-                                                            resourceLine: @js("Active votes on this creator: {$usage['votes_used']}"),
-                                                            confirmLabel: 'Remove favorite and active votes',
-                                                            destructive: true,
-                                                        });
-                                                    "
-                                                @endif
-                                            >
-                                                @csrf
-                                                <button
-                                                    type="submit"
-                                                    class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 sm:w-auto {{ $isFavorited ? 'border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:border-amber-500/50 dark:bg-amber-500/15 dark:text-amber-300 dark:hover:bg-amber-500/25' : 'border-white/30 bg-white/95 text-slate-800 hover:bg-white hover:text-amber-700 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-100 dark:hover:text-amber-300' }}"
-                                                >
-                                                    <svg class="size-5 {{ $isFavorited ? 'fill-current' : 'fill-none' }}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" />
-                                                    </svg>
-                                                    {{ $isFavorited ? 'Favorited' : 'Favorite' }}
-                                                </button>
-                                            </form>
-                                        @else
-                                            <a href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false)]) }}" class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-white/30 bg-white/95 px-4 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-white hover:text-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-100 dark:hover:text-amber-300 sm:w-auto">
-                                                <svg class="size-5 fill-none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" />
-                                                </svg>
-                                                Favorite
-                                            </a>
-                                        @endauth
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-wrap gap-2 text-xs font-medium text-white/90 lg:max-w-xs lg:shrink-0 lg:justify-end">
-                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicRecommendationsCount }} {{ Str::plural('request', $publicRecommendationsCount) }}</span>
-                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $favoritesCount }} {{ $favoritesCount === 1 ? 'follower' : 'followers' }}</span>
-                            <span class="rounded-full border border-white/20 bg-white/15 px-3 py-1.5 backdrop-blur-sm">{{ $publicVotesCount }} {{ Str::plural('vote', $publicVotesCount) }}</span>
-                        </div>
-                    </div>
-                </x-creator-hero-background>
 
                 <div
                     x-show="biographyOpen"
@@ -252,28 +67,6 @@
                                         </a>
                                     @endif
 
-                                    <div class="flex items-center gap-4">
-                                        <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5.75A1.75 1.75 0 0 1 5.75 4h12.5A1.75 1.75 0 0 1 20 5.75V19.5l-4-2-4 2-4-2-4 2Z" />
-                                        </svg>
-                                        <span>{{ $publicRecommendationsCount }} {{ Str::plural('request', $publicRecommendationsCount) }}</span>
-                                    </div>
-
-                                    <div class="flex items-center gap-4">
-                                        <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 19v-1.5A3.5 3.5 0 0 0 12.5 14h-5A3.5 3.5 0 0 0 4 17.5V19" />
-                                            <circle cx="10" cy="7.5" r="3.5" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 8v5M20.5 10.5h-5" />
-                                        </svg>
-                                        <span>{{ $favoritesCount }} {{ $favoritesCount === 1 ? 'follower' : 'followers' }}</span>
-                                    </div>
-
-                                    <div class="flex items-center gap-4">
-                                        <svg class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="m7 11 5-7 5 7h-3v8h-4v-8H7Z" />
-                                        </svg>
-                                        <span>{{ $publicVotesCount }} {{ Str::plural('vote', $publicVotesCount) }}</span>
-                                    </div>
                                 </div>
                             </section>
                         </div>
@@ -329,9 +122,9 @@
                         <div class="max-h-[calc(100vh-9rem)] overflow-y-auto px-6 pb-6">
                             @if (filled($creator->submission_instructions))
                                 <blockquote class="relative rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-6 sm:px-6">
-                                    <span class="pointer-events-none absolute left-4 top-2 bg-gradient-to-br from-indigo-300/60 to-violet-300/20 bg-clip-text text-7xl font-black leading-none text-transparent" aria-hidden="true">“</span>
+                                    <span class="pointer-events-none absolute left-4 top-2 bg-gradient-to-br from-indigo-300/60 to-violet-300/20 bg-clip-text text-7xl font-black leading-none text-transparent" aria-hidden="true">&ldquo;</span>
                                     <div class="relative whitespace-pre-line pl-5 text-sm font-medium leading-6 text-slate-100 sm:text-base sm:leading-7">{{ $creator->submission_instructions }}</div>
-                                    <span class="pointer-events-none absolute bottom-1 right-5 bg-gradient-to-br from-violet-300/35 to-indigo-300/10 bg-clip-text text-6xl font-black leading-none text-transparent" aria-hidden="true">”</span>
+                                    <span class="pointer-events-none absolute bottom-1 right-5 bg-gradient-to-br from-violet-300/35 to-indigo-300/10 bg-clip-text text-6xl font-black leading-none text-transparent" aria-hidden="true">&rdquo;</span>
                                 </blockquote>
                             @else
                                 <p class="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm font-medium leading-6 text-slate-300 sm:text-base">
@@ -353,6 +146,11 @@
                         </div>
                     </div>
                 @endif
+            </div>
+
+            <div class="mt-4 space-y-4">
+                <x-creator.owner-toolbar :creator="$creator" :header="$header" />
+                <x-creator.guide-activity-strip :creator="$creator" :header="$header" />
             </div>
         </div>
     </section>
@@ -383,106 +181,9 @@
                 <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{{ $message }}</div>
             @enderror
 
-            <div class="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start">
-                <aside class="min-w-0 lg:col-start-2 lg:row-start-1">
-                    <div class="space-y-5 lg:sticky lg:top-24">
-                        <div class="w-full min-w-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                            @auth
-                            <div x-data="{ open: false }" class="min-w-0">
-                                <button
-                                    type="button"
-                                    x-on:click="open = ! open"
-                                    aria-expanded="false"
-                                    x-bind:aria-expanded="open.toString()"
-                                    aria-controls="creator-resource-details"
-                                    class="flex w-full min-w-0 items-start gap-3 px-4 py-4 text-left transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset dark:hover:bg-slate-800/60"
-                                >
-                                    <span class="min-w-0 flex-1">
-                                        <span class="block truncate font-semibold text-slate-950 dark:text-white">{{ auth()->user()->publicName() }}</span>
-                                        <span class="mt-0.5 block truncate text-xs font-normal text-slate-500 dark:text-slate-400">{{ auth()->user()->email }}</span>
-                                    </span>
-
-                                    <span class="shrink-0 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">{{ $usage['tier'] }}</span>
-
-                                    <svg
-                                        class="mt-1 size-5 shrink-0 text-slate-400 transition-transform duration-200"
-                                        x-bind:class="{ 'rotate-180 text-indigo-500 dark:text-indigo-300': open }"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        aria-hidden="true"
-                                    >
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-                                    </svg>
-                                </button>
-
-                                <dl class="grid grid-cols-3 gap-2 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
-                                    @foreach ([
-                                        ['Favorites left', $usage['reactors_remaining'], $usage['reactors_limit']],
-                                        ['Requests left', $usage['suggestions_remaining'], $usage['suggestions_limit']],
-                                        ['Votes left', $usage['votes_remaining'], $usage['votes_limit']],
-                                    ] as [$label, $remaining, $limit])
-                                        <div class="min-w-0 rounded-xl bg-slate-50 px-2 py-2 text-center dark:bg-slate-950/60">
-                                            <dt class="truncate text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ $label }}</dt>
-                                            <dd class="mt-1 text-sm font-semibold leading-none text-slate-950 dark:text-white">{{ $remaining }}/{{ $limit }}</dd>
-                                        </div>
-                                    @endforeach
-                                </dl>
-
-                                <div
-                                    id="creator-resource-details"
-                                    x-show="open"
-                                    x-cloak
-                                    x-transition:enter="transition ease-out duration-200"
-                                    x-transition:enter-start="opacity-0 -translate-y-1"
-                                    x-transition:enter-end="opacity-100 translate-y-0"
-                                    x-transition:leave="transition ease-in duration-150"
-                                    x-transition:leave-start="opacity-100 translate-y-0"
-                                    x-transition:leave-end="opacity-0 -translate-y-1"
-                                    class="border-t border-slate-100 px-4 pb-4 pt-3 dark:border-slate-800"
-                                >
-                                    <x-subsection-label as="h2">Your limits</x-subsection-label>
-                                    <dl class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">
-                                        @foreach ([
-                                            ['Creator favorites remaining', $usage['reactors_remaining'], $usage['reactors_used'], $usage['reactors_limit']],
-                                            ['Requests remaining', $usage['suggestions_remaining'], $usage['suggestions_used'], $usage['suggestions_limit']],
-                                            ['Votes remaining', $usage['votes_remaining'], $usage['votes_used'], $usage['votes_limit']],
-                                        ] as [$label, $remaining, $used, $limit])
-                                            <div class="rounded-2xl bg-slate-50 px-3 py-2.5 dark:bg-slate-950/60">
-                                                <dt class="text-xs font-semibold leading-4 text-slate-500 dark:text-slate-400">{{ $label }}</dt>
-                                                <dd class="mt-1 text-lg font-semibold leading-none text-slate-950 dark:text-white">{{ $remaining }}</dd>
-                                                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{{ $used }} of {{ $limit }} used</p>
-                                            </div>
-                                        @endforeach
-                                    </dl>
-
-                                    <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-sm font-medium dark:border-slate-800">
-                                        <a href="{{ route('profile.edit') }}" class="inline-flex min-h-10 items-center rounded-xl px-3 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-500 dark:text-indigo-400 dark:hover:bg-indigo-950/60">
-                                            Profile
-                                        </a>
-
-                                        <form method="POST" action="{{ route('logout') }}">
-                                            @csrf
-                                            <button type="submit" class="inline-flex min-h-10 items-center rounded-xl px-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">
-                                                Log out
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        @else
-                            <div class="p-5">
-                                <p class="font-semibold text-slate-950 dark:text-white">Join the community</p>
-                                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Create a free account to suggest ideas and vote on this journey.</p>
-                                <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                                    <a href="{{ route('register') }}" class="inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">Register</a>
-                                    <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:border-indigo-200 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-200">Log in</a>
-                                </div>
-                            </div>
-                        @endauth
-                        </div>
-
+            <div class="flex min-w-0 flex-col gap-6">
+                <aside class="order-2 min-w-0">
+                    <div class="space-y-5">
                         <section class="w-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="recently-published-title">
                             <x-subsection-label as="h2" id="recently-published-title">Recently Published</x-subsection-label>
 
@@ -541,7 +242,7 @@
                     </div>
                 </aside>
 
-                <div class="min-w-0 space-y-5 lg:col-start-1 lg:row-start-1">
+                <div class="order-1 min-w-0 space-y-5">
                     @php
                         $activeFilterCount = collect([
                             $filters['q'],

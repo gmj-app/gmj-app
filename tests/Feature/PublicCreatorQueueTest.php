@@ -10,7 +10,9 @@ use App\Models\GuideAccolade;
 use App\Models\Recommendation;
 use App\Models\RecommendationAlternative;
 use App\Models\User;
+use App\Models\UserAccolade;
 use App\Models\UserPick;
+use App\Services\Accolades\AccoladeDefinitionRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
@@ -38,7 +40,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('class="px-4 sm:px-6 lg:px-8"', false)
             ->assertSee('max-w-5xl min-w-0 grid-cols-[1fr_auto]', false)
             ->assertSee('md:grid-cols-[1fr_auto_1fr]', false)
-            ->assertSee('>JFragment</h1>', false)
+            ->assertSee('<h1 class="line-clamp-2', false)
             ->assertDontSee("JFragment's Journey", false)
             ->assertDontSee('Suggest ideas, vote with the community, and help guide what this creator makes next.')
             ->assertSee('Exploring music, culture, and first-listen discoveries.')
@@ -57,13 +59,11 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Add Request')
             ->assertSee('aria-label="Add a request for JFragment"', false)
             ->assertSee('Visit Channel')
-            ->assertSee('aria-label="Visit JFragment\'s YouTube channel"', false)
+            ->assertSee('aria-label="Visit JFragment\'s YouTube channel (opens in a new tab)"', false)
             ->assertDontSee('Submit a recommendation')
             ->assertDontSee('Visit YouTube channel')
-            ->assertSeeInOrder([
-                'Your limits',
-                'Filter requests',
-            ])
+            ->assertSeeInOrder(['Your activity with JFragment', 'Filter requests'])
+            ->assertDontSee('Your limits')
             ->assertSee('aria-expanded="false"', false)
             ->assertSee('aria-controls="creator-queue-filters"', false)
             ->assertDontSee('Search and filter suggestions')
@@ -1640,7 +1640,7 @@ class PublicCreatorQueueTest extends TestCase
             ->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertDontSee('0 users have favorited this creator.')
-            ->assertSee('0 followers')
+            ->assertSee('Followers')
             ->assertSee('Favorite');
 
         $this->post(route('creator.favorite', $creator))
@@ -1655,7 +1655,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertDontSee('1 user has favorited this creator.')
-            ->assertSee('1 follower')
+            ->assertSee('Followers')
             ->assertSee('Favorited');
 
         $this->post(route('creator.favorite', $creator))
@@ -1966,13 +1966,69 @@ class PublicCreatorQueueTest extends TestCase
         $this->addPicks($creator, $visible, 3);
         $this->addPicks($creator, $hidden, 5);
 
+        $response = $this->get(route('creator.queue', $creator))->assertOk();
+
+        $response->assertSeeInOrder(['Requests', 'Followers', 'Votes', 'Published']);
+        $this->assertStringContainsString('>1</dd>', $response->getContent());
+        $this->assertStringContainsString('>3</dd>', $response->getContent());
+    }
+
+    public function test_creator_header_groups_all_authoritative_metrics_and_published_count(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'metric-creator']);
+        Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
+        Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'published']);
+
+        $response = $this->get(route('creator.queue', $creator))->assertOk();
+
+        $response
+            ->assertSee('data-creator-community-metrics', false)
+            ->assertSeeInOrder(['Requests', 'Followers', 'Votes', 'Published']);
+        $this->assertSame(1, substr_count($response->getContent(), 'data-creator-community-metrics'));
+    }
+
+    public function test_guest_does_not_see_guide_activity_or_legacy_account_resource_card(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'guest-context']);
+
         $this->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSeeInOrder([
-                '1 request',
-                '0 followers',
-                '3 votes',
+            ->assertDontSee('Your activity with')
+            ->assertDontSee('Your limits')
+            ->assertDontSee('Favorites left')
+            ->assertDontSee('Requests left')
+            ->assertDontSee('Votes left');
+    }
+
+    public function test_header_renders_at_most_two_featured_creator_accolades(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'accolade-creator']);
+        $owner = User::factory()->create();
+
+        foreach ([
+            'creator.community_publications.first_step',
+            'creator.consistency.momentum',
+            'creator.community_reach.gathering_crowd',
+        ] as $order => $key) {
+            $definition = app(AccoladeDefinitionRepository::class)->find($key);
+            UserAccolade::query()->create([
+                'user_id' => $owner->id,
+                'subject_type' => 'creator',
+                'subject_id' => $creator->id,
+                'accolade_key' => $key,
+                'track' => $definition['track'],
+                'level' => $definition['level'],
+                'threshold_at_award' => $definition['threshold'],
+                'awarded_at' => now(),
+                'is_public' => true,
+                'is_featured' => true,
+                'featured_order' => $order,
             ]);
+        }
+
+        $response = $this->get(route('creator.queue', $creator))->assertOk();
+
+        $this->assertSame(2, substr_count($response->getContent(), 'data-featured-creator-accolade'));
     }
 
     public function test_add_recommendation_cta_only_shows_suggestion_resources_for_favorited_guides(): void
@@ -2010,7 +2066,10 @@ class PublicCreatorQueueTest extends TestCase
         $this->actingAs($favoritedUser)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Add Request (1/3)');
+            ->assertSee('Add Request')
+            ->assertSee('1 request available')
+            ->assertSee('2 / 3 used')
+            ->assertSee('1 remaining');
     }
 
     public function test_add_recommendation_cta_shows_zero_remaining_for_exhausted_favorited_guides(): void
@@ -2033,8 +2092,10 @@ class PublicCreatorQueueTest extends TestCase
         $this->actingAs($user)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Add Request (0/3)')
-            ->assertSee('pointer-events-none bg-slate-400 shadow-none', false);
+            ->assertSee('Request limit reached')
+            ->assertSee('3 / 3 used')
+            ->assertSee('0 remaining')
+            ->assertSee('aria-disabled="true"', false);
     }
 
     public function test_creator_owners_cannot_favorite_their_own_page(): void
@@ -2051,6 +2112,10 @@ class PublicCreatorQueueTest extends TestCase
             ->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertDontSee('id="creator-favorite-toggle"', false)
+            ->assertDontSee('Your activity with')
+            ->assertSee('Creator tools')
+            ->assertSee('Manage requests')
+            ->assertSee('Edit creator page')
             ->assertDontSee('Manage creator page')
             ->assertSee('Settings')
             ->assertSee('aria-label="Open settings for '.$creator->display_name.'"', false)

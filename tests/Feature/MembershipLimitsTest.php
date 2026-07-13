@@ -246,8 +246,8 @@ class MembershipLimitsTest extends TestCase
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSeeInOrder(['Requests left', '2/3'])
-            ->assertSeeInOrder(['Votes left', '3/3'])
+            ->assertSeeInOrder(['Requests', '1 / 3 used', '2 remaining'])
+            ->assertSeeInOrder(['Votes', '0 / 3 used', '3 remaining'])
             ->assertSee('Independent resources')
             ->assertSee('name="vote_action" value="add"', false)
             ->assertSee('aria-label="Remove vote from this request"', false)
@@ -285,8 +285,8 @@ class MembershipLimitsTest extends TestCase
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSeeInOrder(['Requests left', '2/3'])
-            ->assertSeeInOrder(['Votes left', '2/3'])
+            ->assertSeeInOrder(['Requests', '1 / 3 used', '2 remaining'])
+            ->assertSeeInOrder(['Votes', '1 / 3 used', '2 remaining'])
             ->assertSee('name="vote_action" value="remove"', false)
             ->assertSee('aria-label="Remove vote from this request"', false)
             ->assertSee('1/3');
@@ -414,7 +414,7 @@ class MembershipLimitsTest extends TestCase
         $this->assertSame(1, $recommendation->fresh()->userPicks()->count());
     }
 
-    public function test_queue_sidebar_shows_account_and_per_reactor_usage(): void
+    public function test_queue_shows_creator_specific_guide_activity_without_global_plan_card(): void
     {
         $creator = Creator::factory()->create(['display_name' => 'JFragment']);
         $user = User::factory()->create([
@@ -433,34 +433,16 @@ class MembershipLimitsTest extends TestCase
         $this->actingAs($user)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Example Member')
-            ->assertSee('Plus')
-            ->assertSee('x-data="{ open: false }"', false)
-            ->assertSee('aria-controls="creator-resource-details"', false)
-            ->assertSee('x-bind:aria-expanded="open.toString()"', false)
-            ->assertSee('Favorites left')
-            ->assertSee('Requests left')
-            ->assertSee('Votes left')
-            ->assertSee('5/5')
-            ->assertSee('4/5')
-            ->assertSee('Your limits')
-            ->assertSee('Creator favorites remaining')
-            ->assertSee('Requests remaining')
-            ->assertSee('Votes remaining')
-            ->assertSee('1 of 5 used')
-            ->assertSee('0 of 5 used')
-            ->assertSee('Profile')
-            ->assertSee('Log out')
-            ->assertSee(route('profile.edit'), false)
-            ->assertSee(route('logout'), false)
+            ->assertSee('Your activity with JFragment')
+            ->assertSee('Not favorited')
+            ->assertSeeInOrder(['Requests', '1 / 5 used', '4 remaining'])
+            ->assertSeeInOrder(['Votes', '0 / 5 used', '5 remaining'])
+            ->assertDontSee('Your limits')
+            ->assertDontSee('Creator favorites remaining')
+            ->assertDontSee('Plus')
             ->assertSeeInOrder([
-                'Favorites left',
-                'Requests left',
-                'Votes left',
-                'Your limits',
-                'Profile',
-                'Log out',
-                'Filters',
+                'Your activity with JFragment',
+                'Filter requests',
             ]);
     }
 
@@ -511,16 +493,15 @@ class MembershipLimitsTest extends TestCase
         $response
             ->assertOk()
             ->assertDontSee('1 user has favorited this creator.')
-            ->assertSee('1 follower')
+            ->assertSee('Followers')
             ->assertSee('aria-label="Remove vote from this request"', false)
             ->assertSee('name="vote_action" value="remove"', false)
             ->assertDontSee('data-global-success-alert', false)
             ->assertSee('data-recommendation-action-feedback', false)
             ->assertSee('Your vote was added.')
-            ->assertSeeInOrder(['Favorites left', '2/3'])
-            ->assertSeeInOrder(['Votes left', '1/3'])
-            ->assertSeeInOrder(['Creator favorites remaining', '2', '1 of 3 used'])
-            ->assertSeeInOrder(['Votes remaining', '1', '2 of 3 used']);
+            ->assertSee('Favorited')
+            ->assertSeeInOrder(['Requests', '0 / 3 used', '3 remaining'])
+            ->assertSeeInOrder(['Votes', '2 / 3 used', '1 remaining']);
 
         $this->assertSame(
             1,
