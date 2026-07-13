@@ -20,7 +20,7 @@ class GuideAccoladeSummaryService
     /** @return array<string, mixed> */
     public function forDashboard(User $user): array
     {
-        return $this->build($user, self::DASHBOARD_TRACKS, true);
+        return $this->build($user, self::DASHBOARD_TRACKS, true, false);
     }
 
     /** @return array<string, mixed> */
@@ -28,16 +28,17 @@ class GuideAccoladeSummaryService
     {
         $tracks = collect(config('accolades.tracks', []))
             ->filter(fn (array $track) => $track['subject_type'] === 'guide')
+            ->sortBy('display_order')
             ->keys()->all();
 
-        return $this->build($user, $tracks, false);
+        return $this->build($user, $tracks, false, true);
     }
 
     /**
      * @param  array<int, string>  $requestedTracks
      * @return array<string, mixed>
      */
-    private function build(User $user, array $requestedTracks, bool $recentLimit): array
+    private function build(User $user, array $requestedTracks, bool $recentLimit, bool $includeEmptyTracks): array
     {
         $awards = UserAccolade::query()
             ->where('user_id', $user->id)
@@ -68,11 +69,11 @@ class GuideAccoladeSummaryService
             ->first();
         $featured = $manualFeature ?: $fallbackFeature;
 
-        $tracks = collect($requestedTracks)->map(function (string $track) use ($awards, $progress): ?array {
+        $tracks = collect($requestedTracks)->map(function (string $track) use ($awards, $progress, $includeEmptyTracks): ?array {
             $earned = $awards->filter(fn (array $item) => $item['award']->track === $track)
                 ->sortBy(fn (array $item) => $item['award']->level)->values();
             $row = $progress->get($track);
-            if (! $row && $earned->isEmpty()) {
+            if (! $includeEmptyTracks && ! $row && $earned->isEmpty()) {
                 return null;
             }
 

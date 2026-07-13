@@ -1,51 +1,43 @@
 <x-app-layout>
     <x-slot name="title">My Accolades</x-slot>
 
-    <div class="py-10 sm:py-12">
+    <div class="py-8 sm:py-10">
         <div class="mx-auto min-w-0 max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">My Accolades</p>
-                    <h1 class="mt-1 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">Your journey so far</h1>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Your private view of earned Guide accolades and persisted track progress.</p>
+                    <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">Featured accolade</p>
+                    <h1 class="mt-1 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">Accolades</h1>
+                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Your earned milestones and progress across the Guide journey.</p>
                 </div>
-                <a href="{{ route('dashboard') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300">Back to My Hub</a>
-            </div>
+                <a href="{{ route('dashboard') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-300">Back to My Hub</a>
+            </header>
 
-            @if (! $accoladeSummary['has_earned'])
-                <section class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
-                    <h2 class="text-xl font-extrabold text-slate-950 dark:text-white">Your journey starts here</h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Submit requests, support community ideas, and explore creators to earn accolades.</p>
-                    <a href="{{ route('home') }}" class="mt-5 inline-flex min-h-10 items-center rounded-full bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400">Explore creators</a>
-                </section>
-            @else
-                @if ($featured = $accoladeSummary['featured'])
-                    <section class="mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-900 dark:bg-amber-950/25 sm:p-6">
-                        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div>
-                                <p class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Featured Guide accolade</p>
-                                <div class="mt-3"><x-accolade-badge :definition="$featured['definition']" size="lg" /></div>
-                                <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{{ $featured['definition']['description'] }}</p>
-                            </div>
-                            <form method="POST" action="{{ route('profile.accolades.featured') }}" class="flex items-center gap-2">
-                                @csrf @method('PATCH')
-                                <label for="private-featured-accolade" class="sr-only">Featured accolade</label>
-                                <select id="private-featured-accolade" name="accolade_id" class="rounded-xl border-slate-300 text-sm dark:border-slate-700 dark:bg-slate-950">
-                                    @foreach ($accoladeSummary['awards']->filter(fn ($item) => $item['award']->is_public) as $item)
-                                        <option value="{{ $item['award']->id }}" @selected($item['award']->id === $featured['award']->id)>{{ $item['definition']['name'] }}</option>
-                                    @endforeach
-                                </select>
-                                <button class="rounded-xl bg-slate-900 px-3 py-2 text-sm font-bold text-white dark:bg-white dark:text-slate-900">Feature</button>
-                            </form>
-                        </div>
-                    </section>
-                @endif
-
-                <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-                    <h2 class="text-xl font-extrabold text-slate-950 dark:text-white">Guide tracks</h2>
-                    <div class="mt-6"><x-accolade-track-list :showcase="$accoladeSummary" /></div>
-                </section>
+            @if (session('success'))
+                <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" role="status">{{ session('success') }}</div>
             @endif
+
+            <div class="mt-5 space-y-5 sm:space-y-6">
+                <x-accolades.featured-summary :summary="$accoladeSummary" />
+                <x-accolades.early-guide-banner :recognition="$accoladeSummary['early_guide']" />
+
+                <section aria-labelledby="accolade-tracks-heading">
+                    <div class="flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <h2 id="accolade-tracks-heading" class="text-xl font-extrabold text-slate-950 dark:text-white">Your Accolade Tracks</h2>
+                            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Keep moving toward your next Guide milestones.</p>
+                        </div>
+                        @if (! $accoladeSummary['has_earned'])
+                            <a href="{{ route('home') }}" class="inline-flex min-h-10 items-center rounded-full bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">Explore creators</a>
+                        @endif
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        @foreach ($accoladeSummary['tracks'] as $track)
+                            <x-accolades.track-card :track="$track" />
+                        @endforeach
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
 </x-app-layout>

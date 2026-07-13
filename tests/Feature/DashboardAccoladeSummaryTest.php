@@ -103,7 +103,7 @@ class DashboardAccoladeSummaryTest extends TestCase
             ->assertSee('View all accolades')
             ->assertSee('href="'.route('accolades.index').'"', false);
         $this->actingAs($guide)->get('/accolades')->assertOk()
-            ->assertSee('Your private view of earned Guide accolades and persisted track progress.')
+            ->assertSee('Your earned milestones and progress across the Guide journey.')
             ->assertSee('Explorer');
     }
 
