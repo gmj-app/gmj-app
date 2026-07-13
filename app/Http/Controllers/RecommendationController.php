@@ -125,9 +125,6 @@ class RecommendationController extends Controller
 
         if ($request->user()) {
             $recommendationsQuery
-                ->withExists([
-                    'userPicks as picked_by_user' => fn ($query) => $query->where('user_id', $request->user()->id),
-                ])
                 ->withSum([
                     'userPicks as current_user_votes_count' => fn ($query) => $query->where('user_id', $request->user()->id),
                 ], 'vote_count');

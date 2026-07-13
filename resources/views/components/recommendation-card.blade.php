@@ -18,7 +18,7 @@
         : collect();
     $totalVotes = $recommendation->totalVotes();
     $currentUserVotes = auth()->check()
-        ? $recommendation->currentUserVoteCount(auth()->user())
+        ? $recommendation->activeVoteQuantityFor(auth()->user())
         : 0;
     $voteLimit = (int) ($usage['votes_limit'] ?? auth()->user()?->membershipLimits()['votes_per_reactor'] ?? 0);
     $votesRemaining = (int) ($usage['votes_remaining'] ?? 0);
@@ -338,7 +338,7 @@
                                 </button>
                             </form>
 
-                            <div class="min-w-0 rounded-xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sm:min-w-14">
+                            <div data-current-user-votes="{{ $currentUserVotes }}" class="min-w-0 rounded-xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sm:min-w-14">
                                 <p class="whitespace-nowrap text-sm font-extrabold leading-none text-slate-950 dark:text-white">{{ $currentUserVotes }}/{{ $voteLimit }}</p>
                                 <p class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">yours</p>
                             </div>

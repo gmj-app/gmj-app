@@ -422,13 +422,15 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Suggested by current guide')
             ->assertSee('Voted by current guide')
             ->assertSee('Submitted and voted by current guide')
-            ->assertSee('title="You voted here with 2 votes"', false)
-            ->assertSee('title="You voted here with 1 vote"', false)
+            ->assertSee('title="You have 2 active votes here"', false)
+            ->assertSee('title="You have 1 active vote here"', false)
             ->assertSee('title="You requested"', false)
             ->assertSee('text-emerald-700', false)
             ->assertSee('text-amber-700', false);
 
-        $this->assertSame(4, substr_count($response->getContent(), '<span>You voted</span>'));
+        $this->assertSame(4, substr_count($response->getContent(), 'data-active-vote-badge'));
+        $this->assertSame(2, substr_count($response->getContent(), 'data-active-vote-quantity="1"'));
+        $this->assertSame(2, substr_count($response->getContent(), 'data-active-vote-quantity="2"'));
         $this->assertSame(4, substr_count($response->getContent(), '<span>You requested</span>'));
         $this->assertSame(2, substr_count($response->getContent(), 'Edit request details'));
 
@@ -462,6 +464,39 @@ class PublicCreatorQueueTest extends TestCase
 
         $this->assertSame(2, substr_count($response->getContent(), '<span>You requested</span>'));
         $response->assertSee('Suggested by')->assertSee($guide->publicName());
+    }
+
+    public function test_active_vote_badge_quantity_matches_yours_control_and_ignores_other_or_released_votes(): void
+    {
+        $creator = Creator::factory()->create();
+        $guide = User::factory()->create();
+        $other = User::factory()->create();
+        $zero = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved', 'title' => 'Zero active votes']);
+        $one = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved', 'title' => 'One active vote']);
+        $multiple = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved', 'title' => 'Three active votes']);
+        $otherVotes = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved', 'title' => 'Other user votes']);
+        $released = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'passed', 'title' => 'Released historical votes']);
+
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $one->id, 'user_id' => $guide->id, 'vote_count' => 1]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $multiple->id, 'user_id' => $guide->id, 'vote_count' => 3]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $otherVotes->id, 'user_id' => $other->id, 'vote_count' => 2]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $released->id, 'user_id' => $guide->id, 'vote_count' => 2, 'released_at' => now(), 'release_reason' => 'request_closed']);
+
+        $response = $this->actingAs($guide)->get(route('creator.queue', $creator))->assertOk();
+        $html = $response->getContent();
+
+        $this->assertSame(2, substr_count($html, 'data-active-vote-quantity="1"'));
+        $this->assertSame(2, substr_count($html, 'data-active-vote-quantity="3"'));
+        $this->assertSame(0, substr_count($html, 'data-active-vote-quantity="2"'));
+        $this->assertSame(1, substr_count($html, 'data-current-user-votes="1"'));
+        $this->assertSame(1, substr_count($html, 'data-current-user-votes="3"'));
+        $response
+            ->assertSee('You voted <span aria-hidden="true">&middot;</span> 1', false)
+            ->assertSee('You voted <span aria-hidden="true">&middot;</span> 3', false);
+
+        $this->assertSame(0, $zero->activeVoteQuantityFor($guide));
+        $this->assertSame(0, $otherVotes->activeVoteQuantityFor($guide));
+        $this->assertSame(0, $released->activeVoteQuantityFor($guide));
     }
 
     public function test_collapsed_rows_hide_avatar_stacks_while_expanded_support_keeps_them(): void

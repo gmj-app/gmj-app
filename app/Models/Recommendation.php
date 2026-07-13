@@ -431,6 +431,11 @@ class Recommendation extends Model
 
     public function currentUserVoteCount(?User $user): int
     {
+        return $this->activeVoteQuantityFor($user);
+    }
+
+    public function activeVoteQuantityFor(?User $user): int
+    {
         if (! $user) {
             return 0;
         }
@@ -452,7 +457,7 @@ class Recommendation extends Model
 
     public function votedBy(?User $user): bool
     {
-        return $this->currentUserVoteCount($user) > 0;
+        return $this->activeVoteQuantityFor($user) > 0;
     }
 
     public function submittedByCurrentUser(?User $user): bool
