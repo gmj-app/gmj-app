@@ -10,6 +10,7 @@ use App\Http\Controllers\CreatorSetupController;
 use App\Http\Controllers\CreatorStarterSuggestionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuideAccoladeController;
+use App\Http\Controllers\GuideAccoladeIndexController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
 use App\Http\Controllers\MyActivityController;
@@ -56,6 +57,7 @@ Route::get('/dashboard', [DashboardController::class, '__invoke'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/accolades', GuideAccoladeIndexController::class)->name('accolades.index');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::get('/notifications/{notification}/open', [NotificationController::class, 'open'])->name('notifications.open');

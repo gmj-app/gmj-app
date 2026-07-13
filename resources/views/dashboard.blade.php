@@ -104,6 +104,64 @@
                 </span>
             </a>
 
+            <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6" aria-labelledby="my-accolades-title">
+                <div class="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">My Accolades</p>
+                        <h2 id="my-accolades-title" class="mt-1 text-xl font-extrabold text-slate-950 dark:text-white">{{ $accoladeSummary['has_earned'] ? 'Your journey so far' : 'Your journey starts here' }}</h2>
+                    </div>
+                    @if ($accoladeSummary['has_earned'])
+                        <a href="{{ route('accolades.index') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-300">View all accolades</a>
+                    @endif
+                </div>
+
+                @if (! $accoladeSummary['has_earned'])
+                    <div class="mt-4 flex flex-col gap-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50 sm:flex-row sm:items-center sm:justify-between">
+                        <p class="text-sm leading-6 text-slate-600 dark:text-slate-300">Submit requests, support community ideas, and explore creators to earn accolades.</p>
+                        <a href="{{ route('home') }}" class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400">Explore creators</a>
+                    </div>
+                @else
+                    <div class="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,2.15fr)] lg:items-start">
+                        @if ($featured = $accoladeSummary['featured'])
+                            <a href="{{ route('accolades.index') }}" class="group min-w-0 rounded-xl border border-amber-200 bg-amber-50/70 p-4 transition hover:border-amber-400 dark:border-amber-900 dark:bg-amber-950/25 dark:hover:border-amber-700">
+                                <p class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Featured Guide accolade</p>
+                                <div class="mt-3"><x-accolade-badge :definition="$featured['definition']" /></div>
+                                <p class="mt-3 text-sm leading-5 text-slate-600 dark:text-slate-300">{{ $featured['definition']['description'] }}</p>
+                            </a>
+                        @endif
+
+                        @if ($accoladeSummary['tracks']->isNotEmpty())
+                            <div class="grid min-w-0 gap-3 sm:grid-cols-3">
+                                @foreach ($accoladeSummary['tracks']->take(3) as $track)
+                                    <article class="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+                                        <h3 class="text-sm font-extrabold text-slate-950 dark:text-white">{{ $track['label'] }}</h3>
+                                        @if ($track['next'])
+                                            <p class="mt-2 text-sm text-slate-600 dark:text-slate-300"><span class="font-bold text-slate-950 dark:text-white">{{ $track['effective_value'] }} / {{ $track['next']['threshold'] }}</span> toward {{ $track['next']['name'] }}</p>
+                                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" role="progressbar" aria-label="{{ $track['label'] }} progress toward {{ $track['next']['name'] }}" aria-valuenow="{{ $track['effective_value'] }}" aria-valuemin="0" aria-valuemax="{{ $track['next']['threshold'] }}">
+                                                <div class="h-full rounded-full bg-emerald-500" style="width: {{ $track['progress_percent'] }}%"></div>
+                                            </div>
+                                        @elseif ($track['highest_earned'])
+                                            <p class="mt-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">{{ $track['highest_earned']['definition']['name'] }}</p>
+                                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Highest current milestone</p>
+                                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950" role="progressbar" aria-label="{{ $track['label'] }} complete" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"><div class="h-full w-full rounded-full bg-emerald-500"></div></div>
+                                        @endif
+                                    </article>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($accoladeSummary['recent']->isNotEmpty())
+                        <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
+                            <span class="mr-1 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Recently earned</span>
+                            @foreach ($accoladeSummary['recent'] as $item)
+                                <x-accolade-badge :definition="$item['definition']" size="sm" />
+                            @endforeach
+                        </div>
+                    @endif
+                @endif
+            </section>
+
             <section class="mt-6 grid gap-6 lg:grid-cols-2">
                 <article class="flex min-w-0 flex-col rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm dark:border-indigo-900 dark:from-indigo-950/60 dark:to-slate-900 sm:p-8">
                     <span class="flex size-12 items-center justify-center rounded-2xl border border-indigo-200 bg-white text-indigo-600 shadow-sm dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">

@@ -21,7 +21,7 @@ class GuideAccoladeController extends Controller
             UserAccolade::query()->where('subject_type', 'guide')->where('subject_id', $request->user()->id)
                 ->update(['is_featured' => false, 'featured_order' => null]);
             $metadata = $award->metadata ?? [];
-            $award->update(['is_featured' => true, 'featured_order' => 1, 'metadata' => $metadata + ['manual_featured' => true]]);
+            $award->update(['is_featured' => true, 'featured_order' => 1, 'metadata' => [...$metadata, 'manual_featured' => true]]);
         });
         Cache::forget("accolades:guide:{$request->user()->id}");
 

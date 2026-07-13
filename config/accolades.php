@@ -33,7 +33,7 @@ return [
     'tracks' => [
         'guide_requests_submitted' => ['label' => 'Request Participation', 'subject_type' => 'guide'],
         'guide_requests_published' => ['label' => 'Published Requests', 'subject_type' => 'guide'],
-        'guide_supported_publications' => ['label' => 'Supported Publications', 'subject_type' => 'guide'],
+        'guide_supported_publications' => ['label' => 'Supported Requests', 'subject_type' => 'guide'],
         'guide_creator_exploration' => ['label' => 'Creator Exploration', 'subject_type' => 'guide'],
         'guide_influence' => ['label' => 'Influence', 'subject_type' => 'guide'],
         'creator_community_publications' => ['label' => 'Community Publications', 'subject_type' => 'creator'],
