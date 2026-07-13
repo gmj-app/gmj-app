@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Creator;
 use App\Models\Recommendation;
 use App\Services\CreatorTagService;
+use App\Services\RecommendationStatusTransitionService;
 use App\Services\YouTubePlaylistMetadataService;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,7 @@ class CreatorRecommendationController extends Controller
         private readonly CreatorTagService $tags,
         private readonly YouTubeUrlService $youtubeUrls,
         private readonly YouTubePlaylistMetadataService $playlistMetadata,
+        private readonly RecommendationStatusTransitionService $transitions,
     ) {}
 
     public function index(Request $request, Creator $creator): View
@@ -143,24 +145,11 @@ class CreatorRecommendationController extends Controller
             'published_reaction_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
-        $publishedAttributes = $this->publishedAttributesFromRequest($validated, $recommendation, $request->exists('published_reaction_url'));
-
-        $releasedVotes = $this->updateRecommendation($recommendation, [
-            'status' => $validated['status'],
-            'scheduled_for' => $validated['status'] === 'scheduled'
-                ? ($validated['scheduled_for'] ?? $recommendation->scheduled_for)
-                : $recommendation->scheduled_for,
-            'published_at' => $validated['status'] === 'published'
-                ? ($validated['published_at'] ?? $recommendation->published_at ?? now())
-                : $recommendation->published_at,
-            ...$publishedAttributes,
-            'moderated_by' => $request->user()->id,
-            'moderated_at' => now(),
-        ]);
+        $result = $this->transitions->transition($recommendation, $validated['status'], $request->user(), $validated, 'creator');
 
         return back()->with(
             'success',
-            $this->statusMessage('Status updated.', $releasedVotes),
+            $this->statusMessage('Status updated.', $result['released_votes']),
         );
     }
 
@@ -176,17 +165,14 @@ class CreatorRecommendationController extends Controller
             'moderation_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $releasedVotes = $this->updateRecommendation($recommendation, [
+        $result = $this->transitions->transition($recommendation, 'hidden', $request->user(), [
             ...$validated,
             'moderation_reason' => $validated['moderation_reason'] ?? 'creator_hidden',
-            'status' => 'hidden',
-            'moderated_by' => $request->user()->id,
-            'moderated_at' => now(),
-        ]);
+        ], 'creator');
 
         return back()->with(
             'success',
-            $this->statusMessage('Request hidden.', $releasedVotes),
+            $this->statusMessage('Request hidden.', $result['released_votes']),
         );
     }
 
@@ -197,7 +183,7 @@ class CreatorRecommendationController extends Controller
     ): RedirectResponse {
         Gate::authorize('manage', $creator);
 
-        $recommendation->delete();
+        $recommendation->forceDelete();
 
         return redirect()
             ->route('creators.recommendations.index', $creator)

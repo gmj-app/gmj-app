@@ -9,12 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 class Recommendation extends Model
 {
     /** @use HasFactory<RecommendationFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const STATUSES = [
         'pending',
@@ -115,6 +116,7 @@ class Recommendation extends Model
         'scheduled_for',
         'published_at',
         'moderation_reason',
+        'moderation_status',
         'moderation_note',
         'moderated_by',
         'moderated_at',
@@ -144,6 +146,7 @@ class Recommendation extends Model
             'source_metadata' => 'array',
             'withdrawn_at' => 'datetime',
             'resource_released_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 
@@ -172,9 +175,19 @@ class Recommendation extends Model
         return $this->hasMany(UserPick::class)->whereNull('released_at');
     }
 
+    public function allUserPicks(): HasMany
+    {
+        return $this->hasMany(UserPick::class);
+    }
+
     public function alternatives(): HasMany
     {
         return $this->hasMany(RecommendationAlternative::class);
+    }
+
+    public function adminAuditLogs()
+    {
+        return $this->morphMany(SuperAdminAuditLog::class, 'auditable');
     }
 
     public function creatorTags(): BelongsToMany

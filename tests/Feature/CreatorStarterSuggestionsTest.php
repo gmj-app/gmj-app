@@ -96,7 +96,9 @@ class CreatorStarterSuggestionsTest extends TestCase
 
         $this->get(route('dashboard'))
             ->assertOk()
-            ->assertSeeInOrder(['Requests submitted', '0']);
+            ->assertSeeInOrder(['3', 'Requests per creator'])
+            ->assertSee('No activity yet')
+            ->assertDontSee('Requests submitted');
 
         $this->post(route('logout'))->assertRedirect('/');
 

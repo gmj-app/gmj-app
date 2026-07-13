@@ -47,7 +47,7 @@ class UnfavoriteCreatorAction
                 ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
                 ->whereIn('status', Recommendation::unfavoriteRemovableStatuses())
                 ->whereDoesntHave('userPicks')
-                ->delete();
+                ->forceDelete();
 
             $favorite->delete();
 

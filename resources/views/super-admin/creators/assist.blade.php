@@ -1,5 +1,6 @@
 <x-super-admin-layout title="Assist Creator Setup">
     @php($owner = $creator->creatorOwners->first()?->user)
+    <nav aria-label="Creator assistance" class="mb-6 flex flex-wrap gap-2"><a href="{{ route('super-admin.creators.assist',$creator) }}" class="rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white">Setup</a><a href="{{ route('super-admin.creators.requests.index',$creator) }}" class="rounded-xl border border-slate-300 px-4 py-2 font-bold">Requests</a><a href="#admin-history" class="rounded-xl border border-slate-300 px-4 py-2 font-bold">Audit History</a></nav>
     <div class="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
         <div class="font-extrabold">Super Admin Assistance Mode</div>
         <p class="mt-1">You are editing {{ $creator->display_name }}’s public creator space. All changes are recorded.</p>
