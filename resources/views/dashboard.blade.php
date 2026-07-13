@@ -33,6 +33,40 @@
                 </dl>
             </section>
 
+            <section class="mt-6" aria-labelledby="favorite-creators-title">
+                <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Your creators</p>
+                        <h2 id="favorite-creators-title" class="mt-1 text-xl font-extrabold text-slate-950 dark:text-white">Favorite creators</h2>
+                    </div>
+                    @if ($resources['creator_favorites_used'] < $resources['creator_favorites_limit'])
+                        <a href="{{ route('home') }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-300">Find more creators</a>
+                    @endif
+                </div>
+
+                @if ($favoriteCreators->isEmpty())
+                    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                        <p class="font-bold text-slate-950 dark:text-white">No favorite creators yet.</p>
+                        <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Favorite creators to reach their request pages quickly from My Hub.</p>
+                        <a href="{{ route('home') }}" class="mt-4 inline-flex min-h-10 items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Find creators</a>
+                    </div>
+                @else
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach ($favoriteCreators as $favoriteCreator)
+                            <x-dashboard.favorite-creator-tile :creator="$favoriteCreator" />
+                        @endforeach
+
+                        @if ($resources['creator_favorites_used'] < $resources['creator_favorites_limit'])
+                            @php($favoriteSlotsRemaining = $resources['creator_favorites_limit'] - $resources['creator_favorites_used'])
+                            <a href="{{ route('home') }}" aria-label="Find another creator; {{ $favoriteSlotsRemaining }} favorite {{ Str::plural('slot', $favoriteSlotsRemaining) }} available" class="flex min-h-20 min-w-0 items-center gap-3 rounded-xl border border-dashed border-slate-400 bg-slate-50 p-4 transition hover:border-indigo-500 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-600 dark:bg-slate-900 dark:hover:border-indigo-400 dark:hover:bg-indigo-950/30">
+                                <span class="flex size-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-2xl font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300" aria-hidden="true">+</span>
+                                <span class="min-w-0"><span class="block font-bold text-slate-950 dark:text-white">Find another creator</span><span class="mt-0.5 block text-sm text-slate-500 dark:text-slate-400">{{ $favoriteSlotsRemaining }} favorite {{ Str::plural('slot', $favoriteSlotsRemaining) }} available</span></span>
+                            </a>
+                        @endif
+                    </div>
+                @endif
+            </section>
+
             @php($hasActivity = $activitySummary['active_vote_count'] > 0 || $activitySummary['suggestion_count'] > 0)
             <a
                 href="{{ $hasActivity ? route('activity.index') : route('home') }}"

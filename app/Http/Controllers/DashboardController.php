@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Services\GuideActivityService;
+use App\Services\GuideFavoriteCreatorService;
 use App\Services\PlanEntitlementService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, GuideActivityService $activity, PlanEntitlementService $entitlements): View
+    public function __invoke(Request $request, GuideActivityService $activity, PlanEntitlementService $entitlements, GuideFavoriteCreatorService $favorites): View
     {
         $user = $request->user();
         $ownedCreators = $user->ownedCreators()
@@ -18,9 +19,10 @@ class DashboardController extends Controller
             ->get();
         $activitySummary = $activity->summaryFor($user);
         $limits = $entitlements->getLimitsForUser($user);
+        $favoriteCreators = $favorites->activeFor($user);
 
         $resources = [
-            'creator_favorites_used' => $user->creatorFavoritesUsed(),
+            'creator_favorites_used' => $favoriteCreators->count(),
             'creator_favorites_limit' => $limits['creator_favorites_limit'],
             'votes_per_creator' => $limits['upvotes_per_creator_limit'],
             'requests_per_creator' => $limits['suggestions_per_creator_limit'],
@@ -28,6 +30,7 @@ class DashboardController extends Controller
 
         return view('dashboard', compact(
             'activitySummary',
+            'favoriteCreators',
             'ownedCreators',
             'resources',
         ));
