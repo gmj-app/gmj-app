@@ -13,7 +13,7 @@
         </h2>
 
         <p class="mt-1 text-sm leading-6 text-gray-600 dark:text-slate-300">
-            {{ __('This is how other people will see you when you suggest, vote, or support requests.') }}
+            {{ __('This is how other people will see you when you request, vote, or support requests.') }}
         </p>
 
         @if ($showAccountContext)

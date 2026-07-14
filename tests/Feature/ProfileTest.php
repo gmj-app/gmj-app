@@ -22,6 +22,12 @@ class ProfileTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Your account uses Google sign-in.')
+            ->assertSee('<div class="mx-auto min-w-0 max-w-5xl">', false)
+            ->assertSee('<main class="mx-auto min-w-0 max-w-5xl space-y-6 px-4 sm:px-6 lg:px-8" data-profile-content>', false)
+            ->assertSeeInOrder(['data-profile-content', 'border border-gray-200 bg-white', 'max-w-xl'], false)
+            ->assertSee('This is how other people will see you when you request, vote, or support requests.')
+            ->assertDontSee('This is how other people will see you when you suggest, vote, or support requests.')
+            ->assertSee('action="'.route('profile.public-identity.update').'"', false)
             ->assertDontSee('Update Password')
             ->assertDontSee('name="current_password"', false);
     }

@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <main class="mx-auto min-w-0 max-w-5xl space-y-6 px-4 sm:px-6 lg:px-8" data-profile-content>
             <div class="border border-gray-200 bg-white p-4 shadow dark:border-slate-800 dark:bg-slate-900 sm:rounded-lg sm:p-8">
                 <div class="max-w-xl">
                     @include('profile.partials.public-identity-form', [
@@ -42,6 +42,6 @@
                     @include('profile.partials.delete-user-form')
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </x-app-layout>
