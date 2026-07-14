@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Creator;
 use App\Models\HomepageAdvertisement;
 use App\Services\HomepageStatsService;
+use App\Services\HomepageTopRequestsQuery;
 use App\Services\PopularCreatorGridService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function index(Request $request, HomepageStatsService $homepageStats, PopularCreatorGridService $gridService): View
+    public function index(Request $request, HomepageStatsService $homepageStats, HomepageTopRequestsQuery $topRequestsQuery, PopularCreatorGridService $gridService): View
     {
         $search = trim((string) $request->query('q', ''));
 
@@ -42,19 +43,7 @@ class HomeController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $creators->getCollection()->load([
-            'recommendations' => fn ($query) => $query
-                ->select(['id', 'creator_id', 'submitted_by', 'submission_source', 'title', 'source_title', 'display_title_override', 'is_pinned', 'created_at'])
-                ->publiclyVisible()
-                ->votable()
-                ->withSum('userPicks as user_picks_count', 'vote_count')
-                ->orderByDesc('user_picks_count')
-                ->orderByDesc('is_pinned')
-                ->latest()
-                ->limit(3),
-        ]);
-        $topRequests = $creators->getCollection()
-            ->mapWithKeys(fn (Creator $creator) => [$creator->id => $creator->recommendations->values()]);
+        $topRequests = $topRequestsQuery->get($creators->pluck('id'));
 
         [
             'creatorCount' => $creatorCount,

@@ -6,7 +6,9 @@ use App\Models\Creator;
 use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserPick;
+use App\Services\HomepageTopRequestsQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class HomepageTest extends TestCase
@@ -291,6 +293,70 @@ class HomepageTest extends TestCase
             ->assertSee('line-clamp-2 min-w-0 text-sm font-medium leading-5', false)
             ->assertDontSee('Fourth public request')
             ->assertDontSee('Hidden request must not appear');
+    }
+
+    public function test_homepage_top_request_projection_is_bounded_ranked_and_mysql_safe(): void
+    {
+        $first = Creator::factory()->create(['display_name' => 'Projection One']);
+        $second = Creator::factory()->create(['display_name' => 'Projection Two']);
+        $empty = Creator::factory()->create(['display_name' => 'Projection Empty']);
+
+        $requests = collect();
+        foreach ([$first, $second] as $creator) {
+            foreach (range(1, 5) as $position) {
+                $recommendation = Recommendation::factory()->create([
+                    'creator_id' => $creator->id,
+                    'title' => "{$creator->display_name} request {$position}",
+                    'status' => 'approved',
+                    'created_at' => now()->subMinutes($position),
+                ]);
+                $this->addVotes($recommendation, 6 - $position);
+                $requests->push($recommendation);
+            }
+        }
+
+        foreach (['pending', 'published', 'passed', 'already_seen', 'hidden', 'withdrawn'] as $status) {
+            Recommendation::factory()->create([
+                'creator_id' => $first->id,
+                'title' => "Excluded {$status}",
+                'status' => $status,
+            ]);
+        }
+        Recommendation::factory()->create([
+            'creator_id' => $first->id,
+            'title' => 'Excluded moderated spam',
+            'status' => 'approved',
+            'moderation_status' => 'removed',
+        ]);
+
+        $projection = app(HomepageTopRequestsQuery::class);
+        $result = $projection->get(collect([$first->id, $second->id, $empty->id]));
+
+        $this->assertCount(3, $result->get($first->id));
+        $this->assertCount(3, $result->get($second->id));
+        $this->assertFalse($result->has($empty->id));
+        $this->assertSame(
+            ['Projection One request 1', 'Projection One request 2', 'Projection One request 3'],
+            $result->get($first->id)->pluck('title')->all(),
+        );
+        $this->assertSame([5, 4, 3], $result->get($first->id)->pluck('user_picks_count')->map(fn ($value) => (int) $value)->all());
+        $this->assertFalse($result->flatten()->contains(fn (Recommendation $request) => str_starts_with($request->title, 'Excluded')));
+
+        $sql = strtolower($projection->builder([$first->id, $second->id])->toSql());
+        $this->assertStringContainsString('row_number() over', $sql);
+        $this->assertMatchesRegularExpression(
+            '/row_number\(\) over .*user_picks_count.* from \(select .* as ["`]user_picks_count["`]/s',
+            $sql,
+            'The window must read the aggregate alias from a nested derived table, not define and order by it in the same SQL scope.',
+        );
+        $this->assertGreaterThanOrEqual(2, substr_count($sql, 'from ('));
+
+        $queryCount = 0;
+        DB::listen(function () use (&$queryCount): void {
+            $queryCount++;
+        });
+        $this->get('/')->assertOk()->assertSee('Projection Empty');
+        $this->assertLessThanOrEqual(12, $queryCount);
     }
 
     public function test_homepage_top_requests_only_show_votable_recommendations(): void
