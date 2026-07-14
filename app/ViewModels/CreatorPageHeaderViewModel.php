@@ -48,8 +48,9 @@ class CreatorPageHeaderViewModel
                 'request_label' => $this->requestLabel($creator, $user, $usage),
                 'request_detail' => $this->requestDetail($creator, $user, $usage),
                 'favorite_state' => $usage['is_favorited'] ?? false,
+                'can_favorite' => $usage === null || $usage['is_favorited'] || $usage['reactors_remaining'] > 0,
                 'favorite_label' => $usage && ! $usage['is_favorited'] && $usage['reactors_remaining'] === 0
-                    ? 'Favorite limit reached'
+                    ? 'Favorites Full'
                     : (($usage['is_favorited'] ?? false) ? 'Favorited' : 'Favorite'),
             ],
             'metrics' => [

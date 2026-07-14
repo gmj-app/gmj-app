@@ -25,13 +25,27 @@
                 @endif
             >
                 @csrf
-                <button type="submit" class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/95 px-5 py-2.5 font-bold text-slate-800 shadow-sm transition hover:bg-white hover:text-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:w-auto dark:bg-slate-950/90 dark:text-white dark:hover:text-amber-300">
-                    <svg class="size-5 {{ $actions['favorite_state'] ? 'fill-current text-amber-500' : 'fill-none' }}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" /></svg>
+                <button
+                    type="submit"
+                    aria-pressed="{{ $actions['favorite_state'] ? 'true' : 'false' }}"
+                    @disabled(! $actions['can_favorite'])
+                    data-favorite-state="{{ $actions['favorite_state'] ? 'selected' : ($actions['can_favorite'] ? 'available' : 'unavailable') }}"
+                    @class([
+                        'inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border px-5 py-2.5 font-bold text-white backdrop-blur transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 sm:w-auto',
+                        'border-indigo-400/70 bg-indigo-500/20 shadow-[0_0_0_1px_rgba(129,140,248,0.08),0_8px_24px_rgba(79,70,229,0.16)] hover:border-indigo-300 hover:bg-indigo-500/30' => $actions['favorite_state'],
+                        'border-white/25 bg-slate-950/65 shadow-sm hover:border-indigo-300/70 hover:bg-indigo-500/15' => ! $actions['favorite_state'] && $actions['can_favorite'],
+                        'cursor-not-allowed border-white/10 bg-slate-900/60 text-slate-400 opacity-80' => ! $actions['can_favorite'],
+                    ])
+                >
+                    <svg class="size-5 shrink-0 {{ $actions['favorite_state'] ? 'fill-current text-indigo-300' : 'fill-none' }}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" /></svg>
                     {{ $actions['favorite_label'] }}
                 </button>
             </form>
         @else
-            <a href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false)]) }}" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/95 px-5 py-2.5 font-bold text-slate-800 shadow-sm transition hover:text-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-white dark:bg-slate-950/90 dark:text-white">Favorite</a>
+            <a href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false)]) }}" aria-label="Sign in to favorite {{ $creator->display_name }}" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-slate-950/65 px-5 py-2.5 font-bold text-white shadow-sm backdrop-blur transition duration-200 hover:border-indigo-300/70 hover:bg-indigo-500/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
+                <svg class="size-5 shrink-0 fill-none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 2.475 5.016 5.535.804-4.005 3.904.946 5.512L12 16.383l-4.951 2.603.946-5.512L3.99 9.57l5.535-.804L12 3.75Z" /></svg>
+                Favorite
+            </a>
         @endauth
     @endif
 

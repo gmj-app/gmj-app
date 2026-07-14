@@ -1668,6 +1668,39 @@ class PublicCreatorQueueTest extends TestCase
         ]);
     }
 
+    public function test_creator_header_favorite_action_uses_polished_available_selected_and_full_states(): void
+    {
+        $creator = Creator::factory()->create(['display_name' => 'Header Creator']);
+        $guide = User::factory()->create();
+
+        $this->actingAs($guide)->get(route('creator.queue', $creator))->assertOk()
+            ->assertSee('data-favorite-state="available"', false)
+            ->assertSee('aria-pressed="false"', false)
+            ->assertSee('border-white/25 bg-slate-950/65', false)
+            ->assertSee('hover:border-indigo-300/70 hover:bg-indigo-500/15', false);
+
+        CreatorFavorite::query()->create(['creator_id' => $creator->id, 'user_id' => $guide->id]);
+
+        $this->actingAs($guide->fresh())->get(route('creator.queue', $creator))->assertOk()
+            ->assertSee('data-favorite-state="selected"', false)
+            ->assertSee('aria-pressed="true"', false)
+            ->assertSee('border-indigo-400/70 bg-indigo-500/20', false)
+            ->assertSee('fill-current text-indigo-300', false)
+            ->assertSee('Favorited');
+
+        $fullGuide = User::factory()->create();
+        Creator::factory()->count(3)->create()->each(fn (Creator $favorite) => CreatorFavorite::query()->create([
+            'creator_id' => $favorite->id,
+            'user_id' => $fullGuide->id,
+        ]));
+
+        $this->actingAs($fullGuide)->get(route('creator.queue', $creator))->assertOk()
+            ->assertSee('data-favorite-state="unavailable"', false)
+            ->assertSee('disabled', false)
+            ->assertSee('Favorites Full')
+            ->assertSee('cursor-not-allowed', false);
+    }
+
     public function test_unfavoriting_removes_only_that_creators_upvotes(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
