@@ -1765,6 +1765,29 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('cursor-not-allowed', false);
     }
 
+    public function test_creator_header_actions_share_one_responsive_button_shell(): void
+    {
+        $creator = Creator::factory()->create([
+            'display_name' => 'Unified Actions Creator',
+            'youtube_channel_url' => 'https://www.youtube.com/@unified-actions',
+        ]);
+        $guide = User::factory()->create();
+        CreatorFavorite::query()->create(['creator_id' => $creator->id, 'user_id' => $guide->id]);
+
+        $response = $this->actingAs($guide)->get(route('creator.queue', $creator));
+        $html = $response->getContent();
+
+        $response->assertOk()
+            ->assertSee('aria-pressed="true"', false)
+            ->assertSee('Favorited')
+            ->assertSee('Visit Channel')
+            ->assertSee('min-h-16 w-full min-w-0 items-center justify-center gap-2.5 rounded-xl border px-5 py-3', false)
+            ->assertSee('focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900', false)
+            ->assertSee('sm:w-auto sm:min-w-36', false);
+
+        $this->assertSame(3, substr_count($html, 'data-creator-header-action'));
+    }
+
     public function test_unfavoriting_removes_only_that_creators_upvotes(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
