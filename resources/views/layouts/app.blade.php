@@ -1,5 +1,10 @@
+@php
+    $accountTheme = auth()->check() && in_array(auth()->user()->theme_preference, ['light', 'dark'], true) ? auth()->user()->theme_preference : null;
+    $browserTheme = in_array(request()->cookie('theme'), ['light', 'dark'], true) ? request()->cookie('theme') : null;
+    $serverTheme = $accountTheme ?? $browserTheme ?? 'dark';
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ $serverTheme === 'dark' ? 'dark' : '' }}" data-theme="{{ $serverTheme }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,16 +13,7 @@
         <title>{{ $title ?? config('app.name', 'Guide My Journey') }}</title>
         <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
 
-        <script>
-            (() => {
-                const storedTheme = localStorage.getItem('theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-                if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
-                    document.documentElement.classList.add('dark');
-                }
-            })();
-        </script>
+        @include('layouts.theme-script', ['accountTheme' => $accountTheme])
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

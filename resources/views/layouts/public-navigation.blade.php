@@ -7,7 +7,22 @@
         toggleTheme() {
             this.dark = ! this.dark;
             document.documentElement.classList.toggle('dark', this.dark);
-            localStorage.setItem('theme', this.dark ? 'dark' : 'light');
+            const theme = this.dark ? 'dark' : 'light';
+            document.documentElement.dataset.theme = theme;
+            localStorage.setItem('theme', theme);
+            document.cookie = `theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`;
+            @auth
+                fetch(@js(route('profile.theme.update')), {
+                    method: 'PATCH',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ theme }),
+                });
+            @endauth
         },
     }"
     @keydown.escape.window="open = false; accountOpen = false; notificationsOpen = false"

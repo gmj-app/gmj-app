@@ -28,6 +28,7 @@ use App\Http\Controllers\SuperAdmin\CreatorRequestController as SuperAdminCreato
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\HomepageAdvertisementController;
 use App\Http\Controllers\SuperAdmin\TestNotificationController;
+use App\Http\Controllers\ThemePreferenceController;
 use App\Http\Controllers\ToolsAdminController;
 use App\Http\Controllers\YoutubeToolsController;
 use App\Http\Middleware\EnsurePublicProfileIsComplete;
@@ -58,6 +59,7 @@ Route::get('/dashboard', [DashboardController::class, '__invoke'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::patch('/profile/theme', ThemePreferenceController::class)->name('profile.theme.update');
     Route::get('/accolades', GuideAccoladeIndexController::class)->name('accolades.index');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');

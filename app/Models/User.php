@@ -34,6 +34,7 @@ class User extends Authenticatable
         'public_profile_completed_at',
         'public_profile_enabled',
         'display_name_prompt_dismissed_at',
+        'theme_preference',
         'email',
         'google_id',
         'avatar_url',
@@ -74,6 +75,10 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
+        static::creating(function (User $user): void {
+            $user->theme_preference ??= 'dark';
+        });
+
         static::created(function (User $user): void {
             app(GuideNumberService::class)->assignIfMissing($user);
             app(GuideAccoladeService::class)->awardEarlyGuideAccolades($user);
