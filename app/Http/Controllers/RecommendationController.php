@@ -235,6 +235,36 @@ class RecommendationController extends Controller
         ));
     }
 
+    public function closed(Request $request, Creator $creator): View
+    {
+        abort_if($creator->status !== 'active', 404);
+
+        $filters = [
+            'status' => in_array($request->query('status'), Recommendation::CLOSED_PUBLIC_STATUSES, true)
+                ? (string) $request->query('status')
+                : '',
+        ];
+
+        $closedRecommendations = $creator->recommendations()
+            ->publicClosed()
+            ->when($filters['status'] !== '', fn ($query) => $query->where('status', $filters['status']))
+            ->with(['submittedBy:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email'])
+            ->withSum('allUserPicks as historical_support_count', 'vote_count')
+            ->withCount('allUserPicks as historical_supporters_count')
+            ->orderByRaw('COALESCE(resolved_at, updated_at, created_at) DESC')
+            ->orderByDesc('id')
+            ->paginate(25)
+            ->withQueryString();
+
+        $closedCounts = $creator->recommendations()
+            ->publicClosed()
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        return view('recommendations.closed', compact('closedCounts', 'closedRecommendations', 'creator', 'filters'));
+    }
+
     public function create(Request $request, Creator $creator): View
     {
         $usage = $this->usageFor($request->user(), $creator);

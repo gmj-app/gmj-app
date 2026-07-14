@@ -46,9 +46,9 @@ class Recommendation extends Model
         'coming_soon',
         'scheduled',
         'recorded',
-        'already_seen',
-        'passed',
     ];
+
+    public const CLOSED_PUBLIC_STATUSES = ['already_seen', 'passed'];
 
     public const UPVOTE_CONSUMING_STATUSES = [
         'pending',
@@ -126,6 +126,11 @@ class Recommendation extends Model
         'is_pinned',
         'scheduled_for',
         'published_at',
+        'resolved_at',
+        'public_resolution_note',
+        'private_resolution_reason',
+        'prior_coverage_url',
+        'prior_coverage_title',
         'moderation_reason',
         'moderation_status',
         'moderation_note',
@@ -152,6 +157,7 @@ class Recommendation extends Model
             'is_pinned' => 'boolean',
             'scheduled_for' => 'datetime',
             'published_at' => 'datetime',
+            'resolved_at' => 'datetime',
             'moderated_at' => 'datetime',
             'published_metadata' => 'array',
             'source_metadata' => 'array',
@@ -503,6 +509,26 @@ class Recommendation extends Model
             ->whereHas('creator', fn (Builder $query) => $query->availableForGuides());
     }
 
+    /** @param Builder<Recommendation> $query */
+    public function scopePublicActive(Builder $query): Builder
+    {
+        return $query->activePubliclyVisible();
+    }
+
+    /** @param Builder<Recommendation> $query */
+    public function scopePublicPublished(Builder $query): Builder
+    {
+        return $query->where('status', 'published')
+            ->whereHas('creator', fn (Builder $query) => $query->availableForGuides());
+    }
+
+    /** @param Builder<Recommendation> $query */
+    public function scopePublicClosed(Builder $query): Builder
+    {
+        return $query->whereIn('status', self::CLOSED_PUBLIC_STATUSES)
+            ->whereHas('creator', fn (Builder $query) => $query->availableForGuides());
+    }
+
     public static function unfavoriteRemovableStatuses(): array
     {
         return self::UNFAVORITE_REMOVABLE_STATUSES;
@@ -511,6 +537,11 @@ class Recommendation extends Model
     public static function activePublicStatuses(): array
     {
         return self::ACTIVE_PUBLIC_STATUSES;
+    }
+
+    public static function closedPublicStatuses(): array
+    {
+        return self::CLOSED_PUBLIC_STATUSES;
     }
 
     public static function suggestionConsumingStatuses(): array

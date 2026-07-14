@@ -230,12 +230,17 @@
                                 </div>
 
                                 <div class="mt-4 flex justify-end">
+                                    <div class="flex flex-wrap items-center gap-4">
                                     <a href="{{ route('creators.published', $creator) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 transition hover:text-emerald-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-300 dark:hover:text-emerald-200">
                                         View all published
                                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
                                         </svg>
                                     </a>
+                                    <a href="{{ route('creators.closed', $creator) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 transition hover:text-indigo-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:text-indigo-300">
+                                        Closed Requests
+                                    </a>
+                                    </div>
                                 </div>
                             @endif
                         </section>

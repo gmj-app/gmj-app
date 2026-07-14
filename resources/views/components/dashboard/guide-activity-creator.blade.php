@@ -85,6 +85,7 @@
                                 $suggestionUrl = match (true) {
                                     $suggestion->status === 'published' => route('creators.published', $creator).'#recommendation-'.$suggestion->id,
                                     in_array($suggestion->status, \App\Models\Recommendation::ACTIVE_PUBLIC_STATUSES, true) => route('creator.queue', $creator).'#recommendation-'.$suggestion->id,
+                                    in_array($suggestion->status, \App\Models\Recommendation::CLOSED_PUBLIC_STATUSES, true) => route('creators.closed', $creator).'#recommendation-'.$suggestion->id,
                                     default => null,
                                 };
                             @endphp

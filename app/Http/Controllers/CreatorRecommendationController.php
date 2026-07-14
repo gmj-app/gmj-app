@@ -98,6 +98,10 @@ class CreatorRecommendationController extends Controller
             'published_reaction_url' => ['nullable', 'url', 'max:2048'],
             'moderation_reason' => ['nullable', 'string', 'max:255'],
             'moderation_note' => ['nullable', 'string', 'max:2000'],
+            'public_resolution_note' => ['nullable', 'string', 'max:2000'],
+            'private_resolution_reason' => ['nullable', 'string', 'max:2000'],
+            'prior_coverage_url' => ['nullable', 'url', 'max:2048'],
+            'prior_coverage_title' => ['nullable', 'string', 'max:255'],
             'is_pinned' => ['sometimes', 'boolean'],
             'tags' => ['nullable', 'string', 'max:300'],
         ]);
@@ -150,6 +154,10 @@ class CreatorRecommendationController extends Controller
             'scheduled_for' => ['nullable', 'date'],
             'published_at' => ['nullable', 'date'],
             'published_reaction_url' => ['nullable', 'url', 'max:2048'],
+            'public_resolution_note' => ['nullable', 'string', 'max:2000'],
+            'private_resolution_reason' => ['nullable', 'string', 'max:2000'],
+            'prior_coverage_url' => ['nullable', 'url', 'max:2048'],
+            'prior_coverage_title' => ['nullable', 'string', 'max:255'],
         ]);
 
         $result = $this->transitions->transition($recommendation, $validated['status'], $request->user(), $validated, 'creator');
@@ -231,7 +239,22 @@ class CreatorRecommendationController extends Controller
                 ? (int) $lockedRecommendation->userPicks()->sum('vote_count')
                 : 0;
 
+            if (in_array($newStatus, Recommendation::CLOSED_PUBLIC_STATUSES, true)) {
+                $attributes['resolved_at'] = $lockedRecommendation->resolved_at ?? now();
+            } elseif (! in_array($newStatus, Recommendation::CLOSED_PUBLIC_STATUSES, true)) {
+                $attributes['resolved_at'] = null;
+            }
+
             $lockedRecommendation->update($attributes);
+
+            if ($releasedVotes > 0) {
+                $now = now();
+                $lockedRecommendation->userPicks()->update(['released_at' => $now, 'release_reason' => 'request_closed']);
+                $lockedRecommendation->update([
+                    'resource_released_at' => $lockedRecommendation->resource_released_at ?? $now,
+                    'resource_release_reason' => $lockedRecommendation->resource_release_reason ?? 'request_closed',
+                ]);
+            }
 
             return $releasedVotes;
         });

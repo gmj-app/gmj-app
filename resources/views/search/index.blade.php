@@ -64,9 +64,11 @@
                                             @php
                                                 $isPublished = $recommendation->status === 'published';
                                                 $recommendationTitle = $isPublished ? $recommendation->displayPublishedTitle() : $recommendation->displayTitle();
-                                                $recommendationUrl = $isPublished
-                                                    ? route('creators.published', $creator).'#recommendation-'.$recommendation->id
-                                                    : route('creator.queue', ['creator' => $creator, 'q' => $query]).'#recommendation-'.$recommendation->id;
+                                                $recommendationUrl = match (true) {
+                                                    $isPublished => route('creators.published', $creator).'#recommendation-'.$recommendation->id,
+                                                    in_array($recommendation->status, \App\Models\Recommendation::CLOSED_PUBLIC_STATUSES, true) => route('creators.closed', $creator).'#recommendation-'.$recommendation->id,
+                                                    default => route('creator.queue', ['creator' => $creator, 'q' => $query]).'#recommendation-'.$recommendation->id,
+                                                };
                                             @endphp
                                             <a href="{{ $recommendationUrl }}" class="group/match block py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500" aria-label="Open request {{ $recommendationTitle }} for {{ $creator->display_name }}">
                                                 <span class="line-clamp-2 text-sm font-semibold leading-5 text-slate-800 group-hover/match:text-indigo-600 dark:text-slate-100 dark:group-hover/match:text-indigo-300">{{ $recommendationTitle }}</span>

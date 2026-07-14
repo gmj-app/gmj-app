@@ -214,5 +214,8 @@ Route::get('/@{handle}', PublicGuideProfileController::class)
 Route::get('/{creator:slug}/published', [RecommendationController::class, 'published'])
     ->name('creators.published');
 
+Route::get('/{creator:slug}/closed', [RecommendationController::class, 'closed'])
+    ->name('creators.closed');
+
 Route::get('/{creator:slug}', [RecommendationController::class, 'showCreatorQueue'])
     ->name('creator.queue');

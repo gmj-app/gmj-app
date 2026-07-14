@@ -33,13 +33,16 @@ class RecommendationStatusTransitionService
 
         $result = DB::transaction(function () use ($recommendation, $newStatus, $actor, $metadata): array {
             $locked = Recommendation::withTrashed()->lockForUpdate()->findOrFail($recommendation->id);
-            $before = $locked->only(['status', 'scheduled_for', 'published_at', 'published_reaction_url', 'moderation_reason', 'moderation_note']);
+            $before = $locked->only(['status', 'scheduled_for', 'published_at', 'resolved_at', 'published_reaction_url', 'moderation_reason', 'moderation_note', 'public_resolution_note', 'private_resolution_reason', 'prior_coverage_url', 'prior_coverage_title']);
             $releasedVotes = $locked->shouldClearUpvotesWhenStatusIs($newStatus) ? (int) $locked->userPicks()->sum('vote_count') : 0;
             $affectedGuides = $locked->shouldClearUpvotesWhenStatusIs($newStatus) ? $locked->userPicks()->distinct('user_id')->count('user_id') : 0;
             $attributes = [
                 'status' => $newStatus,
                 'scheduled_for' => $newStatus === 'scheduled' ? ($metadata['scheduled_for'] ?? $locked->scheduled_for) : $locked->scheduled_for,
                 'published_at' => $newStatus === 'published' ? ($metadata['published_at'] ?? $locked->published_at ?? now()) : $locked->published_at,
+                'resolved_at' => in_array($newStatus, Recommendation::CLOSED_PUBLIC_STATUSES, true)
+                    ? ($metadata['resolved_at'] ?? $locked->resolved_at ?? now())
+                    : null,
                 'moderated_by' => $actor->id,
                 'moderated_at' => now(),
             ];
@@ -52,7 +55,21 @@ class RecommendationStatusTransitionService
             if (array_key_exists('published_reaction_url', $metadata)) {
                 $attributes += $this->publishedAttributes($metadata['published_reaction_url']);
             }
+            foreach (['public_resolution_note', 'private_resolution_reason', 'prior_coverage_url', 'prior_coverage_title'] as $field) {
+                if (array_key_exists($field, $metadata)) {
+                    $attributes[$field] = $metadata[$field];
+                }
+            }
             $locked->update($attributes);
+
+            if ($releasedVotes > 0) {
+                $now = now();
+                $locked->userPicks()->update(['released_at' => $now, 'release_reason' => 'request_closed']);
+                $locked->update([
+                    'resource_released_at' => $locked->resource_released_at ?? $now,
+                    'resource_release_reason' => $locked->resource_release_reason ?? 'request_closed',
+                ]);
+            }
 
             return ['recommendation' => $locked->fresh(), 'released_votes' => $releasedVotes, 'affected_guides' => $affectedGuides, 'before' => $before, 'after' => $locked->fresh()->only(array_keys($before))];
         });

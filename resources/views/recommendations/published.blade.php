@@ -61,6 +61,12 @@
                 </x-creator-hero-background>
             </div>
 
+            <nav aria-label="Creator request sections" class="mt-5 flex flex-wrap gap-2">
+                <a href="{{ route('creator.queue', $creator) }}" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Active</a>
+                <a href="{{ route('creators.published', $creator) }}" aria-current="page" class="rounded-xl border border-emerald-500 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">Published</a>
+                <a href="{{ route('creators.closed', $creator) }}" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Closed</a>
+            </nav>
+
             <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
                 <form method="GET" action="{{ route('creators.published', $creator) }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <div class="min-w-0 flex-1">
