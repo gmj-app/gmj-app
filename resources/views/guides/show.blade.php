@@ -31,46 +31,7 @@
                 @endif
             </section>
 
-            @if ($accoladeShowcase['awards']->isNotEmpty() || $accoladeShowcase['legacy'])
-                <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7" aria-labelledby="guide-accolades-title">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                            <p class="text-xs font-bold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">Featured accolade</p>
-                            <h2 id="guide-accolades-title" class="mt-1 text-2xl font-extrabold text-slate-950 dark:text-white">Accolades</h2>
-                            @if ($featured = $accoladeShowcase['featured']->first())
-                                <div class="mt-4"><x-accolade-badge :definition="$featured['definition']" size="lg" /></div>
-                                <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">{{ $featured['definition']['description'] }}</p>
-                            @elseif ($accoladeShowcase['legacy'])
-                                <p @class([
-                                    'mt-4 inline-flex rounded-full border px-3 py-1.5 text-sm font-bold',
-                                    'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200' => $accoladeShowcase['legacy']['css_class'] !== 'accolade-og',
-                                    'border-slate-300 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 text-slate-800 dark:border-slate-500 dark:from-slate-600 dark:to-slate-950 dark:text-slate-100' => $accoladeShowcase['legacy']['css_class'] === 'accolade-og',
-                                ])>{{ $accoladeShowcase['legacy']['tooltip'] }}</p>
-                            @endif
-                        </div>
-                        @auth
-                            @if (auth()->id() === $guide->id && $accoladeShowcase['awards']->isNotEmpty())
-                                <form method="POST" action="{{ route('profile.accolades.featured') }}" class="flex items-center gap-2">
-                                    @csrf @method('PATCH')
-                                    <label for="featured-accolade" class="sr-only">Featured accolade</label>
-                                    <select id="featured-accolade" name="accolade_id" class="rounded-xl border-slate-300 text-sm dark:border-slate-700 dark:bg-slate-950">
-                                        @foreach ($accoladeShowcase['awards'] as $item)
-                                            <option value="{{ $item['award']->id }}" @selected($item['award']->is_featured)>{{ $item['definition']['name'] }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button class="rounded-xl bg-slate-900 px-3 py-2 text-sm font-bold text-white dark:bg-white dark:text-slate-900">Feature</button>
-                                </form>
-                            @endif
-                        @endauth
-                    </div>
-                    @if ($accoladeShowcase['legacy'])
-                        <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30"><p class="font-extrabold">Early Guide recognition</p><p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ $accoladeShowcase['legacy']['description'] }}</p></div>
-                    @endif
-                    @if ($accoladeShowcase['tracks']->isNotEmpty())
-                        <div class="mt-7 border-t border-slate-200 pt-6 dark:border-slate-800"><x-accolade-track-list :showcase="$accoladeShowcase" /></div>
-                    @endif
-                </section>
-            @endif
+            <x-guides.public-accolades-section :summary="$publicAccolades" :guide="$guide" />
 
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
                 <x-section-header eyebrow="Guide impact" title="Published from their requests" />

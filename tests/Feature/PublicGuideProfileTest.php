@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Creator;
 use App\Models\Recommendation;
 use App\Models\User;
+use App\Models\UserAccolade;
 use App\Models\UserPick;
+use App\Services\Accolades\AccoladeDefinitionRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -13,6 +15,68 @@ use Tests\TestCase;
 class PublicGuideProfileTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_public_accolades_are_compact_and_show_manual_feature_plus_highest_per_track(): void
+    {
+        $guide = User::factory()->create([
+            'public_display_name' => 'Accolade Guide',
+            'public_handle' => 'accolade-guide',
+            'public_profile_enabled' => true,
+            'guide_number' => 1,
+        ]);
+        $trailblazer = $this->award($guide, 'guide.published_requests.trailblazer', featured: true);
+        $this->award($guide, 'guide.published_requests.scout');
+        $this->award($guide, 'guide.published_requests.tracker');
+        $this->award($guide, 'guide.creator_exploration.explorer');
+
+        $response = $this->get(route('guides.show', ['handle' => $guide->public_handle]))->assertOk();
+
+        $response->assertSeeInOrder(['Featured accolade', 'Trailblazer'])
+            ->assertSee('Founding Guide #1')
+            ->assertSee('lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]', false)
+            ->assertSee('View all accolades')
+            ->assertSee('Tracker')
+            ->assertSee('Explorer')
+            ->assertSee('Scout') // retained in the modal history
+            ->assertSee('Earned accolades')
+            ->assertDontSee('Track complete')
+            ->assertDontSee('toward Scout')
+            ->assertDontSee('role="progressbar"', false)
+            ->assertDontSee('profile/accolades/featured');
+
+        $this->assertSame($trailblazer->id, $guide->fresh()->earnedAccolades()->where('is_featured', true)->first()->id);
+        $this->assertSame(2, substr_count($response->getContent(), '>Tracker<')); // compact tile and modal history
+        $this->assertSame(1, substr_count($response->getContent(), '>Scout<')); // modal history only
+    }
+
+    public function test_public_accolades_fallback_visibility_and_empty_state_are_safe(): void
+    {
+        $guide = User::factory()->create([
+            'public_display_name' => 'Safe Guide',
+            'public_handle' => 'safe-guide',
+            'public_profile_enabled' => true,
+            'guide_number' => 700,
+        ]);
+        $this->award($guide, 'guide.published_requests.trailblazer');
+        $this->award($guide, 'guide.published_requests.scout');
+        $this->award($guide, 'guide.influence.first_footprint', public: false);
+        $this->award($guide, 'creator.community_publications.first_step', subjectType: 'creator');
+
+        $this->get(route('guides.show', ['handle' => $guide->public_handle]))->assertOk()
+            ->assertSeeInOrder(['Featured accolade', 'Scout'])
+            ->assertDontSee('First Footprint')
+            ->assertDontSee('First Step');
+
+        $empty = User::factory()->create([
+            'public_display_name' => 'New Guide',
+            'public_handle' => 'new-guide',
+            'public_profile_enabled' => true,
+            'guide_number' => 701,
+        ]);
+        $this->get(route('guides.show', ['handle' => $empty->public_handle]))->assertOk()
+            ->assertSee('No accolades earned yet.')
+            ->assertDontSee('View all accolades');
+    }
 
     public function test_public_profile_shows_safe_identity_impact_and_public_histories(): void
     {
@@ -187,5 +251,25 @@ class PublicGuideProfileTest extends TestCase
         $this->get(route('guides.show', ['handle' => $guide->public_handle]))->assertOk();
 
         $this->assertLessThanOrEqual(18, count(DB::getQueryLog()));
+    }
+
+    private function award(User $user, string $key, bool $featured = false, bool $public = true, string $subjectType = 'guide'): UserAccolade
+    {
+        $definition = app(AccoladeDefinitionRepository::class)->find($key);
+
+        return UserAccolade::create([
+            'user_id' => $user->id,
+            'accolade_key' => $key,
+            'subject_type' => $subjectType,
+            'subject_id' => $user->id,
+            'track' => $definition['track'],
+            'level' => $definition['level'],
+            'progress_value_at_award' => $definition['threshold'],
+            'threshold_at_award' => $definition['threshold'],
+            'awarded_at' => now()->addSeconds($definition['display_order']),
+            'is_featured' => $featured,
+            'featured_order' => $featured ? 1 : null,
+            'is_public' => $public,
+        ]);
     }
 }
