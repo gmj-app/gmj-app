@@ -2,7 +2,7 @@
 
 @php
     $isTopic = $recommendation->recommendation_type === 'topic';
-    $thumbnailUrl = $isTopic ? null : $recommendation->displayThumbnailUrl();
+    $thumbnailUrl = $isTopic ? null : $recommendation->compactThumbnailUrl();
 @endphp
 
 @if ($isTopic)

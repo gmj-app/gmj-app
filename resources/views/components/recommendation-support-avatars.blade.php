@@ -61,10 +61,18 @@
     }
 
     $visibleSupporters = $supporters->take($limit);
-    $hiddenSupportersCount = max(0, $supporters->count() - $visibleSupporters->count());
+    $loadedUpvoterIds = $recommendation->relationLoaded('userPicks')
+        ? $recommendation->userPicks->pluck('user_id')
+        : collect();
+    $totalSupporters = max(
+        $supporters->count(),
+        (int) ($recommendation->active_supporters_count ?? $upvoters->count())
+            + ($includeRequester && $requester && ! $loadedUpvoterIds->contains($requester->id) ? 1 : 0),
+    );
+    $hiddenSupportersCount = max(0, $totalSupporters - $visibleSupporters->count());
     $isDetailLayout = $layout === 'detail';
     $usesDetailGrid = $isDetailLayout && $includeUpvoters;
-    $isCompactDetailLayout = $isDetailLayout && $supporters->count() > 20;
+    $isCompactDetailLayout = $isDetailLayout && $totalSupporters > 20;
     $showsSeparatedNames = $showNames && $isDetailLayout && ! $isCompactDetailLayout;
     $hasVisibleEarlyGuide = $visibleSupporters->contains(
         fn (array $supporter): bool => $supporter['user']->guideAvatarAccolade() !== null

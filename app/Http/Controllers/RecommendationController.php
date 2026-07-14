@@ -102,18 +102,6 @@ class RecommendationController extends Controller
                 ->whereHas('creatorTags', fn ($query) => $query
                     ->where('creator_tags.creator_id', $creator->id)
                     ->where('creator_tags.slug', $filters['tag'])))
-            ->with([
-                'submittedBy:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
-                'submittedBy.guideAccolades',
-                'creatorTags:id,creator_id,name,slug',
-                'userPicks.user:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
-                'userPicks.user.guideAccolades',
-            ])
-            ->when($ownsCreator, fn ($query) => $query->with([
-                'alternatives' => fn ($query) => $query
-                    ->with(['user:id,name,public_display_name,public_handle,avatar_url,email'])
-                    ->latest(),
-            ]))
             ->withSum('userPicks as user_picks_count', 'vote_count');
 
         if ($request->user()) {
@@ -174,6 +162,48 @@ class RecommendationController extends Controller
         ));
     }
 
+    public function cardDetails(Request $request, Recommendation $recommendation): View
+    {
+        $creator = $recommendation->creator;
+        abort_if(! $creator || $creator->status !== 'active' || ! $recommendation->isPubliclyVisible(), 404);
+
+        $user = $request->user();
+        $ownsCreator = $user
+            ? $creator->creatorOwners()->where('user_id', $user->id)->where('role', 'owner')->exists()
+            : false;
+
+        $recommendation->load([
+            'submittedBy:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
+            'submittedBy.guideAccolades',
+            'creatorTags:id,creator_id,name,slug',
+            'userPicks' => fn ($query) => $query->oldest()->limit(10),
+            'userPicks.user:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
+            'userPicks.user.guideAccolades',
+        ])->loadSum('userPicks as user_picks_count', 'vote_count')
+            ->loadCount('userPicks as active_supporters_count');
+
+        if ($user) {
+            $recommendation->loadSum([
+                'userPicks as current_user_votes_count' => fn ($query) => $query->where('user_id', $user->id),
+            ], 'vote_count');
+        }
+
+        if ($ownsCreator) {
+            $recommendation->load([
+                'alternatives' => fn ($query) => $query
+                    ->with(['user:id,name,public_display_name,public_handle,avatar_url,email'])
+                    ->latest(),
+            ]);
+        }
+
+        $usage = $user ? $this->creatorPageHeader->viewerContextFor($user, $creator) : null;
+        $topRequestedId = $request->boolean('top') ? $recommendation->id : null;
+
+        return view('recommendations.partials.card-details', compact(
+            'creator', 'ownsCreator', 'recommendation', 'topRequestedId', 'usage'
+        ));
+    }
+
     public function published(Request $request, Creator $creator): View
     {
         abort_if($creator->status !== 'active', 404);
@@ -220,7 +250,9 @@ class RecommendationController extends Controller
             ->orderByDesc('updated_at')
             ->latest();
 
-        $publishedRecommendations = $publishedRecommendationsQuery->get();
+        $publishedRecommendations = $publishedRecommendationsQuery
+            ->paginate(25)
+            ->withQueryString();
         $publishedRecommendationsCount = $creator->recommendations()
             ->where('status', 'published')
             ->count();

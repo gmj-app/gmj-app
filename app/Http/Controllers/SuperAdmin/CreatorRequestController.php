@@ -17,7 +17,6 @@ use App\Services\SuperAdminAuditService;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -81,7 +80,6 @@ class CreatorRequestController extends Controller
             $item->update($attributes);
             $this->tags->syncFromCommaSeparated($creator, $item, $validated['tags'] ?? '');
         });
-        Cache::flush();
         $item->refresh();
         $this->audit->record($request->user(), $item, 'request.updated', 'Request public content updated on behalf of the creator.', $before, $item->only(array_keys($before)), ['creator_id' => $creator->id], $request);
 
@@ -109,7 +107,6 @@ class CreatorRequestController extends Controller
             $item->update(['status' => 'hidden', 'moderation_status' => 'removed', 'moderation_reason' => $request->validated('moderation_reason'), 'moderation_note' => $request->validated('moderation_note'), 'moderated_by' => $request->user()->id, 'moderated_at' => $now, 'resource_released_at' => $now, 'resource_release_reason' => 'request_removed']);
             $item->delete();
         });
-        Cache::flush();
         $this->audit->record($request->user(), $item, 'request.soft_deleted', 'Request removed as spam or abuse.', [], ['moderation_reason' => $request->validated('moderation_reason'), 'deleted_at' => $item->deleted_at], ['creator_id' => $creator->id, 'released_votes' => $votes, 'affected_guides' => $guides], $request);
 
         return redirect()->route('super-admin.creators.requests.index', $creator)->with('success', 'Request removed. Active votes and request capacity were released.');
@@ -123,7 +120,6 @@ class CreatorRequestController extends Controller
             $item->restore();
             $item->update(['status' => $request->validated('status'), 'moderation_status' => 'restored']);
         });
-        Cache::flush();
         $this->audit->record($request->user(), $item, 'request.restored', 'Request restored without reactivating released resources.', ['deleted_at' => $item->deleted_at], ['status' => $item->status, 'deleted_at' => null], ['creator_id' => $creator->id], $request);
 
         return redirect()->route('super-admin.creators.requests.edit', [$creator, $item])->with('success', 'Request restored. Previous votes and request capacity remain released.');

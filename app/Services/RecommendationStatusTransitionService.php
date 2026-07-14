@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Events\RequestPublished;
 use App\Models\Recommendation;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -73,7 +72,6 @@ class RecommendationStatusTransitionService
 
             return ['recommendation' => $locked->fresh(), 'released_votes' => $releasedVotes, 'affected_guides' => $affectedGuides, 'before' => $before, 'after' => $locked->fresh()->only(array_keys($before))];
         });
-        Cache::flush();
         $this->dispatchPublicationIfNew($result['recommendation'], (string) $result['before']['status'], $actor, $actorContext);
 
         return $result;

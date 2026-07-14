@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Creator;
 use App\Models\HomepageAdvertisement;
-use App\Models\Recommendation;
 use App\Services\HomepageStatsService;
 use App\Services\PopularCreatorGridService;
 use Illuminate\Http\Request;
@@ -43,18 +42,19 @@ class HomeController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $topRequests = Recommendation::query()
-            ->select(['id', 'creator_id', 'submitted_by', 'submission_source', 'title', 'source_title', 'display_title_override', 'is_pinned', 'created_at'])
-            ->whereIn('creator_id', $creators->pluck('id'))
-            ->publiclyVisible()
-            ->votable()
-            ->withSum('userPicks as user_picks_count', 'vote_count')
-            ->orderByDesc('user_picks_count')
-            ->orderByDesc('is_pinned')
-            ->latest()
-            ->get()
-            ->groupBy('creator_id')
-            ->map(fn ($requests) => $requests->take(3)->values());
+        $creators->getCollection()->load([
+            'recommendations' => fn ($query) => $query
+                ->select(['id', 'creator_id', 'submitted_by', 'submission_source', 'title', 'source_title', 'display_title_override', 'is_pinned', 'created_at'])
+                ->publiclyVisible()
+                ->votable()
+                ->withSum('userPicks as user_picks_count', 'vote_count')
+                ->orderByDesc('user_picks_count')
+                ->orderByDesc('is_pinned')
+                ->latest()
+                ->limit(3),
+        ]);
+        $topRequests = $creators->getCollection()
+            ->mapWithKeys(fn (Creator $creator) => [$creator->id => $creator->recommendations->values()]);
 
         [
             'creatorCount' => $creatorCount,

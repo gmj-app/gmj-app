@@ -410,21 +410,53 @@
                         @endphp
 
                         <div
+                            data-creator-request-row
                             id="recommendation-{{ $recommendation->id }}"
-                            x-data="{ open: @js($isActionTarget) }"
+                            x-data="{
+                                open: @js($isActionTarget),
+                                loaded: false,
+                                loading: false,
+                                error: false,
+                                detailsHtml: '',
+                                async loadDetails() {
+                                    if (this.loaded || this.loading) return;
+                                    this.loading = true;
+                                    this.error = false;
+                                    try {
+                                        const response = await fetch(@js(route('requests.card-details', ['recommendation' => $recommendation, 'top' => $recommendation->id === $topRequestedId ? 1 : null])), {
+                                            headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
+                                            credentials: 'same-origin',
+                                        });
+                                        if (! response.ok) throw new Error(`Request failed: ${response.status}`);
+                                        this.detailsHtml = await response.text();
+                                        this.loaded = true;
+                                    } catch (error) {
+                                        this.error = true;
+                                    } finally {
+                                        this.loading = false;
+                                    }
+                                },
+                                toggleDetails() {
+                                    this.open = ! this.open;
+                                    if (this.open) this.loadDetails();
+                                },
+                            }"
                             x-init="
                                 const expandIfHashTarget = () => {
                                     if (window.location.hash === '#recommendation-{{ $recommendation->id }}') {
                                         open = true;
+                                        loadDetails();
                                         $nextTick(() => $el.scrollIntoView({ block: 'start' }));
                                     }
                                 };
 
                                 expandIfHashTarget();
+                                if (open) loadDetails();
                             "
                             x-on:hashchange.window="
                                 if (window.location.hash === '#recommendation-{{ $recommendation->id }}') {
                                     open = true;
+                                    loadDetails();
                                     $nextTick(() => $el.scrollIntoView({ block: 'start' }));
                                 }
                             "
@@ -433,7 +465,7 @@
                         >
                             <button
                                 type="button"
-                                x-on:click="open = ! open"
+                                x-on:click="toggleDetails()"
                                 aria-expanded="false"
                                 x-bind:aria-expanded="open.toString()"
                                 aria-controls="recommendation-details-{{ $recommendation->id }}"
@@ -487,15 +519,16 @@
                                 x-transition:leave-start="opacity-100 translate-y-0"
                                 x-transition:leave-end="opacity-0 -translate-y-1"
                                 class="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40 sm:p-4"
+                                x-bind:aria-busy="loading.toString()"
                             >
-                                <x-recommendation-card
-                                    :recommendation="$recommendation"
-                                    :creator="$creator"
-                                    :usage="$usage"
-                                    :top-requested="$recommendation->id === $topRequestedId"
-                                    :owns-creator="$ownsCreator"
-                                    :anchor="false"
-                                />
+                                <div x-show="loading" class="flex min-h-32 items-center justify-center text-sm font-semibold text-slate-500 dark:text-slate-400" role="status">
+                                    Loading request details&hellip;
+                                </div>
+                                <div x-show="error" class="rounded-xl border border-red-200 bg-red-50 p-5 text-center dark:border-red-900 dark:bg-red-950/30" role="alert">
+                                    <p class="text-sm font-semibold text-red-800 dark:text-red-200">Request details could not be loaded.</p>
+                                    <button type="button" x-on:click="loadDetails()" class="mt-3 rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">Try again</button>
+                                </div>
+                                <div x-show="loaded" x-html="detailsHtml"></div>
                             </div>
                         </div>
                     @empty

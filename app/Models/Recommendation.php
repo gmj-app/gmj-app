@@ -246,6 +246,15 @@ class Recommendation extends Model
             : $this->youtubeThumbnailUrl();
     }
 
+    public function compactThumbnailUrl(): ?string
+    {
+        if ($this->isYouTubeVideo()) {
+            return "https://img.youtube.com/vi/{$this->youtube_video_id}/mqdefault.jpg";
+        }
+
+        return $this->displayThumbnailUrl();
+    }
+
     public function isYouTubePlaylist(): bool
     {
         return $this->media_type === 'playlist' && filled($this->youtube_playlist_id);

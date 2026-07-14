@@ -20,7 +20,7 @@ class CreatorPageHeaderViewModel
             ? $creator->creatorOwners()->where('user_id', $user->id)->where('role', 'owner')->exists()
             : false;
         $isAdminAssisting = $user?->isSuperAdmin() === true && ! $isOwner;
-        $usage = $user ? $this->usageFor($user, $creator) : null;
+        $usage = $user ? $this->viewerContextFor($user, $creator) : null;
         $showcase = $this->accolades->forSubject('creator', $creator->id);
 
         $requestCount = $creator->recommendations()->activePubliclyVisible()->count();
@@ -72,7 +72,7 @@ class CreatorPageHeaderViewModel
     }
 
     /** @return array<string, int|string|bool> */
-    private function usageFor(User $user, Creator $creator): array
+    public function viewerContextFor(User $user, Creator $creator): array
     {
         $limits = $user->membershipLimits();
 

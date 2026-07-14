@@ -217,5 +217,9 @@ Route::get('/{creator:slug}/published', [RecommendationController::class, 'publi
 Route::get('/{creator:slug}/closed', [RecommendationController::class, 'closed'])
     ->name('creators.closed');
 
+Route::get('/requests/{recommendation}/card-details', [RecommendationController::class, 'cardDetails'])
+    ->whereNumber('recommendation')
+    ->name('requests.card-details');
+
 Route::get('/{creator:slug}', [RecommendationController::class, 'showCreatorQueue'])
     ->name('creator.queue');

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Creator;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -57,7 +56,6 @@ class CreatorProfileUpdateService
         }
 
         $this->disk()->delete(array_unique($oldPaths));
-        Cache::flush();
         $creator->refresh();
 
         return ['before' => $before, 'after' => $creator->only($publicFields), 'assets' => $assets];

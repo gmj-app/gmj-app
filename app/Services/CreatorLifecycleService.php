@@ -6,7 +6,6 @@ use App\Models\Creator;
 use App\Models\CreatorFavorite;
 use App\Models\Recommendation;
 use App\Models\UserPick;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CreatorLifecycleService
@@ -29,8 +28,6 @@ class CreatorLifecycleService
                 ->whereHas('recommendation', fn ($query) => $query->votable());
             $voteQuantity = (int) (clone $activeVotes)->sum('vote_count');
             $votes = $activeVotes->update(['released_at' => $now, 'release_reason' => self::REASON]);
-
-            Cache::flush();
 
             return [
                 'favorites' => $favorites,

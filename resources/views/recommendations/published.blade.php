@@ -142,6 +142,9 @@
                             />
                         @endforeach
                     </div>
+                    @if ($publishedRecommendations->hasPages())
+                        <div class="mt-6">{{ $publishedRecommendations->links() }}</div>
+                    @endif
                 @else
                     <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center dark:border-slate-700 dark:bg-slate-900">
                         @if ($publishedRecommendationsCount === 0)

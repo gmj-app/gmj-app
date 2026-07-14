@@ -15,7 +15,6 @@ use App\Services\SuperAdminAuditService;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -104,7 +103,6 @@ class CreatorController extends Controller
             }
         });
         $this->audit->record($request->user(), $creator, 'creator.starter_request.created', count($created).' starter request(s) created on behalf of the creator.', [], [], ['recommendation_ids' => $created], $request);
-        Cache::flush();
 
         return back()->with('success', 'Starter requests added.');
     }
@@ -119,7 +117,6 @@ class CreatorController extends Controller
         $before = ['status' => $creator->status, 'deactivated_at' => $creator->deactivated_at];
         $creator->update(['status' => 'inactive', 'deactivated_at' => now(), 'submissions_open' => false]);
         $this->audit->record($request->user(), $creator, 'creator.disabled', 'Creator disabled and public resources released.', $before, ['status' => 'inactive'], [], $request);
-        Cache::flush();
 
         return back()->with('success', 'Creator disabled.');
     }
@@ -128,7 +125,6 @@ class CreatorController extends Controller
     {
         $creator->update(['status' => 'active', 'deactivated_at' => null]);
         $this->audit->record($request->user(), $creator, 'creator.enabled', 'Creator enabled. Previously released Guide resources were not restored.', [], ['status' => 'active'], [], $request);
-        Cache::flush();
 
         return back()->with('success', 'Creator enabled.');
     }
@@ -149,7 +145,6 @@ class CreatorController extends Controller
         $model = Creator::withTrashed()->findOrFail($creator);
         $model->restore();
         $this->audit->record($request->user(), $model, 'creator.restored', 'Creator restored. Previously released Guide resources were not restored.', [], ['deleted_at' => null], [], $request);
-        Cache::flush();
 
         return back()->with('success', 'Creator restored. Previous Guide allocations remain released.');
     }
