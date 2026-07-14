@@ -71,10 +71,30 @@ class ThemePreferenceTest extends TestCase
     public function test_theme_toggle_keeps_browser_and_account_persistence_hooks(): void
     {
         $this->actingAs(User::factory()->create())->get('/')->assertOk()
-            ->assertSee("localStorage.setItem('theme', theme);", false)
-            ->assertSee('document.cookie = `theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`;', false)
-            ->assertSee("method: 'PATCH'", false)
-            ->assertSee('profile\\/theme', false)
+            ->assertSee('x-data="siteNavigation"', false)
+            ->assertSee('name="theme-update-url" content="'.route('profile.theme.update').'"', false)
+            ->assertSee('name="csrf-token"', false)
             ->assertSee("dark ? 'Switch to light theme' : 'Switch to dark theme'", false);
+
+        $javascript = file_get_contents(resource_path('js/app.js'));
+        $this->assertStringContainsString("Alpine.data('siteNavigation'", $javascript);
+        $this->assertStringContainsString("localStorage.setItem('theme', theme);", $javascript);
+        $this->assertStringContainsString('meta[name="csrf-token"]', $javascript);
+        $this->assertStringContainsString('meta[name="theme-update-url"]', $javascript);
+    }
+
+    public function test_navigation_uses_named_state_without_malformed_inline_javascript(): void
+    {
+        $response = $this->actingAs(User::factory()->create())->get('/')->assertOk()
+            ->assertSee('@click="toggleAccountMenu()"', false)
+            ->assertSee('@click="toggleNotifications()"', false)
+            ->assertSee('@click="toggleMobileMenu()"', false)
+            ->assertSee('@keydown.escape.window="closeAll()"', false)
+            ->assertSee('id="account-menu"', false)
+            ->assertSee('id="notification-dropdown"', false);
+
+        $response->assertDontSee('x-data="{', false)
+            ->assertDontSee('toggleTheme() {', false)
+            ->assertDontSee('meta[name=&quot;', false);
     }
 }

@@ -4,6 +4,60 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
+Alpine.data('siteNavigation', () => ({
+    open: false,
+    accountOpen: false,
+    notificationsOpen: false,
+    dark: document.documentElement.classList.contains('dark'),
+    toggleMobileMenu() {
+        this.open = !this.open;
+        this.accountOpen = false;
+        this.notificationsOpen = false;
+    },
+    toggleAccountMenu() {
+        this.accountOpen = !this.accountOpen;
+        this.notificationsOpen = false;
+    },
+    toggleNotifications() {
+        this.notificationsOpen = !this.notificationsOpen;
+        this.accountOpen = false;
+    },
+    closeAll() {
+        this.open = false;
+        this.accountOpen = false;
+        this.notificationsOpen = false;
+    },
+    async toggleTheme() {
+        this.dark = !this.dark;
+        const theme = this.dark ? 'dark' : 'light';
+
+        document.documentElement.classList.toggle('dark', this.dark);
+        document.documentElement.dataset.theme = theme;
+        localStorage.setItem('theme', theme);
+        document.cookie = `theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`;
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const themeUrl = document.querySelector('meta[name="theme-update-url"]')?.getAttribute('content');
+
+        if (!csrfToken || !themeUrl) return;
+
+        try {
+            await fetch(themeUrl, {
+                method: 'PATCH',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ theme }),
+            });
+        } catch (error) {
+            console.error('Unable to persist theme preference.', error);
+        }
+    },
+}));
+
 const resetModalState = () => {
     document.body.classList.remove('overflow-hidden', 'overflow-y-hidden', 'pointer-events-none');
     document.documentElement.classList.remove('overflow-hidden', 'overflow-y-hidden');
