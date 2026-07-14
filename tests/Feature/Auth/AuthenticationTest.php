@@ -25,7 +25,7 @@ class AuthenticationTest extends TestCase
             ->assertSee('favicon.svg', false)
             ->assertSee('Sign in')
             ->assertDontSee('Sign in to Guide My Journey')
-            ->assertSeeInOrder(['Fans', 'SUGGEST', 'Communities', 'VOTE', 'Creators', 'DECIDE'])
+            ->assertSeeInOrder(['Fans', 'REQUEST', 'Communities', 'VOTE', 'Creators', 'DECIDE'])
             ->assertSee('bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent', false)
             ->assertDontSee('Fans suggest. Communities vote. Creators decide.')
             ->assertSee('Continue with Google')

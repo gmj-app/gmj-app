@@ -13,7 +13,7 @@
                 <a href="{{ route('register') }}" class="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border border-slate-600 bg-slate-900 px-6 py-3 font-extrabold transition hover:border-indigo-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">Go to My Hub</a>
             @endauth
         </div>
-        <p class="mt-9 text-lg font-bold text-slate-300">Fans suggest. Communities vote. Creators decide.</p>
+        <p class="mt-9 text-lg font-bold text-slate-300">Fans request. Communities vote. Creators decide.</p>
         <div class="mx-auto mt-12 flex max-w-2xl flex-col items-center justify-center gap-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-indigo-950/30 sm:flex-row sm:gap-5 sm:p-7" aria-label="Community Guides organize ideas on a ranked creator board before the creator decides">
             <x-how-it-works.demo-avatars size="sm" :limit="3" />
             <span class="text-2xl font-black text-indigo-300 sm:hidden" aria-hidden="true">↓</span><span class="hidden text-2xl font-black text-indigo-300 sm:inline" aria-hidden="true">→</span>

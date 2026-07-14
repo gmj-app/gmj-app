@@ -10,7 +10,7 @@
                         Welcome back, {{ auth()->user()->publicName() }}
                     </h1>
                     <p class="mt-2 text-sm font-medium leading-6 text-slate-600 dark:text-slate-300 md:text-base">
-                        Fans suggest. Communities vote. Creators decide.
+                        Fans request. Communities vote. Creators decide.
                     </p>
                 </div>
 

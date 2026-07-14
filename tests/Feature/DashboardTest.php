@@ -28,7 +28,7 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Welcome back, Guide User')
-            ->assertSee('Fans suggest. Communities vote. Creators decide.')
+            ->assertSee('Fans request. Communities vote. Creators decide.')
             ->assertSee('<h1 class="text-2xl font-semibold', false)
             ->assertDontSee('Your launchpad')
             ->assertDontSee('Manage your creator pages, resources, votes, and suggestions.')

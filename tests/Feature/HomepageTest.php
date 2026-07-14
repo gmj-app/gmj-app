@@ -13,6 +13,22 @@ class HomepageTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_homepage_and_about_use_the_same_canonical_tagline_with_existing_highlight_markup(): void
+    {
+        $highlight = '<span class="bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent dark:from-sky-400 dark:via-indigo-400 dark:to-violet-400">REQUEST</span>';
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSeeInOrder(['Fans ', $highlight.'.', 'Communities ', '>VOTE</span>.', 'Creators ', '>DECIDE</span>.'], false)
+            ->assertDontSee('Fans suggest. Communities vote. Creators decide.');
+
+        $this->get('/about')
+            ->assertOk()
+            ->assertSee('Fans request. Communities vote. Creators decide.')
+            ->assertDontSee('Fans suggest. Communities vote. Creators decide.')
+            ->assertSee('class="mt-9 text-lg font-bold text-slate-300"', false);
+    }
+
     public function test_public_navigation_and_static_pages_are_available(): void
     {
         $this->get('/')
@@ -31,7 +47,7 @@ class HomepageTest extends TestCase
             ->assertSee(route('about'), false)
             ->assertSee(route('faq'), false)
             ->assertSee(route('dashboard'), false)
-            ->assertSeeInOrder(['Fans', 'SUGGEST', 'Communities', 'VOTE', 'Creators', 'DECIDE'])
+            ->assertSeeInOrder(['Fans', 'REQUEST', 'Communities', 'VOTE', 'Creators', 'DECIDE'])
             ->assertSee('bg-gradient-to-r from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent', false)
             ->assertDontSee('Fans suggest. Communities vote. Creators decide.');
 
@@ -46,7 +62,9 @@ class HomepageTest extends TestCase
             ->assertSee('The strongest ideas rise')
             ->assertSee('The creator chooses the next move')
             ->assertSee('The community guides the journey.')
-            ->assertSee('The creator owns the destination.');
+            ->assertSee('The creator owns the destination.')
+            ->assertSee('Fans request. Communities vote. Creators decide.')
+            ->assertDontSee('Fans suggest. Communities vote. Creators decide.');
 
         $this->get('/faq')
             ->assertOk()
@@ -165,7 +183,7 @@ class HomepageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Guide My Journey')
-            ->assertSeeInOrder(['Fans ', '>SUGGEST</span>.', 'Communities ', '>VOTE</span>.', 'Creators ', '>DECIDE</span>.'], false)
+            ->assertSeeInOrder(['Fans ', '>REQUEST</span>.', 'Communities ', '>VOTE</span>.', 'Creators ', '>DECIDE</span>.'], false)
             ->assertSee('from-sky-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent', false)
             ->assertSee('placeholder="Search creators, artists, songs, or topics..."', false)
             ->assertDontSee('Community-powered creator journeys')

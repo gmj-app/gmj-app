@@ -40,7 +40,7 @@ class ExampleTest extends TestCase
             ->assertSee('Help shape what gets made next')
             ->assertSee('Replace noise with a clear creative signal')
             ->assertSee('data-lifecycle', false)
-            ->assertSeeInOrder(['Suggested', 'Community backed', 'Approved', 'Scheduled', 'Published 2 days ago'])
+            ->assertSeeInOrder(['Requested', 'Community backed', 'Approved', 'Scheduled', 'Published 2 days ago'])
             ->assertSee('Votes carry weight')
             ->assertSee('People, not anonymous numbers')
             ->assertSee('No algorithm chooses for you')

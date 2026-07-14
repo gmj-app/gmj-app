@@ -3,7 +3,7 @@
         <div class="text-center"><p class="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-300">How it works</p><h2 id="workflow-title" class="mt-3 text-3xl font-extrabold sm:text-4xl">From a spark to a published journey</h2></div>
         @php
             $stages = [
-                ['title' => 'A fan shares the spark', 'copy' => 'Fans can suggest a topic, idea, video, link, or alternate version in seconds.', 'type' => 'form'],
+                ['title' => 'A fan shares the spark', 'copy' => 'Fans can request a topic, idea, video, link, or alternate version in seconds.', 'type' => 'form'],
                 ['title' => 'The community adds its signal', 'copy' => 'Guides use their limited votes to support the ideas they care about most.', 'type' => 'vote'],
                 ['title' => 'The strongest ideas rise', 'copy' => 'The best-supported ideas rise through transparent community ranking.', 'type' => 'rank'],
                 ['title' => 'The creator chooses the next move', 'copy' => 'Creators always retain final control over what they make, when they make it, and what they pass on.', 'type' => 'decide'],
