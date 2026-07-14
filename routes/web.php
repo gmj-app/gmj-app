@@ -221,5 +221,9 @@ Route::get('/requests/{recommendation}/card-details', [RecommendationController:
     ->whereNumber('recommendation')
     ->name('requests.card-details');
 
+Route::get('/requests/{recommendation}/supporters', [RecommendationController::class, 'supporters'])
+    ->whereNumber('recommendation')
+    ->name('requests.supporters');
+
 Route::get('/{creator:slug}', [RecommendationController::class, 'showCreatorQueue'])
     ->name('creator.queue');

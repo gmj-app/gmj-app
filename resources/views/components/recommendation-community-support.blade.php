@@ -6,37 +6,12 @@
     <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <div class="min-w-0">
             <x-subsection-label>Suggested by</x-subsection-label>
-            @if ($recommendation->submittedBy)
-                <div class="mt-2 flex min-w-0 items-center gap-3">
-                    <x-recommendation-support-avatars
-                        :recommendation="$recommendation"
-                        :limit="1"
-                        :include-upvoters="false"
-                        layout="detail"
-                    />
-                    @if ($recommendation->submittedBy->publicGuideProfileUrl())
-                        <a href="{{ $recommendation->submittedBy->publicGuideProfileUrl() }}" class="min-w-0 truncate text-sm font-medium text-slate-700 hover:text-indigo-600 dark:text-slate-200 dark:hover:text-indigo-300">{{ $recommendation->submittedBy->publicName() }}</a>
-                    @else
-                        <p class="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{{ $recommendation->submittedBy->publicName() }}</p>
-                    @endif
-                </div>
-            @else
-                <p class="mt-2 text-sm font-normal text-slate-500 dark:text-slate-400">Unknown Guide</p>
-            @endif
+            <x-requests.requester-identity :requester="$recommendation->submittedBy" />
         </div>
 
         <div class="min-w-0">
             <x-subsection-label>Community support</x-subsection-label>
-            <x-recommendation-support-avatars
-                :recommendation="$recommendation"
-                :limit="50"
-                :include-requester="false"
-                :skip-requester-upvote="true"
-                :show-empty="true"
-                :show-names="true"
-                layout="detail"
-                class="mt-2"
-            />
+            <x-requests.supporter-preview :recommendation="$recommendation" />
         </div>
     </div>
 </div>

@@ -7,6 +7,8 @@
     $sizeClasses = match ($size) {
         'xs' => 'size-6 text-[10px]',
         'sm' => 'size-8 text-xs',
+        'supporter' => 'size-12 text-sm sm:size-14 sm:text-base',
+        'requester' => 'size-14 text-base',
         'lg' => 'size-16 text-xl',
         'xl' => 'size-20 text-2xl sm:size-24 sm:text-3xl',
         default => 'size-9 text-sm sm:size-10',

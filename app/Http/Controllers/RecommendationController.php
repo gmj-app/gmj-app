@@ -173,14 +173,20 @@ class RecommendationController extends Controller
             : false;
 
         $recommendation->load([
-            'submittedBy:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
+            'submittedBy:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
             'submittedBy.guideAccolades',
             'creatorTags:id,creator_id,name,slug',
-            'userPicks' => fn ($query) => $query->oldest()->limit(10),
-            'userPicks.user:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
+            'userPicks' => fn ($query) => $query
+                ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by))
+                ->oldest('id')
+                ->limit(6),
+            'userPicks.user:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
             'userPicks.user.guideAccolades',
         ])->loadSum('userPicks as user_picks_count', 'vote_count')
-            ->loadCount('userPicks as active_supporters_count');
+            ->loadCount([
+                'userPicks as active_supporters_count' => fn ($query) => $query
+                    ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by)),
+            ]);
 
         if ($user) {
             $recommendation->loadSum([
@@ -202,6 +208,31 @@ class RecommendationController extends Controller
         return view('recommendations.partials.card-details', compact(
             'creator', 'ownsCreator', 'recommendation', 'topRequestedId', 'usage'
         ));
+    }
+
+    public function supporters(Recommendation $recommendation): JsonResponse
+    {
+        $creator = $recommendation->creator;
+        abort_if(! $creator || $creator->status !== 'active' || ! $recommendation->isPubliclyVisible(), 404);
+
+        $supporters = $recommendation->userPicks()
+            ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by))
+            ->whereHas('user')
+            ->with([
+                'user:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
+                'user.guideAccolades',
+            ])
+            ->oldest('id')
+            ->paginate(24);
+
+        return response()->json([
+            'html' => view('recommendations.partials.supporter-directory', [
+                'supporters' => $supporters->getCollection(),
+            ])->render(),
+            'current_page' => $supporters->currentPage(),
+            'next_page' => $supporters->hasMorePages() ? $supporters->currentPage() + 1 : null,
+            'total' => $supporters->total(),
+        ]);
     }
 
     public function published(Request $request, Creator $creator): View
