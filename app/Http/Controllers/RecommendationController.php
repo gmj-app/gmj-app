@@ -64,7 +64,7 @@ class RecommendationController extends Controller
         $topRequestedId = $creator->recommendations()
             ->activePubliclyVisible()
             ->votable()
-            ->withSum('userPicks as user_picks_count', 'vote_count')
+            ->withEffectiveVoteTotal()
             ->orderByDesc('user_picks_count')
             ->orderBy('created_at')
             ->orderBy('id')
@@ -102,7 +102,7 @@ class RecommendationController extends Controller
                 ->whereHas('creatorTags', fn ($query) => $query
                     ->where('creator_tags.creator_id', $creator->id)
                     ->where('creator_tags.slug', $filters['tag'])))
-            ->withSum('userPicks as user_picks_count', 'vote_count');
+            ->withEffectiveVoteTotal();
 
         if ($request->user()) {
             $recommendationsQuery
@@ -134,7 +134,7 @@ class RecommendationController extends Controller
             ->get();
         $recentPublishedRecommendations = $creator->recommendations()
             ->where('status', 'published')
-            ->withSum('userPicks as user_picks_count', 'vote_count')
+            ->withEffectiveVoteTotal()
             ->orderByRaw('COALESCE(published_at, updated_at, created_at) DESC')
             ->latest()
             ->limit(4)
@@ -176,17 +176,22 @@ class RecommendationController extends Controller
             'submittedBy:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
             'submittedBy.guideAccolades',
             'creatorTags:id,creator_id,name,slug',
-            'userPicks' => fn ($query) => $query
+            'allUserPicks' => fn ($query) => $query
                 ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by))
                 ->oldest('id')
                 ->limit(6),
-            'userPicks.user:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
-            'userPicks.user.guideAccolades',
+            'allUserPicks.user:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
+            'allUserPicks.user.guideAccolades',
         ])->loadSum('userPicks as user_picks_count', 'vote_count')
             ->loadCount([
                 'userPicks as active_supporters_count' => fn ($query) => $query
                     ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by)),
             ]);
+        if ($recommendation->isVotingClosed()) {
+            $recommendation->setRelation('userPicks', $recommendation->allUserPicks);
+            $recommendation->active_supporters_count = $recommendation->supporter_count_at_close
+                ?? $recommendation->allUserPicks->pluck('user_id')->unique()->count();
+        }
 
         if ($user) {
             $recommendation->loadSum([
@@ -215,7 +220,7 @@ class RecommendationController extends Controller
         $creator = $recommendation->creator;
         abort_if(! $creator || $creator->status !== 'active' || ! $recommendation->isPubliclyVisible(), 404);
 
-        $supporters = $recommendation->userPicks()
+        $supporters = ($recommendation->isVotingClosed() ? $recommendation->allUserPicks() : $recommendation->userPicks())
             ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by))
             ->whereHas('user')
             ->with([

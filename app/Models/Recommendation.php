@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class Recommendation extends Model
 {
@@ -53,6 +54,10 @@ class Recommendation extends Model
     public const UPVOTE_CONSUMING_STATUSES = [
         'pending',
         'approved',
+    ];
+
+    public const VOTING_CLOSED_STATUSES = [
+        'coming_soon', 'scheduled', 'recorded', 'published', 'already_seen', 'passed', 'hidden', 'withdrawn',
     ];
 
     public const UNFAVORITE_REMOVABLE_STATUSES = [
@@ -121,6 +126,9 @@ class Recommendation extends Model
         'reason',
         'request_context',
         'status',
+        'voting_closed_at',
+        'vote_total_at_close',
+        'supporter_count_at_close',
         'resource_released_at',
         'resource_release_reason',
         'is_pinned',
@@ -163,6 +171,9 @@ class Recommendation extends Model
             'source_metadata' => 'array',
             'withdrawn_at' => 'datetime',
             'resource_released_at' => 'datetime',
+            'voting_closed_at' => 'datetime',
+            'vote_total_at_close' => 'integer',
+            'supporter_count_at_close' => 'integer',
             'deleted_at' => 'datetime',
         ];
     }
@@ -424,12 +435,22 @@ class Recommendation extends Model
 
     public function totalVotes(): int
     {
+        if ($this->isVotingClosed() && $this->vote_total_at_close !== null) {
+            return (int) $this->vote_total_at_close;
+        }
+
         if (array_key_exists('user_picks_count', $this->attributes)) {
             return (int) $this->attributes['user_picks_count'];
         }
 
         if ($this->relationLoaded('userPicks')) {
             return (int) $this->userPicks->sum('vote_count');
+        }
+
+        if ($this->isVotingClosed()) {
+            Log::warning('Voting-closed request is missing its vote snapshot; reconstructing from history.', ['request_id' => $this->id]);
+
+            return (int) $this->allUserPicks()->sum('vote_count');
         }
 
         return (int) $this->userPicks()->sum('vote_count');
@@ -491,6 +512,25 @@ class Recommendation extends Model
     public static function votableStatuses(): array
     {
         return self::upvoteConsumingStatuses();
+    }
+
+    public static function votingClosedStatuses(): array
+    {
+        return self::VOTING_CLOSED_STATUSES;
+    }
+
+    /** @param Builder<Recommendation> $query */
+    public function scopeWithEffectiveVoteTotal(Builder $query, string $alias = 'user_picks_count'): Builder
+    {
+        $active = UserPick::query()->selectRaw('COALESCE(SUM(vote_count), 0)')
+            ->whereColumn('recommendation_id', 'recommendations.id')->whereNull('released_at');
+        $historical = UserPick::query()->selectRaw('COALESCE(SUM(vote_count), 0)')
+            ->whereColumn('recommendation_id', 'recommendations.id');
+        $closed = implode("','", self::VOTING_CLOSED_STATUSES);
+
+        return $query->select('recommendations.*')->selectRaw(
+            "CASE WHEN recommendations.status IN ('{$closed}') THEN COALESCE(recommendations.vote_total_at_close, ({$historical->toSql()}), 0) ELSE ({$active->toSql()}) END AS {$alias}"
+        );
     }
 
     /**

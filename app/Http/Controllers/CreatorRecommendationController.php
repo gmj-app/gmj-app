@@ -238,6 +238,15 @@ class CreatorRecommendationController extends Controller
             $releasedVotes = $lockedRecommendation->shouldClearUpvotesWhenStatusIs($newStatus)
                 ? (int) $lockedRecommendation->userPicks()->sum('vote_count')
                 : 0;
+            $closesVoting = $lockedRecommendation->shouldClearUpvotesWhenStatusIs($newStatus);
+
+            if ($closesVoting && $lockedRecommendation->voting_closed_at === null) {
+                $attributes += [
+                    'voting_closed_at' => now(),
+                    'vote_total_at_close' => $releasedVotes,
+                    'supporter_count_at_close' => $lockedRecommendation->userPicks()->distinct()->count('user_id'),
+                ];
+            }
 
             if (in_array($newStatus, Recommendation::CLOSED_PUBLIC_STATUSES, true)) {
                 $attributes['resolved_at'] = $lockedRecommendation->resolved_at ?? now();
@@ -247,12 +256,13 @@ class CreatorRecommendationController extends Controller
 
             $lockedRecommendation->update($attributes);
 
-            if ($releasedVotes > 0) {
+            if ($closesVoting) {
                 $now = now();
-                $lockedRecommendation->userPicks()->update(['released_at' => $now, 'release_reason' => 'request_closed']);
+                $reason = 'request_'.$newStatus;
+                $lockedRecommendation->userPicks()->update(['released_at' => $now, 'release_reason' => $reason]);
                 $lockedRecommendation->update([
                     'resource_released_at' => $lockedRecommendation->resource_released_at ?? $now,
-                    'resource_release_reason' => $lockedRecommendation->resource_release_reason ?? 'request_closed',
+                    'resource_release_reason' => $lockedRecommendation->resource_release_reason ?? $reason,
                 ]);
             }
 

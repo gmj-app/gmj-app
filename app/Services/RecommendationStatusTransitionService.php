@@ -13,7 +13,11 @@ use Throwable;
 
 class RecommendationStatusTransitionService
 {
-    public function __construct(private readonly YouTubeUrlService $youtubeUrls, private readonly YouTubePlaylistMetadataService $playlistMetadata) {}
+    public function __construct(
+        private readonly YouTubeUrlService $youtubeUrls,
+        private readonly YouTubePlaylistMetadataService $playlistMetadata,
+        private readonly RequestCacheInvalidator $cache,
+    ) {}
 
     /** @return array{recommendation:Recommendation,released_votes:int,affected_guides:int,before:array,after:array} */
     public function transition(Recommendation $recommendation, string $newStatus, User $actor, array $metadata = [], string $actorContext = 'creator'): array
@@ -33,8 +37,9 @@ class RecommendationStatusTransitionService
         $result = DB::transaction(function () use ($recommendation, $newStatus, $actor, $metadata): array {
             $locked = Recommendation::withTrashed()->lockForUpdate()->findOrFail($recommendation->id);
             $before = $locked->only(['status', 'scheduled_for', 'published_at', 'resolved_at', 'published_reaction_url', 'moderation_reason', 'moderation_note', 'public_resolution_note', 'private_resolution_reason', 'prior_coverage_url', 'prior_coverage_title']);
-            $releasedVotes = $locked->shouldClearUpvotesWhenStatusIs($newStatus) ? (int) $locked->userPicks()->sum('vote_count') : 0;
-            $affectedGuides = $locked->shouldClearUpvotesWhenStatusIs($newStatus) ? $locked->userPicks()->distinct('user_id')->count('user_id') : 0;
+            $closesVoting = $locked->shouldClearUpvotesWhenStatusIs($newStatus);
+            $releasedVotes = $closesVoting ? (int) $locked->userPicks()->sum('vote_count') : 0;
+            $affectedGuides = $closesVoting ? $locked->userPicks()->distinct()->count('user_id') : 0;
             $attributes = [
                 'status' => $newStatus,
                 'scheduled_for' => $newStatus === 'scheduled' ? ($metadata['scheduled_for'] ?? $locked->scheduled_for) : $locked->scheduled_for,
@@ -45,6 +50,13 @@ class RecommendationStatusTransitionService
                 'moderated_by' => $actor->id,
                 'moderated_at' => now(),
             ];
+            if ($closesVoting && $locked->voting_closed_at === null) {
+                $attributes += [
+                    'voting_closed_at' => now(),
+                    'vote_total_at_close' => $releasedVotes,
+                    'supporter_count_at_close' => $affectedGuides,
+                ];
+            }
             if (array_key_exists('moderation_reason', $metadata)) {
                 $attributes['moderation_reason'] = $metadata['moderation_reason'];
             }
@@ -61,17 +73,19 @@ class RecommendationStatusTransitionService
             }
             $locked->update($attributes);
 
-            if ($releasedVotes > 0) {
+            if ($closesVoting) {
                 $now = now();
-                $locked->userPicks()->update(['released_at' => $now, 'release_reason' => 'request_closed']);
+                $reason = 'request_'.$newStatus;
+                $locked->userPicks()->update(['released_at' => $now, 'release_reason' => $reason]);
                 $locked->update([
                     'resource_released_at' => $locked->resource_released_at ?? $now,
-                    'resource_release_reason' => $locked->resource_release_reason ?? 'request_closed',
+                    'resource_release_reason' => $locked->resource_release_reason ?? $reason,
                 ]);
             }
 
             return ['recommendation' => $locked->fresh(), 'released_votes' => $releasedVotes, 'affected_guides' => $affectedGuides, 'before' => $before, 'after' => $locked->fresh()->only(array_keys($before))];
         });
+        $this->cache->forget($result['recommendation']);
         $this->dispatchPublicationIfNew($result['recommendation'], (string) $result['before']['status'], $actor, $actorContext);
 
         return $result;
