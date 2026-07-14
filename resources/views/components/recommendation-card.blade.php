@@ -137,7 +137,7 @@
             @if ($recommendation->isCreatorAdded())
                 <span class="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-semibold text-violet-700 dark:bg-violet-950 dark:text-violet-300">Added by creator</span>
             @endif
-            <span class="rounded-full px-3 py-1.5 text-sm font-semibold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>
+            <x-requests.status-badge :request="$recommendation" />
         </div>
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -395,7 +395,7 @@
 
                     <div class="flex min-w-0 flex-col items-center justify-center px-1 py-1 text-center">
                         <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Voting closed</span>
-                        <span class="mt-2 inline-flex max-w-full rounded-full px-2.5 py-1 text-xs font-bold {{ $recommendation->statusBadgeClass() }}">{{ $recommendation->statusLabel() }}</span>
+                        <x-requests.status-badge :request="$recommendation" class="mt-2" />
                     </div>
                 </div>
             @else

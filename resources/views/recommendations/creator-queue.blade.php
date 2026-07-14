@@ -441,8 +441,11 @@
                                 <x-recommendation-compact-media :recommendation="$recommendation" />
 
                                 <span class="min-w-0 flex-1">
-                                    <span class="block break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
-                                        {{ $recommendation->displayTitle() }}
+                                    <span class="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
+                                        <span class="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
+                                            {{ $recommendation->displayTitle() }}
+                                        </span>
+                                        <x-requests.status-badge :request="$recommendation" variant="compact" />
                                     </span>
                                     <x-recommendation-user-indicators
                                         :recommendation="$recommendation"

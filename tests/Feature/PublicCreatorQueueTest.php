@@ -365,6 +365,70 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
     }
 
+    public function test_folded_request_rows_show_only_meaningful_public_status_badges(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'status-badges']);
+        $statuses = [
+            'approved' => 'Ordinary active request with a deliberately long title that must leave room for its vote total',
+            'coming_soon' => 'Anticipated request',
+            'scheduled' => 'Planned request',
+            'recorded' => 'Recorded request',
+            'already_seen' => 'Already seen request',
+            'passed' => 'Passed request',
+        ];
+
+        foreach ($statuses as $status => $title) {
+            Recommendation::factory()->create([
+                'creator_id' => $creator->id,
+                'status' => $status,
+                'title' => $title,
+            ]);
+        }
+
+        foreach (['pending' => 'Private pending request', 'hidden' => 'Private hidden request', 'withdrawn' => 'Private withdrawn request'] as $status => $title) {
+            Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => $status, 'title' => $title]);
+        }
+
+        $response = $this->get(route('creator.queue', $creator))->assertOk();
+        $html = $response->getContent();
+
+        $this->assertSame(5, substr_count($html, 'data-status-variant="compact"'));
+        foreach ([
+            'coming_soon' => ['Coming Soon', 'violet'],
+            'scheduled' => ['Scheduled', 'blue'],
+            'recorded' => ['Recorded', 'amber'],
+            'already_seen' => ['Already Seen', 'slate'],
+            'passed' => ['Passed', 'rose'],
+        ] as $status => [$label, $style]) {
+            $response->assertSee('data-request-status="'.$status.'"', false)
+                ->assertSee('data-status-style="'.$style.'"', false)
+                ->assertSee('aria-label="Request status: '.$label.'. Voting is closed."', false);
+            $this->assertSame(3, substr_count($html, 'data-request-status="'.$status.'"')); // folded plus two expanded contexts
+        }
+
+        $approved = Recommendation::query()->where('creator_id', $creator->id)->where('status', 'approved')->firstOrFail();
+        $this->blade('<x-requests.status-badge :request="$request" variant="compact" />', ['request' => $approved])
+            ->assertDontSee('Approved');
+
+        $published = Recommendation::factory()->make(['status' => 'published']);
+        $this->blade('<x-requests.status-badge :request="$request" variant="compact" />', ['request' => $published])
+            ->assertSee('Published')
+            ->assertSee('data-status-style="emerald"', false);
+
+        foreach (['pending', 'hidden', 'withdrawn'] as $privateStatus) {
+            $privateRequest = Recommendation::factory()->make(['status' => $privateStatus]);
+            $this->blade('<x-requests.status-badge :request="$request" variant="compact" />', ['request' => $privateRequest])
+                ->assertDontSee('data-request-status', false);
+        }
+
+        $response->assertDontSee('Private pending request')
+            ->assertDontSee('Private hidden request')
+            ->assertDontSee('Private withdrawn request')
+            ->assertSee('flex min-w-0 flex-col items-start gap-1 sm:flex-row', false)
+            ->assertSee('Ordinary active request with a deliberately long title')
+            ->assertSee('vote');
+    }
+
     public function test_logged_in_guides_see_their_vote_and_submission_indicators(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
