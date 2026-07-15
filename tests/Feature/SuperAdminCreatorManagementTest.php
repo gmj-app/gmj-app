@@ -53,6 +53,90 @@ class SuperAdminCreatorManagementTest extends TestCase
         $this->assertSame('owner-google-id', $owner->fresh()->google_id);
     }
 
+    public function test_browser_form_submission_persists_scalar_settings_and_shows_success(): void
+    {
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        $creator->update(['submissions_open' => true, 'recommendation_approval_mode' => Creator::APPROVAL_MODE_AUTO]);
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+
+        $response = $this->actingAs($admin)->post(route('super-admin.creators.update', $creator), [
+            '_method' => 'PUT',
+            'display_name' => $creator->display_name,
+            'slug' => $creator->slug,
+            'youtube_channel_url' => $creator->youtube_channel_url ?: $creator->channel_url,
+            'submissions_open' => '0',
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+            'save_action' => 'save',
+        ]);
+
+        $response->assertStatus(302)
+            ->assertRedirect(route('super-admin.creators.assist', $creator))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+        $this->assertFalse($creator->fresh()->submissions_open);
+        $this->assertSame(Creator::APPROVAL_MODE_MANUAL, $creator->fresh()->recommendation_approval_mode);
+        $this->followRedirects($response)->assertSee('Creator space updated successfully.');
+    }
+
+    public function test_save_and_preview_persists_before_redirecting_to_public_creator_page(): void
+    {
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+
+        $response = $this->actingAs($admin)->post(route('super-admin.creators.update', $creator), [
+            '_method' => 'PUT',
+            'display_name' => 'Previewed Creator',
+            'slug' => $creator->slug,
+            'submissions_open' => '1',
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_AUTO,
+            'save_action' => 'preview',
+        ]);
+
+        $response->assertStatus(302)->assertRedirect(route('super-admin.creators.preview', $creator));
+        $this->assertSame('Previewed Creator', $creator->fresh()->display_name);
+    }
+
+    public function test_unchanged_legacy_identity_values_do_not_block_unrelated_assistance_updates(): void
+    {
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        $creator->forceFill(['slug' => 'Legacy_Slug', 'channel_url' => 'legacy-channel-reference', 'youtube_channel_url' => null])->save();
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+
+        $this->actingAs($admin)->post(route('super-admin.creators.update', $creator), [
+            '_method' => 'PUT',
+            'display_name' => $creator->display_name,
+            'slug' => 'Legacy_Slug',
+            'youtube_channel_url' => 'legacy-channel-reference',
+            'submissions_open' => '0',
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+            'save_action' => 'save',
+        ])->assertRedirect(route('super-admin.creators.assist', $creator))->assertSessionHasNoErrors();
+
+        $this->assertFalse($creator->fresh()->submissions_open);
+    }
+
+    public function test_assistance_validation_errors_are_visible_and_do_not_persist_partial_changes(): void
+    {
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+
+        $response = $this->actingAs($admin)->from(route('super-admin.creators.assist', $creator))
+            ->post(route('super-admin.creators.update', $creator), [
+                '_method' => 'PUT',
+                'display_name' => 'Should Not Persist',
+                'slug' => 'invalid changed slug',
+                'submissions_open' => '0',
+                'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+                'save_action' => 'save',
+            ]);
+
+        $response->assertStatus(302)->assertSessionHasErrors('slug');
+        $this->assertSame('Original', $creator->fresh()->display_name);
+        $this->followRedirects($response)
+            ->assertSee('No changes were saved. Please correct the following:')
+            ->assertSee('format is invalid');
+    }
+
     public function test_assistance_mode_uploads_and_safely_replaces_creator_media(): void
     {
         Storage::fake('creator_uploads');

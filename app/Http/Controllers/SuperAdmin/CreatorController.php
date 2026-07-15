@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class CreatorController extends Controller
 {
@@ -76,7 +77,15 @@ class CreatorController extends Controller
 
     public function update(UpdateCreatorProfileRequest $request, Creator $creator): RedirectResponse
     {
-        $result = $this->profiles->update($creator, $request->validated(), $request->allFiles());
+        try {
+            $result = $this->profiles->update($creator, $request->validated(), $request->allFiles());
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->withInput($request->safe()->except(['avatar', 'hero']))
+                ->with('error', 'No changes were saved. The existing creator images and settings are unchanged. Please try again.');
+        }
+
         $this->audit->record($request->user(), $creator, 'creator.profile.updated', 'Creator public-space settings updated.', $result['before'], $result['after'], ['assets' => $result['assets']], $request);
 
         return redirect()->route($request->input('save_action') === 'preview' ? 'super-admin.creators.preview' : 'super-admin.creators.assist', $creator)->with('success', 'Creator space updated successfully.');
