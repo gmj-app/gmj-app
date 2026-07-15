@@ -37,6 +37,8 @@
                 <div><dt class="sr-only">Closed date</dt><dd>Closed {{ $closedAt?->format('M j, Y') }}</dd></div>
             </dl>
 
+            <x-recommendation-support-avatars :recommendation="$recommendation" :include-requester="false" :skip-requester-upvote="true" :show-empty="false" class="mt-3" />
+
             @if ($recommendation->public_resolution_note)
                 <p class="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{{ $recommendation->public_resolution_note }}</p>
             @endif

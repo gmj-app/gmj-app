@@ -8,15 +8,12 @@ use Illuminate\Support\Collection;
 
 class RequestSupportRecipientResolver
 {
+    public function __construct(private readonly RequestSupportService $support) {}
+
     /** @return Collection<int, User> */
     public function resolve(Recommendation $request, ?int $excludeUserId = null): Collection
     {
-        $userIds = $request->allUserPicks()
-            ->where('vote_count', '>', 0)
-            ->where(function ($query): void {
-                $query->whereNull('release_reason')
-                    ->orWhere('release_reason', '!=', 'request_removed');
-            })
+        $userIds = $this->support->historicalSupport($request)
             ->when($excludeUserId, fn ($query) => $query->where('user_id', '!=', $excludeUserId))
             ->distinct()
             ->pluck('user_id');

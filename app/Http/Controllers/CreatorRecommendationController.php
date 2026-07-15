@@ -47,7 +47,7 @@ class CreatorRecommendationController extends Controller
 
         $recommendations = $creator->recommendations()
             ->with(['submittedBy:id,name,email', 'creatorTags:id,creator_id,name,slug', 'presentationRevisions' => fn ($query) => $query->with('actor:id,name')->latest()->limit(5), 'identityCorrections' => fn ($query) => $query->where('status', 'pending')->with('requester:id,name,email')->latest()])
-            ->withSum('userPicks as user_picks_count', 'vote_count')
+            ->withEffectiveVoteTotal()
             ->when($filters['q'] ?? null, function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query

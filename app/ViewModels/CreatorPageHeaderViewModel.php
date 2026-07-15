@@ -26,7 +26,8 @@ class CreatorPageHeaderViewModel
         $requestCount = $creator->recommendations()->activePubliclyVisible()->count();
         $followerCount = $creator->creatorFavorites()->whereNull('released_at')->count();
         $voteCount = (int) $creator->userPicks()
-            ->whereHas('recommendation', fn ($query) => $query->publiclyVisible()->votable())
+            ->validHistoricalSupport()
+            ->whereHas('recommendation', fn ($query) => $query->publiclyVisible())
             ->sum('vote_count');
         $publishedCount = $creator->recommendations()->where('status', 'published')->count();
 

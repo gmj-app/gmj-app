@@ -200,12 +200,17 @@ class Recommendation extends Model
 
     public function userPicks(): HasMany
     {
-        return $this->hasMany(UserPick::class)->whereNull('released_at');
+        return $this->hasMany(UserPick::class)->activeSupport();
     }
 
     public function allUserPicks(): HasMany
     {
         return $this->hasMany(UserPick::class);
+    }
+
+    public function historicalUserPicks(): HasMany
+    {
+        return $this->hasMany(UserPick::class)->validHistoricalSupport();
     }
 
     public function alternatives(): HasMany
@@ -450,7 +455,7 @@ class Recommendation extends Model
         if ($this->isVotingClosed()) {
             Log::warning('Voting-closed request is missing its vote snapshot; reconstructing from history.', ['request_id' => $this->id]);
 
-            return (int) $this->allUserPicks()->sum('vote_count');
+            return (int) $this->historicalUserPicks()->sum('vote_count');
         }
 
         return (int) $this->userPicks()->sum('vote_count');
@@ -525,7 +530,9 @@ class Recommendation extends Model
         $active = UserPick::query()->selectRaw('COALESCE(SUM(vote_count), 0)')
             ->whereColumn('recommendation_id', 'recommendations.id')->whereNull('released_at');
         $historical = UserPick::query()->selectRaw('COALESCE(SUM(vote_count), 0)')
-            ->whereColumn('recommendation_id', 'recommendations.id');
+            ->whereColumn('recommendation_id', 'recommendations.id')
+            ->whereRaw('vote_count > 0')
+            ->whereRaw("(release_reason IS NULL OR release_reason <> 'request_removed')");
         $closed = implode("','", self::VOTING_CLOSED_STATUSES);
 
         return $query->select('recommendations.*')->selectRaw(
@@ -636,6 +643,16 @@ class Recommendation extends Model
     public function isVotingClosed(): bool
     {
         return ! $this->isVotable();
+    }
+
+    public function isVotingOpen(): bool
+    {
+        return $this->isVotable();
+    }
+
+    public function usesHistoricalSupportDisplay(): bool
+    {
+        return $this->isVotingClosed();
     }
 
     public function canBeWithdrawnBy(?User $user): bool

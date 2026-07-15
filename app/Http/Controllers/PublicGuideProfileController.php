@@ -26,6 +26,7 @@ class PublicGuideProfileController extends Controller
             ->publiclyVisible();
 
         $completedSupport = UserPick::query()
+            ->validHistoricalSupport()
             ->where('user_id', $guide->id)
             ->whereHas('recommendation', fn (Builder $query) => $query
                 ->publiclyVisible()
@@ -48,14 +49,14 @@ class PublicGuideProfileController extends Controller
         $publishedSuggestions = (clone $publicSuggestions)
             ->where('status', 'published')
             ->with('creator')
-            ->withSum('userPicks as user_picks_count', 'vote_count')
+            ->withEffectiveVoteTotal()
             ->latest('published_at')
             ->limit(6)
             ->get();
 
         $suggestions = (clone $publicSuggestions)
             ->with('creator')
-            ->withSum('userPicks as user_picks_count', 'vote_count')
+            ->withEffectiveVoteTotal()
             ->latest()
             ->paginate(10, ['*'], 'suggestions_page')
             ->withQueryString();
@@ -63,7 +64,7 @@ class PublicGuideProfileController extends Controller
         $supportedRecommendations = (clone $completedSupport)
             ->with(['recommendation' => fn ($query) => $query
                 ->with('creator')
-                ->withSum('userPicks as user_picks_count', 'vote_count')])
+                ->withEffectiveVoteTotal()])
             ->latest()
             ->paginate(10, ['*'], 'support_page')
             ->withQueryString();

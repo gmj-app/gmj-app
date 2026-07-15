@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserPickFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -44,5 +45,25 @@ class UserPick extends Model
     public function recommendation(): BelongsTo
     {
         return $this->belongsTo(Recommendation::class);
+    }
+
+    /** @param Builder<UserPick> $query */
+    public function scopeActiveSupport(Builder $query): Builder
+    {
+        return $query->whereNull('released_at')->where('vote_count', '>', 0);
+    }
+
+    /**
+     * Released capacity is still valid history unless moderation explicitly
+     * invalidated the allocation.
+     *
+     * @param  Builder<UserPick>  $query
+     */
+    public function scopeValidHistoricalSupport(Builder $query): Builder
+    {
+        return $query->where('vote_count', '>', 0)
+            ->where(fn (Builder $query) => $query
+                ->whereNull('release_reason')
+                ->orWhere('release_reason', '!=', 'request_removed'));
     }
 }

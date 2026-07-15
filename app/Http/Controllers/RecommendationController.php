@@ -10,6 +10,7 @@ use App\Models\Recommendation;
 use App\Models\User;
 use App\Services\Accolades\AccoladeShowcaseService;
 use App\Services\CreatorParticipationService;
+use App\Services\RequestSupportService;
 use App\Services\UnfavoriteCreatorAction;
 use App\Services\YouTubePlaylistMetadataService;
 use App\Services\YouTubeUrlService;
@@ -33,6 +34,7 @@ class RecommendationController extends Controller
         private readonly YouTubePlaylistMetadataService $playlistMetadata,
         private readonly AccoladeShowcaseService $accoladeShowcase,
         private readonly CreatorPageHeaderViewModel $creatorPageHeader,
+        private readonly RequestSupportService $requestSupport,
     ) {}
 
     public function showCreatorQueue(Request $request, Creator $creator): View
@@ -176,21 +178,20 @@ class RecommendationController extends Controller
             'submittedBy:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
             'submittedBy.guideAccolades',
             'creatorTags:id,creator_id,name,slug',
-            'allUserPicks' => fn ($query) => $query
+            'historicalUserPicks' => fn ($query) => $query
                 ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by))
                 ->oldest('id')
                 ->limit(6),
-            'allUserPicks.user:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
-            'allUserPicks.user.guideAccolades',
+            'historicalUserPicks.user:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
+            'historicalUserPicks.user.guideAccolades',
         ])->loadSum('userPicks as user_picks_count', 'vote_count')
             ->loadCount([
                 'userPicks as active_supporters_count' => fn ($query) => $query
                     ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by)),
             ]);
         if ($recommendation->isVotingClosed()) {
-            $recommendation->setRelation('userPicks', $recommendation->allUserPicks);
-            $recommendation->active_supporters_count = $recommendation->supporter_count_at_close
-                ?? $recommendation->allUserPicks->pluck('user_id')->unique()->count();
+            $recommendation->setRelation('userPicks', $recommendation->historicalUserPicks);
+            $recommendation->active_supporters_count = $this->requestSupport->displaySupporterCount($recommendation);
         }
 
         if ($user) {
@@ -220,7 +221,7 @@ class RecommendationController extends Controller
         $creator = $recommendation->creator;
         abort_if(! $creator || $creator->status !== 'active' || ! $recommendation->isPubliclyVisible(), 404);
 
-        $supporters = ($recommendation->isVotingClosed() ? $recommendation->allUserPicks() : $recommendation->userPicks())
+        $supporters = $this->requestSupport->displaySupport($recommendation)
             ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by))
             ->whereHas('user')
             ->with([
@@ -278,10 +279,10 @@ class RecommendationController extends Controller
                 'submittedBy:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
                 'submittedBy.guideAccolades',
                 'creatorTags:id,creator_id,name,slug',
-                'userPicks.user:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
-                'userPicks.user.guideAccolades',
+                'historicalUserPicks.user:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
+                'historicalUserPicks.user.guideAccolades',
             ])
-            ->withSum('userPicks as user_picks_count', 'vote_count')
+            ->withEffectiveVoteTotal()
             ->orderByDesc('published_at')
             ->orderByDesc('updated_at')
             ->latest();
@@ -289,6 +290,10 @@ class RecommendationController extends Controller
         $publishedRecommendations = $publishedRecommendationsQuery
             ->paginate(25)
             ->withQueryString();
+        $publishedRecommendations->getCollection()->each(function (Recommendation $recommendation): void {
+            $recommendation->setRelation('userPicks', $recommendation->historicalUserPicks);
+            $recommendation->active_supporters_count = $this->requestSupport->displaySupporterCount($recommendation);
+        });
         $publishedRecommendationsCount = $creator->recommendations()
             ->where('status', 'published')
             ->count();
@@ -316,13 +321,20 @@ class RecommendationController extends Controller
         $closedRecommendations = $creator->recommendations()
             ->publicClosed()
             ->when($filters['status'] !== '', fn ($query) => $query->where('status', $filters['status']))
-            ->with(['submittedBy:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email'])
-            ->withSum('allUserPicks as historical_support_count', 'vote_count')
-            ->withCount('allUserPicks as historical_supporters_count')
+            ->with([
+                'submittedBy:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email',
+                'historicalUserPicks' => fn ($query) => $query->with('user:id,name,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url,email')->oldest('id')->limit(6),
+            ])
+            ->withSum('historicalUserPicks as historical_support_count', 'vote_count')
+            ->withCount('historicalUserPicks as historical_supporters_count')
             ->orderByRaw('COALESCE(resolved_at, updated_at, created_at) DESC')
             ->orderByDesc('id')
             ->paginate(25)
             ->withQueryString();
+        $closedRecommendations->getCollection()->each(function (Recommendation $recommendation): void {
+            $recommendation->setRelation('userPicks', $recommendation->historicalUserPicks);
+            $recommendation->active_supporters_count = (int) $recommendation->historical_supporters_count;
+        });
 
         $closedCounts = $creator->recommendations()
             ->publicClosed()
