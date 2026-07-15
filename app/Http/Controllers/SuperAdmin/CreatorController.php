@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use App\Exceptions\CreatorProfileUpdateException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreStarterSuggestionsRequest;
 use App\Http\Requests\UpdateCreatorProfileRequest;
@@ -15,7 +16,9 @@ use App\Services\SuperAdminAuditService;
 use App\Services\YouTubeUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
@@ -80,7 +83,29 @@ class CreatorController extends Controller
         try {
             $result = $this->profiles->update($creator, $request->validated(), $request->allFiles());
         } catch (Throwable $exception) {
-            report($exception);
+            $failure = $exception instanceof CreatorProfileUpdateException && $exception->getPrevious()
+                ? $exception->getPrevious()
+                : $exception;
+            $avatar = $request->file('avatar');
+            $banner = $request->file('hero');
+
+            Log::error('Creator assistance update failed.', [
+                'creator_id' => $creator->getKey(),
+                'actor_user_id' => $request->user()?->getKey(),
+                'route_name' => $request->route()?->getName(),
+                'submit_action' => $request->input('save_action'),
+                'stage' => $exception instanceof CreatorProfileUpdateException ? $exception->stage : 'profile_update',
+                'avatar_present' => $request->hasFile('avatar'),
+                'banner_present' => $request->hasFile('hero'),
+                'avatar_mime' => $this->safeFileMetadata($avatar, 'mime'),
+                'avatar_size' => $this->safeFileMetadata($avatar, 'size'),
+                'banner_mime' => $this->safeFileMetadata($banner, 'mime'),
+                'banner_size' => $this->safeFileMetadata($banner, 'size'),
+                'disk' => 'creator_uploads',
+                'exception' => $failure::class,
+                'message' => $failure->getMessage(),
+            ]);
+            report($failure);
 
             return back()->withInput($request->safe()->except(['avatar', 'hero']))
                 ->with('error', 'No changes were saved. The existing creator images and settings are unchanged. Please try again.');
@@ -89,6 +114,19 @@ class CreatorController extends Controller
         $this->audit->record($request->user(), $creator, 'creator.profile.updated', 'Creator public-space settings updated.', $result['before'], $result['after'], ['assets' => $result['assets']], $request);
 
         return redirect()->route($request->input('save_action') === 'preview' ? 'super-admin.creators.preview' : 'super-admin.creators.assist', $creator)->with('success', 'Creator space updated successfully.');
+    }
+
+    private function safeFileMetadata(?UploadedFile $file, string $attribute): string|int|null
+    {
+        if (! $file) {
+            return null;
+        }
+
+        try {
+            return $attribute === 'mime' ? $file->getMimeType() : $file->getSize();
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     public function starter(StoreStarterSuggestionsRequest $request, Creator $creator, YouTubeUrlService $youtube): RedirectResponse

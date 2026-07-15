@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\CreatorProfileUpdateException;
 use App\Models\Creator;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -15,7 +16,11 @@ class CreatorProfileUpdateService
     {
         $publicFields = ['display_name', 'slug', 'youtube_channel_url', 'bio', 'submission_instructions', 'submissions_open', 'recommendation_approval_mode', 'avatar_path', 'hero_path'];
         $before = $creator->only($publicFields);
-        $replacement = $this->media->stage($creator, $files);
+        try {
+            $replacement = $this->media->stage($creator, $files);
+        } catch (Throwable $exception) {
+            throw new CreatorProfileUpdateException('media_staging', $exception);
+        }
         $newPaths = $replacement['newPaths'];
         $oldPaths = $replacement['oldPaths'];
         $assets = $replacement['assets'];
@@ -25,21 +30,38 @@ class CreatorProfileUpdateService
         $updates['submissions_open'] = (bool) $validated['submissions_open'];
 
         try {
-            DB::transaction(function () use ($creator, $updates, $validated): void {
-                $creator->update($updates);
+            $stage = 'database_update';
+            DB::transaction(function () use ($creator, $updates, $validated, &$stage): void {
+                $creator->forceFill($updates)->save();
                 if (array_key_exists('tags', $validated)) {
+                    $stage = 'tag_synchronization';
                     $wanted = $this->tags->resolve($creator, explode(',', (string) $validated['tags']))->pluck('id');
                     $creator->creatorTags()->whereNotIn('id', $wanted)->whereDoesntHave('recommendations')->delete();
                 }
             });
-        } catch (Throwable $e) {
-            $this->media->delete($newPaths);
-            throw $e;
+        } catch (Throwable $exception) {
+            try {
+                $this->media->delete($newPaths);
+            } catch (Throwable $cleanupException) {
+                report($cleanupException);
+            }
+
+            throw new CreatorProfileUpdateException($stage, $exception);
         }
 
-        $this->media->delete($oldPaths);
+        // The replacement has committed. Cleanup and cache failures must not turn a
+        // successful profile save into a misleading rollback message.
+        try {
+            $this->media->delete($oldPaths);
+        } catch (Throwable $exception) {
+            report(new CreatorProfileUpdateException('old_media_cleanup', $exception));
+        }
         $creator->refresh();
-        $this->cache->forget($creator);
+        try {
+            $this->cache->forget($creator);
+        } catch (Throwable $exception) {
+            report(new CreatorProfileUpdateException('cache_invalidation', $exception));
+        }
 
         return ['before' => $before, 'after' => $creator->only($publicFields), 'assets' => $assets];
     }

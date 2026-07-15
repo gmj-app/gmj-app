@@ -181,6 +181,47 @@ class SuperAdminCreatorManagementTest extends TestCase
         $this->assertSame(['avatar'], SuperAdminAuditLog::query()->latest('id')->first()->metadata['assets']);
     }
 
+    public function test_assistance_mode_saves_avatar_only_banner_only_and_combined_uploads(): void
+    {
+        Storage::fake('creator_uploads');
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        $payload = [
+            'display_name' => $creator->display_name,
+            'slug' => $creator->slug,
+            'submissions_open' => '1',
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+            'save_action' => 'save',
+        ];
+
+        $this->actingAs($admin)->put(route('super-admin.creators.update', $creator), [
+            ...$payload,
+            'avatar' => UploadedFile::fake()->image('avatar.jpg', 600, 600),
+        ])->assertSessionHas('success');
+        $avatarPath = $creator->fresh()->avatar_path;
+        $this->assertNotNull($avatarPath);
+        $this->assertNull($creator->fresh()->hero_path);
+
+        $this->put(route('super-admin.creators.update', $creator), [
+            ...$payload,
+            'hero' => UploadedFile::fake()->image('banner.jpg', 1400, 500),
+        ])->assertSessionHas('success');
+        $bannerPath = $creator->fresh()->hero_path;
+        $this->assertSame($avatarPath, $creator->fresh()->avatar_path);
+        $this->assertNotNull($bannerPath);
+
+        $this->put(route('super-admin.creators.update', $creator), [
+            ...$payload,
+            'avatar' => UploadedFile::fake()->image('avatar-2.webp', 600, 600),
+            'hero' => UploadedFile::fake()->image('banner-2.webp', 1400, 500),
+        ])->assertSessionHas('success');
+        $creator->refresh();
+        $this->assertNotSame($avatarPath, $creator->avatar_path);
+        $this->assertNotSame($bannerPath, $creator->hero_path);
+        Storage::disk('creator_uploads')->assertMissing([$avatarPath, $bannerPath]);
+        Storage::disk('creator_uploads')->assertExists([$creator->avatar_path, $creator->hero_path]);
+    }
+
     public function test_starter_request_is_creator_attributed_and_lifecycle_restore_does_not_reactivate_resources(): void
     {
         [$creator, $owner] = $this->creatorWithOwner('owner@example.com', 'Creator');

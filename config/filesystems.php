@@ -69,8 +69,10 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
-            'report' => false,
+            // Creator replacement code handles failures transactionally. Let the
+            // adapter retain the real object-storage exception for diagnostics.
+            'throw' => true,
+            'report' => true,
         ],
 
     ],
