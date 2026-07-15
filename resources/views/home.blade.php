@@ -2,7 +2,7 @@
     <section class="relative overflow-hidden px-4 pb-10 pt-10 text-center sm:px-6 sm:pb-8 sm:pt-12 lg:px-8">
         <div class="absolute inset-x-0 top-0 -z-10 mx-auto h-80 max-w-4xl rounded-full bg-indigo-200/50 blur-3xl dark:bg-indigo-900/20"></div>
 
-        <div class="mx-auto max-w-3xl">
+        <div class="mx-auto max-w-5xl">
             <h1 class="text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-6xl">
                 Guide My Journey
             </h1>
@@ -10,40 +10,32 @@
                 <x-brand-tagline />
             </p>
 
-            <form method="GET" action="{{ route('search.index') }}" class="mx-auto mt-6 max-w-2xl">
-                <label for="creator-search" class="sr-only">Search creators, artists, songs, or topics</label>
-                <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-900/10 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 dark:focus-within:ring-indigo-950 sm:flex-row sm:items-center">
-                    <div class="flex min-w-0 flex-1 items-center">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" class="ml-3 h-6 w-6 shrink-0 fill-none stroke-slate-400" stroke-width="2">
-                            <circle cx="11" cy="11" r="7"></circle>
-                            <path d="m20 20-4-4"></path>
-                        </svg>
-                        <input
-                            id="creator-search"
-                            name="q"
-                            type="search"
-                            value="{{ $search }}"
-                            placeholder="Search creators, artists, songs, or topics..."
-                            minlength="2"
-                            class="min-w-0 flex-1 border-0 bg-transparent px-3 py-3 text-base text-slate-950 placeholder:text-slate-400 focus:ring-0 dark:text-white sm:px-4 sm:text-lg"
-                        >
+            <div class="mx-auto mt-6 flex max-w-5xl flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+                <form method="GET" action="{{ route('search.index') }}" class="min-w-0 flex-1">
+                    <label for="creator-search" class="sr-only">Search creators, artists, songs, or topics</label>
+                    <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-900/10 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 dark:focus-within:ring-indigo-950 sm:flex-row sm:items-center">
+                        <div class="flex min-w-0 flex-1 items-center">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" class="ml-3 h-6 w-6 shrink-0 fill-none stroke-slate-400" stroke-width="2">
+                                <circle cx="11" cy="11" r="7"></circle>
+                                <path d="m20 20-4-4"></path>
+                            </svg>
+                            <input
+                                id="creator-search"
+                                name="q"
+                                type="search"
+                                value="{{ $search }}"
+                                placeholder="Search creators, artists, songs, or topics..."
+                                minlength="2"
+                                class="min-w-0 flex-1 border-0 bg-transparent px-3 py-3 text-base text-slate-950 placeholder:text-slate-400 focus:ring-0 dark:text-white sm:px-4 sm:text-lg"
+                            >
+                        </div>
+                        <button type="submit" class="min-h-12 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 sm:w-auto sm:px-6">
+                            Search
+                        </button>
                     </div>
-                    <button type="submit" class="min-h-12 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 sm:w-auto sm:px-6">
-                        Search
-                    </button>
-                </div>
-            </form>
+                </form>
 
-            <div class="mt-5 flex flex-wrap justify-center gap-3" aria-label="Platform stats">
-                <div class="min-w-36 rounded-2xl border border-slate-200/80 bg-white/70 px-5 py-3 shadow-sm shadow-indigo-950/5 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:shadow-black/20">
-                    <div class="text-2xl font-extrabold leading-none text-slate-950 dark:text-white">{{ number_format($creatorCount) }}</div>
-                    <div class="mt-1 text-sm font-semibold text-indigo-600 dark:text-indigo-300">Creators</div>
-                </div>
-
-                <div class="min-w-36 rounded-2xl border border-slate-200/80 bg-white/70 px-5 py-3 shadow-sm shadow-violet-950/5 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:shadow-black/20">
-                    <div class="text-2xl font-extrabold leading-none text-slate-950 dark:text-white">{{ number_format($guideCount) }}</div>
-                    <div class="mt-1 text-sm font-semibold text-violet-600 dark:text-violet-300">Guides</div>
-                </div>
+                <x-homepage-platform-stats :creator-count="$creatorCount" :guide-count="$guideCount" />
             </div>
         </div>
     </section>

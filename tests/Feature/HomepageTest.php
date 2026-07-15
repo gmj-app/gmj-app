@@ -134,10 +134,13 @@ class HomepageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('aria-label="Platform stats"', false)
-            ->assertSee('>2</div>', false)
+            ->assertSee('>2</dd>', false)
             ->assertSee('Creators')
-            ->assertSee('>1,001</div>', false)
+            ->assertSee('>1,001</dd>', false)
             ->assertSee('Guides')
+            ->assertSee('lg:flex-row lg:items-center lg:gap-4', false)
+            ->assertSee('text-sm font-extrabold tabular-nums', false)
+            ->assertDontSee('min-w-36', false)
             ->assertDontSee('Inactive Stats Creator');
     }
 
@@ -749,7 +752,7 @@ class HomepageTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('>1</div>', false)
+            ->assertSee('>1</dd>', false)
             ->assertSee('Active Creator')
             ->assertDontSee('Vitamin B Reacts')
             ->assertSee('Add Creator Account');
