@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
@@ -83,13 +84,23 @@ class CreatorController extends Controller
         try {
             $result = $this->profiles->update($creator, $request->validated(), $request->allFiles());
         } catch (Throwable $exception) {
+            $errorReference = Str::upper(Str::random(8));
             $failure = $exception instanceof CreatorProfileUpdateException && $exception->getPrevious()
                 ? $exception->getPrevious()
                 : $exception;
+
+            // Service validation is an expected form error. Media staging has
+            // already been cleaned up by the profile service, so let Laravel
+            // return the actual field error instead of treating it as an outage.
+            if ($failure instanceof ValidationException) {
+                throw $failure;
+            }
+
             $avatar = $request->file('avatar');
             $banner = $request->file('hero');
 
-            Log::error('Creator assistance update failed.', [
+            $context = [
+                'error_reference' => $errorReference,
                 'creator_id' => $creator->getKey(),
                 'actor_user_id' => $request->user()?->getKey(),
                 'route_name' => $request->route()?->getName(),
@@ -103,12 +114,32 @@ class CreatorController extends Controller
                 'banner_size' => $this->safeFileMetadata($banner, 'size'),
                 'disk' => 'creator_uploads',
                 'exception' => $failure::class,
-                'message' => $failure->getMessage(),
-            ]);
-            report($failure);
+                'message' => $this->safeExceptionMessage($failure),
+            ];
+
+            // Write to both the configured application logger and stderr, which is
+            // collected directly by Laravel Cloud. Neither logger may hide the
+            // original failure or prevent the response from carrying its reference.
+            foreach ([null, 'stderr'] as $channel) {
+                try {
+                    $logger = $channel ? Log::channel($channel) : Log::getFacadeRoot();
+                    $logger->error('Creator assistance update failed.', $context);
+                } catch (Throwable $loggingException) {
+                    try {
+                        report($loggingException);
+                    } catch (Throwable) {
+                        // The visible reference remains available even if logging is unavailable.
+                    }
+                }
+            }
+            try {
+                report($failure);
+            } catch (Throwable) {
+                // A reporting outage must not replace the original update response.
+            }
 
             return back()->withInput($request->safe()->except(['avatar', 'hero']))
-                ->with('error', 'No changes were saved. The existing creator images and settings are unchanged. Please try again.');
+                ->with('error', "No changes were saved. The existing creator images and settings are unchanged. Please try again. Error reference: {$errorReference}");
         }
 
         $this->audit->record($request->user(), $creator, 'creator.profile.updated', 'Creator public-space settings updated.', $result['before'], $result['after'], ['assets' => $result['assets']], $request);
@@ -127,6 +158,14 @@ class CreatorController extends Controller
         } catch (Throwable) {
             return null;
         }
+    }
+
+    private function safeExceptionMessage(Throwable $exception): string
+    {
+        $message = preg_replace('/https?:\/\/\S+/i', '[url]', $exception->getMessage()) ?? 'Unknown error';
+        $message = preg_replace('/[\x00-\x1F\x7F]+/', ' ', $message) ?? 'Unknown error';
+
+        return Str::limit($message, 1000, '…');
     }
 
     public function starter(StoreStarterSuggestionsRequest $request, Creator $creator, YouTubeUrlService $youtube): RedirectResponse

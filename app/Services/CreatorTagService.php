@@ -82,12 +82,6 @@ class CreatorTagService
             ->unique('slug')
             ->values();
 
-        if ($normalized->count() > self::MAX_TAGS_PER_RECOMMENDATION) {
-            throw ValidationException::withMessages([
-                'tags' => 'Add no more than 5 tags to a request.',
-            ]);
-        }
-
         $existing = $creator->creatorTags()
             ->whereIn('slug', $normalized->pluck('slug'))
             ->get()

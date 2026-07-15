@@ -2,13 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\CreatorProfileUpdateException;
 use App\Models\Creator;
 use App\Models\CreatorOwner;
 use App\Models\SuperAdminAuditLog;
 use App\Models\User;
+use App\Services\CreatorProfileUpdateService;
+use App\Services\CreatorTagService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Tests\TestCase;
 
 class SuperAdminCreatorManagementTest extends TestCase
@@ -78,6 +82,32 @@ class SuperAdminCreatorManagementTest extends TestCase
         $this->followRedirects($response)->assertSee('Creator space updated successfully.');
     }
 
+    public function test_full_creator_tag_list_does_not_apply_the_per_request_five_tag_limit(): void
+    {
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        app(CreatorTagService::class)->createDefaults($creator);
+        $this->assertCount(10, $creator->creatorTags);
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+
+        $response = $this->actingAs($admin)->post(route('super-admin.creators.update', $creator), [
+            '_method' => 'PUT',
+            'display_name' => $creator->display_name,
+            'slug' => $creator->slug,
+            'tags' => $creator->creatorTags->pluck('name')->implode(', '),
+            'submissions_open' => '0',
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+            'save_action' => 'save',
+        ]);
+
+        $response->assertRedirect(route('super-admin.creators.assist', $creator))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+        $creator->refresh();
+        $this->assertFalse($creator->submissions_open);
+        $this->assertSame(Creator::APPROVAL_MODE_MANUAL, $creator->recommendation_approval_mode);
+        $this->assertCount(10, $creator->creatorTags);
+    }
+
     public function test_save_and_preview_persists_before_redirecting_to_public_creator_page(): void
     {
         [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
@@ -135,6 +165,57 @@ class SuperAdminCreatorManagementTest extends TestCase
         $this->followRedirects($response)
             ->assertSee('No changes were saved. Please correct the following:')
             ->assertSee('format is invalid');
+    }
+
+    public function test_unexpected_assistance_failure_has_a_visible_log_reference(): void
+    {
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        $this->mock(CreatorProfileUpdateService::class)
+            ->shouldReceive('update')
+            ->once()
+            ->andThrow(new CreatorProfileUpdateException('database_update', new RuntimeException('Forced test failure')));
+
+        $response = $this->actingAs($admin)->put(route('super-admin.creators.update', $creator), [
+            'display_name' => $creator->display_name,
+            'slug' => $creator->slug,
+            'submissions_open' => '1',
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+            'save_action' => 'save',
+        ]);
+
+        $response->assertRedirect()
+            ->assertSessionHas('error', fn (string $message): bool => preg_match('/Error reference: [A-Z0-9]{8}$/', $message) === 1);
+        $this->assertSame('Original', $creator->fresh()->display_name);
+    }
+
+    public function test_service_validation_is_shown_as_a_field_error_and_cleans_up_staged_media(): void
+    {
+        Storage::fake('creator_uploads');
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        $oldPath = 'creators/'.$creator->id.'/avatars/existing.jpg';
+        Storage::disk('creator_uploads')->put($oldPath, 'existing');
+        $creator->update(['avatar_path' => $oldPath]);
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+
+        $response = $this->actingAs($admin)
+            ->from(route('super-admin.creators.assist', $creator))
+            ->put(route('super-admin.creators.update', $creator), [
+                'display_name' => 'Must Roll Back',
+                'slug' => $creator->slug,
+                'tags' => str_repeat('x', 51),
+                'submissions_open' => '0',
+                'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+                'avatar' => UploadedFile::fake()->image('replacement.jpg', 600, 600),
+                'save_action' => 'save',
+            ]);
+
+        $response->assertRedirect(route('super-admin.creators.assist', $creator))
+            ->assertSessionHasErrors(['tags' => 'Each tag must be 50 characters or fewer.']);
+        $creator->refresh();
+        $this->assertSame('Original', $creator->display_name);
+        $this->assertSame($oldPath, $creator->avatar_path);
+        $this->assertSame([$oldPath], Storage::disk('creator_uploads')->allFiles());
     }
 
     public function test_assistance_mode_uploads_and_safely_replaces_creator_media(): void
