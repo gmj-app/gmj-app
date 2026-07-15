@@ -1,16 +1,16 @@
 <x-public-layout title="Guide My Journey">
-    <section class="relative overflow-hidden px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-24 sm:pt-20 lg:px-8">
+    <section class="relative overflow-hidden px-4 pb-10 pt-10 text-center sm:px-6 sm:pb-8 sm:pt-12 lg:px-8">
         <div class="absolute inset-x-0 top-0 -z-10 mx-auto h-80 max-w-4xl rounded-full bg-indigo-200/50 blur-3xl dark:bg-indigo-900/20"></div>
 
         <div class="mx-auto max-w-3xl">
             <h1 class="text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-6xl">
                 Guide My Journey
             </h1>
-            <p class="mx-auto mt-4 max-w-2xl text-xl font-bold leading-8 text-slate-800 dark:text-slate-100">
+            <p class="mx-auto mt-3 max-w-2xl text-xl font-bold leading-8 text-slate-800 dark:text-slate-100 sm:mt-2">
                 <x-brand-tagline />
             </p>
 
-            <form method="GET" action="{{ route('search.index') }}" class="mx-auto mt-8 max-w-2xl">
+            <form method="GET" action="{{ route('search.index') }}" class="mx-auto mt-6 max-w-2xl">
                 <label for="creator-search" class="sr-only">Search creators, artists, songs, or topics</label>
                 <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-900/10 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 dark:focus-within:ring-indigo-950 sm:flex-row sm:items-center">
                     <div class="flex min-w-0 flex-1 items-center">
@@ -34,7 +34,7 @@
                 </div>
             </form>
 
-            <div class="mt-6 flex flex-wrap justify-center gap-3" aria-label="Platform stats">
+            <div class="mt-5 flex flex-wrap justify-center gap-3" aria-label="Platform stats">
                 <div class="min-w-36 rounded-2xl border border-slate-200/80 bg-white/70 px-5 py-3 shadow-sm shadow-indigo-950/5 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:shadow-black/20">
                     <div class="text-2xl font-extrabold leading-none text-slate-950 dark:text-white">{{ number_format($creatorCount) }}</div>
                     <div class="mt-1 text-sm font-semibold text-indigo-600 dark:text-indigo-300">Creators</div>
@@ -48,7 +48,7 @@
         </div>
     </section>
 
-    <section class="border-t border-slate-200 bg-white/60 px-4 py-14 dark:border-slate-800 dark:bg-slate-900/40 sm:px-6 sm:py-20 lg:px-8">
+    <section class="border-t border-slate-200 bg-white/60 px-4 py-10 dark:border-slate-800 dark:bg-slate-900/40 sm:px-6 sm:pb-14 sm:pt-8 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <x-section-header eyebrow="Creator journeys" :title="$search !== '' ? 'Search results' : 'Popular creators'">
                 @if ($search !== '')
@@ -62,7 +62,7 @@
                     <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Try another creator name, channel, or slug.</p>
                 </div>
             @else
-                <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($gridItems as $gridItem)
                         @if ($gridItem['type'] === 'creator')
                         @php($creator = $gridItem['item'])
