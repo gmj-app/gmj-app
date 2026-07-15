@@ -739,9 +739,9 @@ class CreatorManagementRoutesTest extends TestCase
         $this->assertSame('pending', $existingRecommendation->fresh()->status);
     }
 
-    public function test_owner_can_upload_replace_and_remove_creator_branding(): void
+    public function test_owner_can_upload_and_replace_creator_branding_without_removal(): void
     {
-        Storage::fake('public');
+        Storage::fake('creator_uploads');
 
         [$creator, $owner] = $this->creatorWithOwner();
 
@@ -759,7 +759,7 @@ class CreatorManagementRoutesTest extends TestCase
 
         $this->assertStringStartsWith("creators/{$creator->id}/avatars/", $firstAvatarPath);
         $this->assertStringStartsWith("creators/{$creator->id}/heroes/", $firstHeroPath);
-        Storage::disk('public')->assertExists([$firstAvatarPath, $firstHeroPath]);
+        Storage::disk('creator_uploads')->assertExists([$firstAvatarPath, $firstHeroPath]);
 
         $this->get(route('home'))
             ->assertOk()
@@ -777,11 +777,8 @@ class CreatorManagementRoutesTest extends TestCase
         ])->assertRedirect();
 
         $creator->refresh();
-        Storage::disk('public')->assertMissing([$firstAvatarPath, $firstHeroPath]);
-        Storage::disk('public')->assertExists([$creator->avatar_path, $creator->hero_path]);
-
-        $replacementAvatarPath = $creator->avatar_path;
-        $replacementHeroPath = $creator->hero_path;
+        Storage::disk('creator_uploads')->assertMissing([$firstAvatarPath, $firstHeroPath]);
+        Storage::disk('creator_uploads')->assertExists([$creator->avatar_path, $creator->hero_path]);
 
         $this->patch(route('creators.settings.update', $creator), [
             ...$this->validSettingsPayload($creator),
@@ -790,14 +787,14 @@ class CreatorManagementRoutesTest extends TestCase
         ])->assertRedirect();
 
         $creator->refresh();
-        $this->assertNull($creator->avatar_path);
-        $this->assertNull($creator->hero_path);
-        Storage::disk('public')->assertMissing([$replacementAvatarPath, $replacementHeroPath]);
+        $this->assertNotNull($creator->avatar_path);
+        $this->assertNotNull($creator->hero_path);
+        Storage::disk('creator_uploads')->assertExists([$creator->avatar_path, $creator->hero_path]);
     }
 
     public function test_creator_branding_uploads_are_validated(): void
     {
-        Storage::fake('public');
+        Storage::fake('creator_uploads');
 
         [$creator, $owner] = $this->creatorWithOwner();
 
@@ -813,9 +810,29 @@ class CreatorManagementRoutesTest extends TestCase
         $this->assertNull($creator->fresh()->hero_path);
     }
 
+    public function test_failed_replacement_preserves_existing_creator_media(): void
+    {
+        Storage::fake('creator_uploads');
+        [$creator, $owner] = $this->creatorWithOwner();
+
+        $this->actingAs($owner)->patch(route('creators.settings.update', $creator), [
+            ...$this->validSettingsPayload($creator),
+            'avatar' => UploadedFile::fake()->image('existing.jpg', 512, 512),
+        ])->assertRedirect();
+        $existingPath = $creator->fresh()->avatar_path;
+
+        $this->patch(route('creators.settings.update', $creator), [
+            ...$this->validSettingsPayload($creator),
+            'avatar' => UploadedFile::fake()->create('replacement.svg', 10, 'image/svg+xml'),
+        ])->assertSessionHasErrors('avatar');
+
+        $this->assertSame($existingPath, $creator->fresh()->avatar_path);
+        Storage::disk('creator_uploads')->assertExists($existingPath);
+    }
+
     public function test_creator_branding_upload_works_when_windows_realpath_resolution_fails(): void
     {
-        Storage::fake('public');
+        Storage::fake('creator_uploads');
 
         [$creator, $owner] = $this->creatorWithOwner();
         $source = UploadedFile::fake()->image('avatar.jpg', 512, 512);
@@ -837,12 +854,11 @@ class CreatorManagementRoutesTest extends TestCase
         $creator->refresh();
 
         $this->assertNotNull($creator->avatar_path);
-        Storage::disk('public')->assertExists($creator->avatar_path);
+        Storage::disk('creator_uploads')->assertExists($creator->avatar_path);
     }
 
-    public function test_creator_branding_uploads_use_configured_default_disk(): void
+    public function test_creator_branding_uploads_use_dedicated_creator_disk(): void
     {
-        config(['filesystems.default' => 'creator_uploads']);
         Storage::fake('creator_uploads');
 
         [$creator, $owner] = $this->creatorWithOwner();
@@ -864,7 +880,7 @@ class CreatorManagementRoutesTest extends TestCase
 
     public function test_non_owner_cannot_update_creator_branding(): void
     {
-        Storage::fake('public');
+        Storage::fake('creator_uploads');
 
         [$creator] = $this->creatorWithOwner();
         $nonOwner = User::factory()->create();
@@ -877,15 +893,15 @@ class CreatorManagementRoutesTest extends TestCase
             ->assertForbidden();
 
         $this->assertNull($creator->fresh()->avatar_path);
-        Storage::disk('public')->assertDirectoryEmpty("creators/{$creator->id}");
+        Storage::disk('creator_uploads')->assertDirectoryEmpty("creators/{$creator->id}");
     }
 
     public function test_creator_branding_helpers_prioritize_local_files_and_generate_initials(): void
     {
-        Storage::fake('public');
+        Storage::fake('creator_uploads');
 
-        Storage::disk('public')->put('creators/1/avatars/avatar.jpg', 'avatar');
-        Storage::disk('public')->put('creators/1/heroes/hero.jpg', 'hero');
+        Storage::disk('creator_uploads')->put('creators/1/avatars/avatar.jpg', 'avatar');
+        Storage::disk('creator_uploads')->put('creators/1/heroes/hero.jpg', 'hero');
 
         $creator = Creator::factory()->create([
             'id' => 1,
@@ -898,15 +914,15 @@ class CreatorManagementRoutesTest extends TestCase
 
         $this->assertSame('CC', $creator->initials);
         $this->assertSame(
-            Storage::disk('public')->url($creator->avatar_path),
+            Storage::disk('creator_uploads')->url($creator->avatar_path),
             $creator->avatar_url,
         );
         $this->assertSame(
-            Storage::disk('public')->url($creator->hero_path),
+            Storage::disk('creator_uploads')->url($creator->hero_path),
             $creator->hero_url,
         );
 
-        Storage::disk('public')->delete([$creator->avatar_path, $creator->hero_path]);
+        Storage::disk('creator_uploads')->delete([$creator->avatar_path, $creator->hero_path]);
 
         $this->assertSame('https://example.com/youtube-avatar.jpg', $creator->avatar_url);
         $this->assertSame('https://example.com/youtube-banner.jpg', $creator->hero_url);

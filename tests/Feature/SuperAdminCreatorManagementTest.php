@@ -7,6 +7,8 @@ use App\Models\CreatorOwner;
 use App\Models\SuperAdminAuditLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SuperAdminCreatorManagementTest extends TestCase
@@ -49,6 +51,50 @@ class SuperAdminCreatorManagementTest extends TestCase
         $this->assertSame(2, $creator->creatorTags()->count());
         $this->assertSame('creator.profile.updated', SuperAdminAuditLog::query()->sole()->action);
         $this->assertSame('owner-google-id', $owner->fresh()->google_id);
+    }
+
+    public function test_assistance_mode_uploads_and_safely_replaces_creator_media(): void
+    {
+        Storage::fake('creator_uploads');
+        [$creator] = $this->creatorWithOwner('owner@example.com', 'Original');
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+
+        $this->actingAs($admin)->get(route('super-admin.creators.assist', $creator))
+            ->assertOk()
+            ->assertSee('enctype="multipart/form-data"', false)
+            ->assertSee('New avatar preview')
+            ->assertSee('New banner preview')
+            ->assertDontSee('Remove current avatar')
+            ->assertDontSee('Remove current banner');
+
+        $payload = [
+            'display_name' => $creator->display_name,
+            'slug' => $creator->slug,
+            'submissions_open' => '1',
+            'recommendation_approval_mode' => Creator::APPROVAL_MODE_MANUAL,
+        ];
+        $this->put(route('super-admin.creators.update', $creator), [
+            ...$payload,
+            'avatar' => UploadedFile::fake()->image('avatar.jpg', 800, 800),
+            'hero' => UploadedFile::fake()->image('banner.jpg', 1600, 500),
+        ])->assertRedirect(route('super-admin.creators.assist', $creator));
+
+        $creator->refresh();
+        $oldAvatar = $creator->avatar_path;
+        $oldHero = $creator->hero_path;
+        Storage::disk('creator_uploads')->assertExists([$oldAvatar, $oldHero]);
+
+        $this->put(route('super-admin.creators.update', $creator), [
+            ...$payload,
+            'avatar' => UploadedFile::fake()->image('replacement.webp', 600, 600),
+        ])->assertRedirect();
+
+        $creator->refresh();
+        $this->assertNotSame($oldAvatar, $creator->avatar_path);
+        $this->assertSame($oldHero, $creator->hero_path);
+        Storage::disk('creator_uploads')->assertMissing($oldAvatar);
+        Storage::disk('creator_uploads')->assertExists([$creator->avatar_path, $creator->hero_path]);
+        $this->assertSame(['avatar'], SuperAdminAuditLog::query()->latest('id')->first()->metadata['assets']);
     }
 
     public function test_starter_request_is_creator_attributed_and_lifecycle_restore_does_not_reactivate_resources(): void

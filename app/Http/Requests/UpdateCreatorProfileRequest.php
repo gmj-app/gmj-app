@@ -28,8 +28,6 @@ class UpdateCreatorProfileRequest extends FormRequest
             'tags' => ['nullable', 'string', 'max:1000'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'hero' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'remove_avatar' => ['nullable', 'boolean'],
-            'remove_hero' => ['nullable', 'boolean'],
             'save_action' => ['nullable', Rule::in(['save', 'preview'])],
         ];
     }
