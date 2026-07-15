@@ -1,6 +1,7 @@
 @props([
     'user',
     'size' => 'md',
+    'plateVariant' => 'compact',
 ])
 
 @php
@@ -16,6 +17,11 @@
     $accolade = $user->guideAvatarAccolade();
     $numberLabel = $accolade['plate_text'] ?? null;
     $accoladeClass = $accolade['css_class'] ?? '';
+    $numberPlateClasses = match ($plateVariant) {
+        'profile' => 'min-w-7 h-[18px] px-1.5 text-[10px] font-extrabold border-2 sm:min-w-8 sm:h-5 sm:px-2 sm:text-[11px]',
+        'standard' => 'min-w-6 h-4 px-1.5 text-[9px] font-bold',
+        default => 'px-1 py-0.5 text-[clamp(7px,0.5rem,8px)] font-bold',
+    };
 @endphp
 
 <span {{ $attributes->class(['guide-avatar relative inline-flex shrink-0 overflow-visible rounded-full', 'z-10' => $accolade !== null, $accoladeClass]) }}>
@@ -37,6 +43,6 @@
     @endif
 
     @if ($accolade && $accolade['display_number_plate'] && $numberLabel)
-        <span class="guide-accolade__number absolute bottom-0 left-1/2 z-30 -translate-x-1/2 translate-y-1/3 rounded-md border px-1 py-0.5 text-[clamp(7px,0.5rem,8px)] font-bold leading-none" title="{{ $accolade['description'] }}" aria-label="{{ $accolade['name'] }}">{{ $numberLabel }}</span>
+        <span data-number-plate-variant="{{ $plateVariant }}" class="guide-accolade__number absolute bottom-0 left-1/2 z-30 inline-flex -translate-x-1/2 translate-y-1/3 items-center justify-center whitespace-nowrap rounded-md border leading-none {{ $numberPlateClasses }}" title="{{ $accolade['description'] }}" aria-label="{{ $accolade['name'] }} number {{ ltrim($numberLabel, '#') }}">{{ $numberLabel }}</span>
     @endif
 </span>

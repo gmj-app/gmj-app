@@ -176,6 +176,29 @@ class GuideAccoladeTest extends TestCase
             ->assertDontSee('guide-accolade__number', false);
     }
 
+    public function test_profile_number_plate_variant_scales_without_changing_compact_avatars(): void
+    {
+        app(GuideAccoladeService::class)->ensureInitialAccolades();
+
+        foreach ([[1, 'Founding Guide'], [500, 'OG Guide']] as [$number, $label]) {
+            $profile = $this->blade('<x-guide-avatar :user="$user" size="xl" plate-variant="profile" />', [
+                'user' => User::factory()->make(['guide_number' => $number]),
+            ]);
+            $profile->assertSee("#{$number}")
+                ->assertSee('data-number-plate-variant="profile"', false)
+                ->assertSee('min-w-7 h-[18px]', false)
+                ->assertSee('sm:min-w-8 sm:h-5', false)
+                ->assertSee("aria-label=\"{$label} number {$number}\"", false);
+        }
+
+        $compact = $this->blade('<x-guide-avatar :user="$user" size="supporter" />', [
+            'user' => User::factory()->make(['guide_number' => 59]),
+        ]);
+        $compact->assertSee('data-number-plate-variant="compact"', false)
+            ->assertSee('text-[clamp(7px,0.5rem,8px)]', false)
+            ->assertDontSee('min-w-7 h-[18px]', false);
+    }
+
     public function test_inactive_tiers_are_ignored_and_priority_wins_for_overlaps(): void
     {
         $guide = User::factory()->make(['guide_number' => 45]);

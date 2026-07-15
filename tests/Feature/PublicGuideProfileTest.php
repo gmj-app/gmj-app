@@ -36,6 +36,7 @@ class PublicGuideProfileTest extends TestCase
 
         $response->assertSeeInOrder(['Featured accolade', 'Trailblazer'])
             ->assertSee('Founding Guide #1')
+            ->assertSee('data-number-plate-variant="profile"', false)
             ->assertSee('lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]', false)
             ->assertSee('View all accolades')
             ->assertSee('Tracker')

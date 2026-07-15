@@ -3,7 +3,7 @@
         <div class="mx-auto min-w-0 max-w-5xl space-y-6">
             <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">
                 <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-                    <x-guide-avatar :user="$guide" size="xl" />
+                    <x-guide-avatar :user="$guide" size="xl" plate-variant="profile" />
                     <div class="min-w-0">
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-300">Guide Profile</p>
                         <h1 class="mt-1 break-words text-3xl font-semibold tracking-tight text-slate-950 dark:text-white md:text-4xl">{{ $guide->publicName() }}</h1>
