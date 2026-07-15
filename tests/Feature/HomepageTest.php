@@ -131,17 +131,50 @@ class HomepageTest extends TestCase
         ]);
         User::factory()->count(1001)->create();
 
-        $this->get('/')
+        $response = $this->get('/');
+
+        $response
             ->assertOk()
+            ->assertSee('data-home-search-group', false)
+            ->assertSee('max-w-[54rem]', false)
+            ->assertSee('lg:grid-cols-[minmax(0,1fr)_auto]', false)
+            ->assertSee('method="GET" action="'.route('search.index').'"', false)
+            ->assertSee('name="q"', false)
+            ->assertSee('placeholder="Search creators, artists, songs, or topics..."', false)
+            ->assertSee('<button type="submit"', false)
+            ->assertSee('Search')
+            ->assertSee('data-platform-stats', false)
             ->assertSee('aria-label="Platform stats"', false)
             ->assertSee('>2</dd>', false)
             ->assertSee('Creators')
             ->assertSee('>1,001</dd>', false)
             ->assertSee('Guides')
-            ->assertSee('lg:flex-row lg:items-center lg:gap-4', false)
             ->assertSee('text-sm font-extrabold tabular-nums', false)
             ->assertDontSee('min-w-36', false)
             ->assertDontSee('Inactive Stats Creator');
+
+        $this->assertSame(1, substr_count($response->getContent(), 'data-home-search-group'));
+        $this->assertSame(1, substr_count($response->getContent(), 'data-platform-stats'));
+        $this->assertSame(1, substr_count($response->getContent(), '<form method="GET" action="'.route('search.index').'"'));
+    }
+
+    public function test_compact_platform_stats_format_large_counts_without_queries_or_interaction(): void
+    {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $response = $this->blade(
+            '<x-homepage-platform-stats :creator-count="$creatorCount" :guide-count="$guideCount" />',
+            ['creatorCount' => 1000, 'guideCount' => 1000000],
+        );
+
+        $response
+            ->assertSee('>1,000</dd>', false)
+            ->assertSee('>1,000,000</dd>', false)
+            ->assertSee('min-w-48', false)
+            ->assertDontSee('<a ', false)
+            ->assertDontSee('<button', false);
+        $this->assertSame([], DB::getQueryLog());
     }
 
     public function test_homepage_ranks_creators_by_votes_on_visible_recommendations(): void

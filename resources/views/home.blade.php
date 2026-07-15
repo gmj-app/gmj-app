@@ -10,8 +10,8 @@
                 <x-brand-tagline />
             </p>
 
-            <div class="mx-auto mt-6 flex max-w-5xl flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-                <form method="GET" action="{{ route('search.index') }}" class="min-w-0 flex-1">
+            <div data-home-search-group class="mx-auto mt-6 grid w-full max-w-[54rem] items-center gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-4">
+                <form method="GET" action="{{ route('search.index') }}" class="min-w-0 w-full">
                     <label for="creator-search" class="sr-only">Search creators, artists, songs, or topics</label>
                     <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-900/10 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 dark:focus-within:ring-indigo-950 sm:flex-row sm:items-center">
                         <div class="flex min-w-0 flex-1 items-center">
