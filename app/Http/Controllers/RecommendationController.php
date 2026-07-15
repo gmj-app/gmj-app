@@ -10,6 +10,7 @@ use App\Models\Recommendation;
 use App\Models\User;
 use App\Services\Accolades\AccoladeShowcaseService;
 use App\Services\CreatorParticipationService;
+use App\Services\RequestCacheInvalidator;
 use App\Services\RequestSupportService;
 use App\Services\UnfavoriteCreatorAction;
 use App\Services\YouTubePlaylistMetadataService;
@@ -35,6 +36,7 @@ class RecommendationController extends Controller
         private readonly AccoladeShowcaseService $accoladeShowcase,
         private readonly CreatorPageHeaderViewModel $creatorPageHeader,
         private readonly RequestSupportService $requestSupport,
+        private readonly RequestCacheInvalidator $requestCache,
     ) {}
 
     public function showCreatorQueue(Request $request, Creator $creator): View
@@ -178,21 +180,18 @@ class RecommendationController extends Controller
             'submittedBy:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
             'submittedBy.guideAccolades',
             'creatorTags:id,creator_id,name,slug',
-            'historicalUserPicks' => fn ($query) => $query
-                ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by))
-                ->oldest('id')
-                ->limit(6),
-            'historicalUserPicks.user:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url',
-            'historicalUserPicks.user.guideAccolades',
         ])->loadSum('userPicks as user_picks_count', 'vote_count')
             ->loadCount([
                 'userPicks as active_supporters_count' => fn ($query) => $query
                     ->when($recommendation->submitted_by, fn ($query) => $query->where('user_id', '!=', $recommendation->submitted_by)),
             ]);
-        if ($recommendation->isVotingClosed()) {
-            $recommendation->setRelation('userPicks', $recommendation->historicalUserPicks);
-            $recommendation->active_supporters_count = $this->requestSupport->displaySupporterCount($recommendation);
-        }
+        $recommendation->setRelation('userPicks', $this->requestSupport->displaySupporterPreview(
+            $recommendation, 6, $recommendation->submitted_by
+        ));
+        $recommendation->active_supporters_count = $this->requestSupport->displaySupporterCount(
+            $recommendation, $recommendation->submitted_by
+        );
+        $recommendation->supporter_scope = $this->requestSupport->displaySupportScope($recommendation);
 
         if ($user) {
             $recommendation->loadSum([
@@ -631,6 +630,7 @@ class RecommendationController extends Controller
         if (! $removed) {
             VoteAllocated::dispatch($request->user()->id, $creator->id, $recommendation->id, 1);
         }
+        $this->requestCache->forget($recommendation);
 
         return redirect()
             ->to(route('creator.queue', $creator)."#recommendation-{$recommendation->id}")

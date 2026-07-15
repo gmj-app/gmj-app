@@ -117,6 +117,40 @@ class HistoricalSupportStatusMatrixTest extends TestCase
             ->assertJsonPath('next_page', null);
     }
 
+    public function test_approved_card_and_endpoint_display_bounded_active_supporters_consistently(): void
+    {
+        $request = Recommendation::factory()->create(['status' => 'approved']);
+        $guides = User::factory()->count(8)->create();
+        foreach ([2, 2, 2, 2, 2, 2, 1, 1] as $index => $quantity) {
+            UserPick::factory()->create([
+                'creator_id' => $request->creator_id,
+                'recommendation_id' => $request->id,
+                'user_id' => $guides[$index]->id,
+                'vote_count' => $quantity,
+            ]);
+        }
+
+        $support = app(RequestSupportService::class);
+        $this->assertSame('active', $support->displaySupportScope($request));
+        $this->assertSame(14, $support->displayVoteQuantity($request));
+        $this->assertSame(8, $support->displaySupporterCount($request, $request->submitted_by));
+        $this->assertCount(6, $support->displaySupporterPreview($request, 6, $request->submitted_by));
+
+        $this->get(route('requests.card-details', $request))
+            ->assertOk()
+            ->assertSee('data-supporter-preview-count="6"', false)
+            ->assertSee('data-supporter-total="8"', false)
+            ->assertSee('+2', false)
+            ->assertDontSee('No votes yet.');
+        $this->getJson(route('requests.supporters', $request))
+            ->assertOk()
+            ->assertJsonPath('total', 8);
+
+        $request->userPicks()->where('user_id', $guides->last()->id)->delete();
+        $this->assertSame(13, $support->displayVoteQuantity($request));
+        $this->assertSame(7, $support->displaySupporterCount($request, $request->submitted_by));
+    }
+
     public static function closedStatuses(): array
     {
         return [

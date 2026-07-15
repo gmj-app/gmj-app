@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Recommendation;
 use App\Models\UserPick;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class RequestSupportService
 {
@@ -26,6 +27,29 @@ class RequestSupportService
         return $request->usesHistoricalSupportDisplay()
             ? $this->historicalSupport($request)
             : $this->activeSupport($request);
+    }
+
+    public function displaySupportScope(Recommendation $request): string
+    {
+        return $request->usesHistoricalSupportDisplay() ? 'historical' : 'active';
+    }
+
+    /** @return Collection<int, UserPick> */
+    public function activeSupporterPreview(Recommendation $request, int $limit = 6, ?int $excludeUserId = null): Collection
+    {
+        return $this->preview($this->activeSupport($request), $limit, $excludeUserId);
+    }
+
+    /** @return Collection<int, UserPick> */
+    public function historicalSupporterPreview(Recommendation $request, int $limit = 6, ?int $excludeUserId = null): Collection
+    {
+        return $this->preview($this->historicalSupport($request), $limit, $excludeUserId);
+    }
+
+    /** @return Collection<int, UserPick> */
+    public function displaySupporterPreview(Recommendation $request, int $limit = 6, ?int $excludeUserId = null): Collection
+    {
+        return $this->preview($this->displaySupport($request), $limit, $excludeUserId);
     }
 
     public function activeVoteQuantity(Recommendation $request): int
@@ -57,11 +81,28 @@ class RequestSupportService
         return $request->vote_total_at_close ?? $this->historicalVoteQuantity($request);
     }
 
-    public function displaySupporterCount(Recommendation $request): int
+    public function displaySupporterCount(Recommendation $request, ?int $excludeUserId = null): int
     {
-        return $request->usesHistoricalSupportDisplay()
-            ? $this->historicalSupporterCount($request)
-            : $this->activeSupporterCount($request);
+        $query = $this->displaySupport($request);
+        if ($excludeUserId) {
+            $query->where('user_id', '!=', $excludeUserId);
+        }
+
+        return $this->distinctSupporterCount($query);
+    }
+
+    /** @param Builder<UserPick> $query
+     * @return Collection<int, UserPick>
+     */
+    private function preview(Builder $query, int $limit, ?int $excludeUserId): Collection
+    {
+        return $query
+            ->when($excludeUserId, fn (Builder $query) => $query->where('user_id', '!=', $excludeUserId))
+            ->whereHas('user')
+            ->with(['user:id,guide_number,public_display_name,public_handle,public_profile_enabled,avatar_url', 'user.guideAccolades'])
+            ->oldest('id')
+            ->limit(max(1, min($limit, 24)))
+            ->get();
     }
 
     /** @param Builder<UserPick> $query */
