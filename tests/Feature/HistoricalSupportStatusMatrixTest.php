@@ -151,6 +151,23 @@ class HistoricalSupportStatusMatrixTest extends TestCase
         $this->assertSame(7, $support->displaySupporterCount($request, $request->submitted_by));
     }
 
+    public function test_audit_does_not_report_requester_exclusion_as_missing_support_data(): void
+    {
+        $requester = User::factory()->create();
+        $request = Recommendation::factory()->create(['status' => 'approved', 'submitted_by' => $requester->id]);
+        UserPick::factory()->create([
+            'creator_id' => $request->creator_id,
+            'recommendation_id' => $request->id,
+            'user_id' => $requester->id,
+            'vote_count' => 3,
+        ]);
+
+        $this->artisan("requests:audit-support-display --request={$request->id} --dry-run")
+            ->expectsOutputToContain('Requester supporters excluded from Community Support: 1')
+            ->expectsOutputToContain('Mismatch: none')
+            ->assertSuccessful();
+    }
+
     public static function closedStatuses(): array
     {
         return [

@@ -38,14 +38,16 @@ class AuditRequestSupportDisplay extends Command
             $historicalVotes = $support->historicalVoteQuantity($request);
             $activeSupporters = $support->activeSupporterCount($request);
             $historicalSupporters = $support->historicalSupporterCount($request);
+            $eligibleDisplaySupporters = $request->isVotingOpen() ? $activeSupporters : $historicalSupporters;
             $displayVotes = $support->displayVoteQuantity($request);
             $displaySupporters = $support->displaySupporterCount($request, $request->submitted_by);
+            $requesterExcluded = max(0, $eligibleDisplaySupporters - $displaySupporters);
             $preview = $support->displaySupporterPreview($request, 6, $request->submitted_by);
             $remaining = max(0, $displaySupporters - $preview->count());
             $scope = $support->displaySupportScope($request);
             $expectedScope = $request->isVotingOpen() ? 'active' : 'historical';
             $issues = collect([
-                $displayVotes > 0 && $displaySupporters === 0 ? 'votes-without-visible-supporters' : null,
+                $displayVotes > 0 && $eligibleDisplaySupporters === 0 ? 'votes-without-supporter-rows' : null,
                 $preview->count() > $displaySupporters ? 'preview-exceeds-total' : null,
                 $remaining !== max(0, $displaySupporters - $preview->count()) ? 'incorrect-remaining-count' : null,
                 $scope !== $expectedScope ? 'incorrect-display-scope' : null,
@@ -56,6 +58,7 @@ class AuditRequestSupportDisplay extends Command
             $this->line("Request #{$request->id} | {$request->status} | voting=".($request->isVotingOpen() ? 'open' : 'closed'));
             $this->line("Votes display/active/historical: {$displayVotes} / {$activeVotes} / {$historicalVotes}");
             $this->line("Supporters display/active/historical: {$displaySupporters} / {$activeSupporters} / {$historicalSupporters}");
+            $this->line("Requester supporters excluded from Community Support: {$requesterExcluded}");
             $this->line("Preview/remaining/scope: {$preview->count()} / {$remaining} / {$scope}");
             $this->line('Mismatch: '.($issues->isEmpty() ? 'none' : $issues->implode(', ')));
         }, 100);
