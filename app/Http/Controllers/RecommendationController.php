@@ -631,6 +631,7 @@ class RecommendationController extends Controller
             VoteAllocated::dispatch($request->user()->id, $creator->id, $recommendation->id, 1);
         }
         $this->requestCache->forget($recommendation);
+        $this->requestCache->forgetGuide($request->user()->id);
 
         return redirect()
             ->to(route('creator.queue', $creator)."#recommendation-{$recommendation->id}")

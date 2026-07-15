@@ -19,7 +19,7 @@ class RecommendationStatusTransitionService
         private readonly RequestCacheInvalidator $cache,
     ) {}
 
-    /** @return array{recommendation:Recommendation,released_votes:int,affected_guides:int,before:array,after:array} */
+    /** @return array{recommendation:Recommendation,released_votes:int,affected_guides:int,supporter_user_ids:array<int,int>,before:array,after:array} */
     public function transition(Recommendation $recommendation, string $newStatus, User $actor, array $metadata = [], string $actorContext = 'creator'): array
     {
         if (! in_array($newStatus, Recommendation::STATUSES, true)) {
@@ -40,6 +40,7 @@ class RecommendationStatusTransitionService
             $closesVoting = $locked->shouldClearUpvotesWhenStatusIs($newStatus);
             $releasedVotes = $closesVoting ? (int) $locked->userPicks()->sum('vote_count') : 0;
             $affectedGuides = $closesVoting ? $locked->userPicks()->distinct()->count('user_id') : 0;
+            $supporterUserIds = $closesVoting ? $locked->userPicks()->distinct()->pluck('user_id')->map(fn ($id) => (int) $id)->all() : [];
             $attributes = [
                 'status' => $newStatus,
                 'scheduled_for' => $newStatus === 'scheduled' ? ($metadata['scheduled_for'] ?? $locked->scheduled_for) : $locked->scheduled_for,
@@ -83,9 +84,12 @@ class RecommendationStatusTransitionService
                 ]);
             }
 
-            return ['recommendation' => $locked->fresh(), 'released_votes' => $releasedVotes, 'affected_guides' => $affectedGuides, 'before' => $before, 'after' => $locked->fresh()->only(array_keys($before))];
+            return ['recommendation' => $locked->fresh(), 'released_votes' => $releasedVotes, 'affected_guides' => $affectedGuides, 'supporter_user_ids' => $supporterUserIds, 'before' => $before, 'after' => $locked->fresh()->only(array_keys($before))];
         });
         $this->cache->forget($result['recommendation']);
+        foreach ($result['supporter_user_ids'] as $supporterUserId) {
+            $this->cache->forgetGuide($supporterUserId);
+        }
         $this->dispatchPublicationIfNew($result['recommendation'], (string) $result['before']['status'], $actor, $actorContext);
 
         return $result;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserPick;
+use App\Services\PublicGuideMetricsService;
 use App\ViewModels\PublicGuideAccoladeViewModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class PublicGuideProfileController extends Controller
 {
-    public function __invoke(Request $request, string $handle, PublicGuideAccoladeViewModel $accolades): View
+    public function __invoke(Request $request, string $handle, PublicGuideAccoladeViewModel $accolades, PublicGuideMetricsService $metrics): View
     {
         $guide = User::query()
             ->where('public_handle', strtolower($handle))
@@ -32,19 +33,14 @@ class PublicGuideProfileController extends Controller
                 ->publiclyVisible()
                 ->whereNotIn('status', Recommendation::votableStatuses()));
 
+        $publicMetrics = $metrics->forGuide($guide);
         $stats = [
-            'suggestions' => (clone $publicSuggestions)->count(),
-            'published' => (clone $publicSuggestions)->where('status', 'published')->count(),
-            'votes_cast' => (int) (clone $completedSupport)->sum('vote_count'),
-            'creators_supported' => (clone $completedSupport)->distinct()->count('creator_id'),
+            'suggestions' => $publicMetrics['requests_count'],
+            'published' => $publicMetrics['published_requests_count'],
+            'votes_cast' => $publicMetrics['votes_cast_count'],
+            'creators_supported' => $publicMetrics['creators_supported_count'],
         ];
-
-        $activeSupportCount = UserPick::query()
-            ->where('user_id', $guide->id)
-            ->whereHas('recommendation', fn (Builder $query) => $query
-                ->publiclyVisible()
-                ->votable())
-            ->count();
+        $activeSupportCount = $publicMetrics['active_requests_supported_count'];
 
         $publishedSuggestions = (clone $publicSuggestions)
             ->where('status', 'published')

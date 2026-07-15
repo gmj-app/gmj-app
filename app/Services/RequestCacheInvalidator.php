@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Cache;
 
 class RequestCacheInvalidator
 {
+    public function forgetGuide(int $userId): void
+    {
+        Cache::forget("user:{$userId}:activity");
+        Cache::forget("guide:{$userId}:profile");
+    }
+
     public function forget(Recommendation $request): void
     {
         foreach (array_filter([

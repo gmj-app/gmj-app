@@ -8,7 +8,10 @@ use App\Models\User;
 use App\Models\UserAccolade;
 use App\Models\UserPick;
 use App\Services\Accolades\AccoladeDefinitionRepository;
+use App\Services\PublicGuideMetricsService;
+use App\Services\RequestCacheInvalidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -172,7 +175,67 @@ class PublicGuideProfileTest extends TestCase
             ->assertDontSee('votes remaining')
             ->assertDontSee('membership_tier');
 
-        $this->assertMatchesRegularExpression('/>3<.*votes cast/s', $response->getContent());
+        $this->assertMatchesRegularExpression('/>5<.*votes cast/s', $response->getContent());
+        $this->assertMatchesRegularExpression('/>1<.*creators supported/s', $response->getContent());
+    }
+
+    public function test_public_metrics_include_active_and_valid_history_without_exposing_active_selections(): void
+    {
+        $guide = User::factory()->create([
+            'public_display_name' => 'Aggregate Guide',
+            'public_handle' => 'aggregate-guide',
+            'public_profile_enabled' => true,
+        ]);
+        $firstCreator = Creator::factory()->create();
+        $secondCreator = Creator::factory()->create();
+        $activeA = Recommendation::factory()->create(['creator_id' => $firstCreator->id, 'status' => 'approved', 'title' => 'Private Active Alpha']);
+        $activeB = Recommendation::factory()->create(['creator_id' => $firstCreator->id, 'status' => 'approved', 'title' => 'Private Active Beta']);
+        $published = Recommendation::factory()->create(['creator_id' => $secondCreator->id, 'status' => 'published']);
+        $invalid = Recommendation::factory()->create(['creator_id' => $secondCreator->id, 'status' => 'passed']);
+
+        foreach ([[$activeA, 2, null], [$activeB, 1, null], [$published, 4, 'request_published'], [$invalid, 9, 'request_removed']] as [$request, $quantity, $reason]) {
+            UserPick::factory()->create([
+                'user_id' => $guide->id,
+                'creator_id' => $request->creator_id,
+                'recommendation_id' => $request->id,
+                'vote_count' => $quantity,
+                'released_at' => $reason ? now() : null,
+                'release_reason' => $reason,
+            ]);
+        }
+
+        $metrics = app(PublicGuideMetricsService::class)->forGuide($guide);
+        $this->assertSame(7, $metrics['votes_cast_count']);
+        $this->assertSame(2, $metrics['creators_supported_count']);
+        $this->assertSame(2, $metrics['active_requests_supported_count']);
+        $this->assertSame(3, $metrics['active_vote_quantity']);
+        $this->assertSame(4, $metrics['historical_vote_quantity']);
+
+        $this->get(route('guides.show', ['handle' => $guide->public_handle]))
+            ->assertOk()
+            ->assertSee('Currently supporting 2 active requests')
+            ->assertSee('Active selections and allocations are private.')
+            ->assertDontSee('Private Active Alpha')
+            ->assertDontSee('Private Active Beta')
+            ->assertDontSee('2 votes contributed')
+            ->assertDontSee('1 vote contributed');
+
+        $this->artisan('guides:audit-public-metrics --handle=@aggregate-guide -v')
+            ->expectsOutputToContain('Historical/lifetime vote quantity: 4 / 7')
+            ->expectsOutputToContain('Mismatch: none')
+            ->assertSuccessful();
+    }
+
+    public function test_targeted_guide_profile_cache_invalidation(): void
+    {
+        $guide = User::factory()->create();
+        Cache::put("guide:{$guide->id}:profile", 'stale');
+        Cache::put("user:{$guide->id}:activity", 'stale');
+
+        app(RequestCacheInvalidator::class)->forgetGuide($guide->id);
+
+        $this->assertFalse(Cache::has("guide:{$guide->id}:profile"));
+        $this->assertFalse(Cache::has("user:{$guide->id}:activity"));
     }
 
     public function test_missing_or_disabled_public_profile_returns_not_found(): void
