@@ -1,4 +1,5 @@
 <nav
+    data-public-header
     x-data="siteNavigation"
     @keydown.escape.window="closeAll()"
     class="sticky top-0 z-40 border-b border-white/70 bg-white/85 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/85"
@@ -26,7 +27,12 @@
             <a href="{{ route('faq') }}" class="{{ $navLinkClass(request()->routeIs('faq')) }}">FAQ</a>
         </div>
 
-        <div class="flex shrink-0 items-center justify-end gap-2">
+        <div class="flex shrink-0 items-center justify-end gap-2.5">
+            <x-platform-stats
+                :creator-count="$platformStats['creatorCount']"
+                :guide-count="$platformStats['guideCount']"
+                header
+            />
             @auth
                 @php($accountUser = auth()->user())
                 <x-notifications.bell />

@@ -7,6 +7,7 @@ use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserPick;
 use App\Services\HomepageTopRequestsQuery;
+use App\Services\PlatformStatisticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -121,7 +122,7 @@ class HomepageTest extends TestCase
             ->assertSee(route('logout'), false);
     }
 
-    public function test_homepage_hero_shows_live_platform_stats(): void
+    public function test_header_shows_live_platform_stats_while_homepage_search_is_centered_independently(): void
     {
         Creator::factory()->count(2)->create();
         Creator::factory()->create([
@@ -135,16 +136,17 @@ class HomepageTest extends TestCase
 
         $response
             ->assertOk()
+            ->assertSee('data-public-header', false)
             ->assertSee('data-home-search-group', false)
-            ->assertSee('max-w-[54rem]', false)
-            ->assertSee('lg:grid-cols-[minmax(0,1fr)_auto]', false)
+            ->assertSee('max-w-[42rem]', false)
             ->assertSee('method="GET" action="'.route('search.index').'"', false)
             ->assertSee('name="q"', false)
             ->assertSee('placeholder="Search creators, artists, songs, or topics..."', false)
             ->assertSee('<button type="submit"', false)
             ->assertSee('Search')
             ->assertSee('data-platform-stats', false)
-            ->assertSee('aria-label="Platform stats"', false)
+            ->assertSee('aria-label="Guide My Journey community statistics"', false)
+            ->assertSee('hidden xl:inline-flex', false)
             ->assertSee('>2</dd>', false)
             ->assertSee('Creators')
             ->assertSee('>1,001</dd>', false)
@@ -156,6 +158,26 @@ class HomepageTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'data-home-search-group'));
         $this->assertSame(1, substr_count($response->getContent(), 'data-platform-stats'));
         $this->assertSame(1, substr_count($response->getContent(), '<form method="GET" action="'.route('search.index').'"'));
+        $this->assertLessThan(
+            strpos($response->getContent(), 'data-home-hero'),
+            strpos($response->getContent(), 'data-platform-stats'),
+            'Platform statistics must render in the header, before the homepage hero.',
+        );
+    }
+
+    public function test_authenticated_header_orders_stats_before_notifications_and_avatar(): void
+    {
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->get('/')->assertOk();
+        $content = $response->getContent();
+
+        $this->assertLessThan(strpos($content, 'aria-controls="notification-dropdown"'), strpos($content, 'data-platform-stats'));
+        $this->assertLessThan(strpos($content, 'aria-label="Open account menu"'), strpos($content, 'aria-controls="notification-dropdown"'));
+        $response
+            ->assertSee('md:grid-cols-[1fr_auto_1fr]', false)
+            ->assertSee('gap-2.5', false)
+            ->assertSee('notification-dropdown')
+            ->assertSee('account-menu');
     }
 
     public function test_compact_platform_stats_format_large_counts_without_queries_or_interaction(): void
@@ -164,7 +186,7 @@ class HomepageTest extends TestCase
         DB::enableQueryLog();
 
         $response = $this->blade(
-            '<x-homepage-platform-stats :creator-count="$creatorCount" :guide-count="$guideCount" />',
+            '<x-platform-stats :creator-count="$creatorCount" :guide-count="$guideCount" />',
             ['creatorCount' => 1000, 'guideCount' => 1000000],
         );
 
@@ -174,7 +196,29 @@ class HomepageTest extends TestCase
             ->assertSee('min-w-48', false)
             ->assertDontSee('<a ', false)
             ->assertDontSee('<button', false);
+
+        $this->blade(
+            '<x-platform-stats :creator-count="1" :guide-count="1" />',
+        )->assertSee('Creator')->assertSee('Guide')->assertDontSee('Creators')->assertDontSee('Guides');
         $this->assertSame([], DB::getQueryLog());
+    }
+
+    public function test_shared_platform_statistics_are_cached_across_public_pages(): void
+    {
+        Creator::factory()->create();
+        User::factory()->create();
+        app(PlatformStatisticsService::class)->forget();
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->get('/about')->assertOk();
+        $this->get('/faq')->assertOk();
+
+        $countQueries = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_contains(strtolower($query['query']), 'count('));
+        $this->assertCount(2, $countQueries, 'The shared header counts should query once each and then use the cache.');
+
+        Creator::factory()->create();
+        $this->assertSame(2, app(PlatformStatisticsService::class)->publicCounts()['creatorCount']);
     }
 
     public function test_homepage_ranks_creators_by_votes_on_visible_recommendations(): void

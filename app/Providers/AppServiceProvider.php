@@ -16,9 +16,12 @@ use App\Listeners\EvaluateGuideAccoladesAfterRequestCreated;
 use App\Listeners\NotifyCreatorOfNewRequest;
 use App\Listeners\NotifyRequestSubmitterOfPublication;
 use App\Listeners\NotifyRequestSupportersOfPublication;
+use App\Models\Creator;
 use App\Models\User;
+use App\Services\PlatformStatisticsService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -46,5 +49,22 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(FavoriteCreatorAdded::class, EvaluateAccoladesAfterFavoriteAdded::class);
         Event::listen(VoteAllocated::class, EvaluateCreatorReachAfterVoteAllocated::class);
         Event::listen(AnnouncementPublished::class, DistributeAnnouncementNotifications::class);
+
+        View::composer('layouts.public-navigation', function ($view): void {
+            $view->with('platformStats', app(PlatformStatisticsService::class)->publicCounts());
+        });
+
+        $forgetPlatformStatistics = fn (): mixed => app(PlatformStatisticsService::class)->forget();
+        Creator::created($forgetPlatformStatistics);
+        Creator::updated(function (Creator $creator) use ($forgetPlatformStatistics): void {
+            if ($creator->wasChanged(['status', 'deactivated_at'])) {
+                $forgetPlatformStatistics();
+            }
+        });
+        Creator::deleted($forgetPlatformStatistics);
+        Creator::restored($forgetPlatformStatistics);
+        User::created($forgetPlatformStatistics);
+        User::deleted($forgetPlatformStatistics);
+        User::restored($forgetPlatformStatistics);
     }
 }
