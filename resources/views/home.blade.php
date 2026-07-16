@@ -38,6 +38,8 @@
         </div>
     </section>
 
+    @include('game.preview', ['game' => $dailyJourney])
+
     <section class="border-t border-slate-200 bg-white/60 px-4 py-10 dark:border-slate-800 dark:bg-slate-900/40 sm:px-6 sm:pb-14 sm:pt-8 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <x-section-header eyebrow="Creator journeys" :title="$search !== '' ? 'Search results' : 'Popular creators'">
@@ -117,7 +119,7 @@
 
                                 <div class="mt-auto border-t border-slate-200/80 pt-5 dark:border-slate-800">
                                     <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-center text-sm text-slate-500 dark:text-slate-400">
-                                        <span><strong class="text-slate-950 dark:text-white">{{ (int) $creator->total_votes_count }}</strong> {{ Str::plural('vote', (int) $creator->total_votes_count) }}</span>
+                                        <span><strong class="text-slate-950 dark:text-white">{{ number_format((int) $creator->followers_count) }}</strong> {{ Str::plural('follower', (int) $creator->followers_count) }}</span>
                                         <span aria-hidden="true" class="text-slate-300 dark:text-slate-700">|</span>
                                         <span><strong class="text-slate-950 dark:text-white">{{ (int) $creator->visible_recommendations_count }}</strong> {{ Str::plural('request', (int) $creator->visible_recommendations_count) }}</span>
                                         <span aria-hidden="true" class="text-slate-300 dark:text-slate-700">|</span>

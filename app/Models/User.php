@@ -237,6 +237,11 @@ class User extends Authenticatable
         return $this->hasMany(UserAccolade::class);
     }
 
+    public function gameRuns(): HasMany
+    {
+        return $this->hasMany(GameRun::class);
+    }
+
     public function guideEarnedAccolades(): HasMany
     {
         return $this->earnedAccolades()->where('subject_type', 'guide')->whereColumn('subject_id', 'user_id');

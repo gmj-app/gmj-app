@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Creator;
+use App\Models\CreatorFavorite;
 use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserPick;
@@ -531,7 +532,7 @@ class HomepageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Published Stats Creator')
-            ->assertSee('>1</strong> vote', false)
+            ->assertSee('>0</strong> followers', false)
             ->assertSee('>3</strong> requests', false)
             ->assertSee('>1</strong> published', false)
             ->assertSee('No Published Creator')
@@ -575,7 +576,7 @@ class HomepageTest extends TestCase
             ->assertOk()
             ->assertSee('Approved public request')
             ->assertDontSee('Private pending request')
-            ->assertSee('>1</strong> vote', false)
+            ->assertSee('>0</strong> followers', false)
             ->assertSee('>1</strong> request', false);
 
         $approved->update(['status' => 'hidden']);
@@ -585,8 +586,42 @@ class HomepageTest extends TestCase
             ->assertOk()
             ->assertDontSee('Approved public request')
             ->assertSee('Private pending request')
-            ->assertSee('>5</strong> votes', false)
+            ->assertSee('>0</strong> followers', false)
             ->assertSee('>1</strong> request', false);
+    }
+
+    public function test_homepage_creator_cards_show_only_current_valid_followers_with_correct_pluralization(): void
+    {
+        $zero = Creator::factory()->create(['display_name' => 'Zero Followers Creator']);
+        $one = Creator::factory()->create(['display_name' => 'One Follower Creator']);
+        $many = Creator::factory()->create(['display_name' => 'Many Followers Creator']);
+
+        CreatorFavorite::query()->create([
+            'creator_id' => $one->id,
+            'user_id' => User::factory()->create()->id,
+        ]);
+
+        foreach (User::factory()->count(2)->create() as $guide) {
+            CreatorFavorite::query()->create(['creator_id' => $many->id, 'user_id' => $guide->id]);
+        }
+
+        CreatorFavorite::query()->create([
+            'creator_id' => $many->id,
+            'user_id' => User::factory()->create()->id,
+            'released_at' => now(),
+            'release_reason' => 'creator_unavailable',
+        ]);
+
+        $deletedGuide = User::factory()->create();
+        CreatorFavorite::query()->create(['creator_id' => $many->id, 'user_id' => $deletedGuide->id]);
+        $deletedGuide->delete();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('>0</strong> followers', false)
+            ->assertSee('>1</strong> follower', false)
+            ->assertSee('>2</strong> followers', false)
+            ->assertDontSee('</strong> vote', false);
     }
 
     public function test_homepage_creator_cards_show_description_previews_with_fallbacks(): void

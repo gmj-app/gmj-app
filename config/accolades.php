@@ -28,11 +28,12 @@ $make = static fn (
 ];
 
 return [
-    'icons' => ['footprint', 'trail-marker', 'binoculars', 'route', 'summit', 'boots', 'map', 'compass', 'gps', 'globe', 'handshake', 'ripple', 'path', 'community', 'ear', 'calendar', 'network'],
+    'icons' => ['footprint', 'trail-marker', 'binoculars', 'route', 'summit', 'boots', 'map', 'compass', 'gps', 'globe', 'handshake', 'ripple', 'path', 'community', 'ear', 'calendar', 'network', 'trophy'],
     'styles' => ['emerald', 'sky', 'violet', 'amber', 'rose', 'indigo', 'slate'],
     'tracks' => [
         'guide_creator_exploration' => ['label' => 'Creator Exploration', 'subject_type' => 'guide', 'display_order' => 10, 'icon_key' => 'globe', 'accent' => 'violet'],
         'guide_influence' => ['label' => 'Influence', 'subject_type' => 'guide', 'display_order' => 20, 'icon_key' => 'ripple', 'accent' => 'amber'],
+        'guide_daily_challenge_wins' => ['label' => 'Daily Challenge Wins', 'subject_type' => 'guide', 'display_order' => 25, 'icon_key' => 'trophy', 'accent' => 'amber'],
         'guide_requests_published' => ['label' => 'Published Requests', 'subject_type' => 'guide', 'display_order' => 30, 'icon_key' => 'route', 'accent' => 'emerald'],
         'guide_requests_submitted' => ['label' => 'Request Participation', 'subject_type' => 'guide', 'display_order' => 40, 'icon_key' => 'trail-marker', 'accent' => 'emerald'],
         'guide_supported_publications' => ['label' => 'Supported Requests', 'subject_type' => 'guide', 'display_order' => 50, 'icon_key' => 'boots', 'accent' => 'sky'],
@@ -62,6 +63,10 @@ return [
         $make('guide.influence.journey_shaper', 'guide', 'guide_influence', 3, 'Journey Shaper', 'Influenced twenty-five published requests.', 25, 'path', 'amber', 52),
         $make('guide.influence.community_navigator', 'guide', 'guide_influence', 4, 'Community Navigator', 'Influenced fifty published requests.', 50, 'compass', 'amber', 53),
         $make('guide.influence.legacy_guide', 'guide', 'guide_influence', 5, 'Legacy Guide', 'Influenced one hundred published requests.', 100, 'summit', 'amber', 54),
+        $make('guide.daily_challenge_wins.trailblazer', 'guide', 'guide_daily_challenge_wins', 1, 'Trailblazer of the Day', 'Won the Daily Journey Challenge.', 1, 'trophy', 'amber', 55),
+        $make('guide.daily_challenge_wins.pathfinder', 'guide', 'guide_daily_challenge_wins', 2, 'Pathfinder', 'Won three Daily Journey Challenges.', 3, 'route', 'amber', 56),
+        $make('guide.daily_challenge_wins.champion', 'guide', 'guide_daily_challenge_wins', 3, 'Journey Champion', 'Won ten Daily Journey Challenges.', 10, 'summit', 'amber', 57),
+        $make('guide.daily_challenge_wins.legend', 'guide', 'guide_daily_challenge_wins', 4, 'Legend of the Trail', 'Won twenty-five Daily Journey Challenges.', 25, 'trophy', 'amber', 58),
 
         $make('creator.community_publications.first_step', 'creator', 'creator_community_publications', 1, 'First Step', 'Published your first community request.', 1, 'footprint', 'indigo', 60),
         $make('creator.community_publications.listener', 'creator', 'creator_community_publications', 2, 'Listener', 'Published five community requests.', 5, 'ear', 'indigo', 61),
