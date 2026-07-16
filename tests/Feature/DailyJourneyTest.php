@@ -24,6 +24,20 @@ class DailyJourneyTest extends TestCase
         $this->postJson(route('game.runs.issue'))->assertUnauthorized();
     }
 
+    public function test_homepage_game_shell_contains_polished_accessible_ui_without_the_prototype_footer(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Preparing your run')
+            ->assertSee('Start run')
+            ->assertSee('Pause run (P or Escape)')
+            ->assertSee('Shield')
+            ->assertSee('EMPTY')
+            ->assertSee('Tap')
+            ->assertSee('Hold')
+            ->assertDontSee('Landscape is recommended.');
+    }
+
     public function test_game_day_uses_the_manila_calendar_boundary(): void
     {
         Carbon::setTestNow('2026-07-16 16:30:00 UTC');

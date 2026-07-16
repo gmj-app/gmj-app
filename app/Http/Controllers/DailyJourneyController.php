@@ -67,6 +67,15 @@ class DailyJourneyController extends Controller
 
     private function clientConfig(): array
     {
-        return ['width' => 1280, 'height' => 720, 'startingSpeed' => config('daily_journey.starting_speed'), 'maximumSpeed' => config('daily_journey.maximum_speed'), 'acceleration' => config('daily_journey.acceleration_per_second'), 'minGap' => config('daily_journey.minimum_obstacle_gap'), 'maxGap' => config('daily_journey.maximum_obstacle_gap'), 'collectibleBonus' => config('daily_journey.collectible_bonus')];
+        return ['width' => 1280, 'height' => 720, 'startingSpeed' => config('daily_journey.starting_speed'), 'maximumSpeed' => config('daily_journey.maximum_speed'), 'acceleration' => config('daily_journey.acceleration_per_second'), 'minGap' => config('daily_journey.minimum_obstacle_gap'), 'maxGap' => config('daily_journey.maximum_obstacle_gap'), 'collectibleBonus' => config('daily_journey.collectible_bonus'), 'ui' => [
+            'countdownStepMs' => config('daily_journey.ui.countdown_step_ms'),
+            'toastDurationMs' => config('daily_journey.ui.toast_duration_ms'),
+            'toastQueueLimit' => config('daily_journey.ui.toast_queue_limit'),
+            'hudUpdateMs' => config('daily_journey.ui.hud_update_ms'),
+            'shieldBrokenMs' => config('daily_journey.ui.shield_broken_ms'),
+            'scoreMilestones' => config('daily_journey.ui.score_milestones'),
+            'resetWarningMinutes' => config('daily_journey.ui.reset_warning_minutes'),
+            'overlayMaxWidth' => config('daily_journey.ui.overlay_max_width'),
+        ]];
     }
 }

@@ -19,4 +19,14 @@ return [
     'cache_seconds' => 30,
     'all_time_enabled' => false,
     'accolade_track' => 'guide_daily_challenge_wins',
+    'ui' => [
+        'countdown_step_ms' => 700,
+        'toast_duration_ms' => 1400,
+        'toast_queue_limit' => 3,
+        'hud_update_ms' => 100,
+        'shield_broken_ms' => 900,
+        'score_milestones' => [1000, 2500, 5000, 10000],
+        'reset_warning_minutes' => [10, 1],
+        'overlay_max_width' => 580,
+    ],
 ];

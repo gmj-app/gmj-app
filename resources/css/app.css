@@ -26,6 +26,119 @@
     .guide-avatar.accolade-og .guide-accolade__number {
         @apply border-slate-200/80 bg-gradient-to-br from-slate-500 via-slate-700 to-slate-950 text-white shadow-[0_1px_4px_rgba(148,163,184,0.45)];
     }
+
+    .game-hud-cell {
+        @apply flex min-h-14 items-center gap-2 rounded-xl border border-white/15 bg-slate-950/75 px-3 py-2 text-white shadow-lg backdrop-blur-sm;
+    }
+
+    .game-hud-label {
+        @apply block text-[10px] font-extrabold uppercase tracking-[0.16em] text-sky-200/80;
+    }
+
+    .game-hud-value {
+        @apply block truncate text-lg font-black leading-5 tabular-nums sm:text-2xl;
+    }
+
+    .game-hud-status {
+        @apply block text-xs font-black leading-4 tracking-wide;
+    }
+
+    .game-shield-cell {
+        @apply min-w-24 transition-colors motion-reduce:transition-none;
+    }
+
+    .game-shield-cell[data-state="empty"] {
+        @apply text-slate-400;
+    }
+
+    .game-shield-cell[data-state="ready"] {
+        @apply border-sky-300/60 bg-sky-950/85 text-sky-200 shadow-sky-500/20;
+    }
+
+    .game-shield-cell[data-state="broken"] {
+        @apply border-amber-300/60 bg-amber-950/85 text-amber-200;
+    }
+
+    .game-hud-button {
+        @apply inline-flex min-h-14 min-w-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-slate-950/75 px-3 text-sm font-extrabold text-white shadow-lg backdrop-blur-sm hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+    }
+
+    .game-hud-button:disabled {
+        @apply cursor-not-allowed opacity-50;
+    }
+
+    .game-state-panel {
+        @apply rounded-2xl border border-white/15 bg-slate-950/85 px-5 py-5 shadow-2xl backdrop-blur-sm sm:px-8 sm:py-7;
+    }
+
+    .game-control-chip {
+        @apply inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200;
+    }
+
+    .game-control-chip kbd,
+    .game-shell-control kbd {
+        @apply rounded-md border border-slate-500 bg-slate-800 px-2 py-1 font-mono text-xs font-black text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.25)];
+    }
+
+    .game-shell-control {
+        @apply inline-flex items-center gap-2;
+    }
+
+    .game-result-cell {
+        @apply rounded-xl border border-white/10 bg-white/5 px-3 py-3;
+    }
+
+    .game-result-cell dt {
+        @apply text-[10px] font-extrabold uppercase tracking-wider text-slate-400;
+    }
+
+    .game-result-cell dd {
+        @apply mt-1 truncate text-lg font-black tabular-nums text-white;
+    }
+
+    .game-action-primary,
+    .game-action-secondary,
+    .game-action-danger {
+        @apply inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-extrabold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white motion-reduce:transition-none;
+    }
+
+    .game-action-primary {
+        @apply bg-indigo-500 text-white shadow-lg shadow-indigo-950/40 hover:bg-indigo-400;
+    }
+
+    .game-action-secondary {
+        @apply border border-white/20 bg-white/5 text-white hover:bg-white/10;
+    }
+
+    .game-action-danger {
+        @apply bg-rose-600 text-white hover:bg-rose-500;
+    }
+
+    .game-toast {
+        @apply pointer-events-none absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded-lg border border-white/15 bg-slate-950/85 px-4 py-2 text-center text-sm font-black uppercase tracking-wider text-white shadow-xl backdrop-blur-sm sm:top-28 sm:text-base;
+    }
+
+    .game-toast[data-tone="star"],
+    .game-toast[data-tone="champion"],
+    .game-toast[data-tone="milestone"] {
+        @apply border-amber-300/50 text-amber-200;
+    }
+
+    .game-toast[data-tone="shield"] {
+        @apply border-sky-300/50 text-sky-200;
+    }
+
+    .game-toast[data-tone="positive"] {
+        @apply border-emerald-300/50 text-emerald-200;
+    }
+
+    .game-toast[data-tone="warning"] {
+        @apply border-orange-300/50 text-orange-200;
+    }
+}
+
+[data-daily-journey] [hidden] {
+    display: none !important;
 }
 
 [x-cloak] {
