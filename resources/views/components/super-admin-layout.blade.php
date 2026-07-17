@@ -10,7 +10,6 @@
                 <a href="{{ route('super-admin.announcements.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.announcements.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Announcements</a>
                 <a href="{{ route('super-admin.accolades.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.accolades.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Accolades</a>
                 <a href="{{ route('super-admin.notifications.test') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.notifications.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Notifications</a>
-                <a href="{{ route('super-admin.game.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.game.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Game</a>
             </nav>
         </div>
         @if (session('success'))<div class="mb-6 rounded-xl bg-emerald-100 p-4 font-semibold text-emerald-800">{{ session('success') }}</div>@endif

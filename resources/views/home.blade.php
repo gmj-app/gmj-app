@@ -38,10 +38,6 @@
         </div>
     </section>
 
-    @if ($canAccessDailyJourney)
-        @include('game.preview', ['game' => $dailyJourney])
-    @endif
-
     <section class="border-t border-slate-200 bg-white/60 px-4 py-10 dark:border-slate-800 dark:bg-slate-900/40 sm:px-6 sm:pb-14 sm:pt-8 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <x-section-header eyebrow="Creator journeys" :title="$search !== '' ? 'Search results' : 'Popular creators'">

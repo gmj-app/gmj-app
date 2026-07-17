@@ -8,7 +8,6 @@ use App\Http\Controllers\CreatorRecommendationController;
 use App\Http\Controllers\CreatorSettingsController;
 use App\Http\Controllers\CreatorSetupController;
 use App\Http\Controllers\CreatorStarterSuggestionController;
-use App\Http\Controllers\DailyJourneyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuideAccoladeController;
 use App\Http\Controllers\GuideAccoladeIndexController;
@@ -27,7 +26,6 @@ use App\Http\Controllers\SuperAdmin\AnnouncementController;
 use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorController;
 use App\Http\Controllers\SuperAdmin\CreatorRequestController as SuperAdminCreatorRequestController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
-use App\Http\Controllers\SuperAdmin\GameController as SuperAdminGameController;
 use App\Http\Controllers\SuperAdmin\HomepageAdvertisementController;
 use App\Http\Controllers\SuperAdmin\TestNotificationController;
 use App\Http\Controllers\ThemePreferenceController;
@@ -37,16 +35,6 @@ use App\Http\Middleware\EnsurePublicProfileIsComplete;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::middleware(['auth', 'daily-journey-access'])->prefix('game/daily-journey')->name('game.')->group(function () {
-    Route::get('/', [DailyJourneyController::class, 'leaderboard'])->name('leaderboard');
-    Route::get('/today', [DailyJourneyController::class, 'today'])->middleware('throttle:60,1')->name('today');
-    Route::get('/champions', [DailyJourneyController::class, 'champions'])->middleware('throttle:60,1')->name('champions');
-    Route::middleware(EnsurePublicProfileIsComplete::class)->prefix('runs')->name('runs.')->group(function () {
-        Route::post('/', [DailyJourneyController::class, 'issue'])->middleware('throttle:20,1')->name('issue');
-        Route::post('/{session}/start', [DailyJourneyController::class, 'start'])->middleware('throttle:30,1')->name('start');
-        Route::post('/{session}/finish', [DailyJourneyController::class, 'finish'])->middleware('throttle:30,1')->name('finish');
-    });
-});
 Route::get('/ads/{advertisement}/click', AdvertisementClickController::class)->name('ads.click');
 Route::get('/search', SearchController::class)->name('search.index');
 Route::view('/about', 'pages.about')->name('about');
@@ -187,9 +175,6 @@ require __DIR__.'/auth.php';
 
 Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verified', 'super-admin'])->group(function () {
     Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
-    Route::get('/game', [SuperAdminGameController::class, 'index'])->name('game.index');
-    Route::get('/game/runs/{run}', [SuperAdminGameController::class, 'show'])->name('game.show');
-    Route::patch('/game/runs/{run}/invalidate', [SuperAdminGameController::class, 'invalidate'])->name('game.invalidate');
     Route::get('/notifications/test', [TestNotificationController::class, 'index'])->name('notifications.test');
     Route::get('/accolades', [SuperAdminAccoladeController::class, 'index'])->name('accolades.index');
     Route::post('/accolades/guides/{user}/evaluate', [SuperAdminAccoladeController::class, 'evaluateGuide'])->name('accolades.guides.evaluate');

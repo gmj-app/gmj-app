@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\EnsureCanAccessDailyJourney;
 use App\Http\Middleware\EnsureUserIsSuperAdmin;
 use App\Http\Middleware\LogSlowRequests;
 use Illuminate\Foundation\Application;
@@ -15,10 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['theme']);
-        $middleware->alias([
-            'super-admin' => EnsureUserIsSuperAdmin::class,
-            'daily-journey-access' => EnsureCanAccessDailyJourney::class,
-        ]);
+        $middleware->alias(['super-admin' => EnsureUserIsSuperAdmin::class]);
         $middleware->web(append: [LogSlowRequests::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

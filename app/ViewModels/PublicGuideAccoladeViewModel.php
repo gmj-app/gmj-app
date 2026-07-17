@@ -5,12 +5,11 @@ namespace App\ViewModels;
 use App\Models\User;
 use App\Models\UserAccolade;
 use App\Services\Accolades\AccoladeDefinitionRepository;
-use App\Services\DailyJourney\AccessService;
 use Illuminate\Support\Collection;
 
 class PublicGuideAccoladeViewModel
 {
-    public function __construct(private readonly AccoladeDefinitionRepository $definitions, private readonly AccessService $dailyJourneyAccess) {}
+    public function __construct(private readonly AccoladeDefinitionRepository $definitions) {}
 
     /** @return array<string, mixed> */
     public function forGuide(User $guide): array
@@ -22,7 +21,6 @@ class PublicGuideAccoladeViewModel
             ->orderBy('track')
             ->orderBy('level')
             ->get()
-            ->reject(fn (UserAccolade $award) => $award->track === config('daily_journey.accolade_track') && ! $this->dailyJourneyAccess->allows(auth()->user()))
             ->map(fn (UserAccolade $award) => $this->present($award))
             ->filter()
             ->values();

@@ -13,14 +13,5 @@ export default defineConfig({
         sourcemap: false,
         minify: 'esbuild',
         cssCodeSplit: true,
-        rollupOptions: {
-            output: {
-                manualChunks(id) {
-                    if (id.replaceAll('\\', '/').includes('/node_modules/phaser/')) {
-                        return 'daily-journey-phaser';
-                    }
-                },
-            },
-        },
     },
 });

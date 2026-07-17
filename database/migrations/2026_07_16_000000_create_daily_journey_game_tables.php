@@ -103,7 +103,9 @@ return new class extends Migration
     {
         Schema::dropIfExists('game_daily_champions');
         Schema::dropIfExists('game_daily_bests');
-        Schema::table('game_days', fn (Blueprint $table) => $table->dropForeign(['winner_run_id']));
+        if (Schema::hasTable('game_days')) {
+            Schema::table('game_days', fn (Blueprint $table) => $table->dropForeign(['winner_run_id']));
+        }
         Schema::dropIfExists('game_runs');
         Schema::dropIfExists('game_run_sessions');
         Schema::dropIfExists('game_days');

@@ -18,7 +18,6 @@ use App\Listeners\NotifyRequestSubmitterOfPublication;
 use App\Listeners\NotifyRequestSupportersOfPublication;
 use App\Models\Creator;
 use App\Models\User;
-use App\Services\DailyJourney\AccessService as DailyJourneyAccessService;
 use App\Services\PlatformStatisticsService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -41,7 +40,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('access-video-tools', fn (User $user): bool => (bool) $user->can_access_video_tools);
-        Gate::define('access-daily-journey-game', fn (User $user): bool => app(DailyJourneyAccessService::class)->allows($user));
         Event::listen(RequestCreated::class, NotifyCreatorOfNewRequest::class);
         Event::listen(RequestCreated::class, EvaluateGuideAccoladesAfterRequestCreated::class);
         Event::listen(RequestCreated::class, EvaluateCreatorReachAfterRequestCreated::class);

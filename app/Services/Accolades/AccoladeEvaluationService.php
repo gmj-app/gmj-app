@@ -11,7 +11,6 @@ use App\Services\Accolades\Evaluators\CreatorCommunityPublicationEvaluator;
 use App\Services\Accolades\Evaluators\CreatorCommunityReachEvaluator;
 use App\Services\Accolades\Evaluators\CreatorConsistencyEvaluator;
 use App\Services\Accolades\Evaluators\GuideCreatorExplorationEvaluator;
-use App\Services\Accolades\Evaluators\GuideDailyChallengeWinsEvaluator;
 use App\Services\Accolades\Evaluators\GuideInfluenceEvaluator;
 use App\Services\Accolades\Evaluators\GuidePublishedRequestEvaluator;
 use App\Services\Accolades\Evaluators\GuideRequestSubmissionEvaluator;
@@ -99,7 +98,6 @@ class AccoladeEvaluationService
             'guide:guide_supported_publications' => app(GuideSupportedPublicationEvaluator::class),
             'guide:guide_creator_exploration' => app(GuideCreatorExplorationEvaluator::class),
             'guide:guide_influence' => app(GuideInfluenceEvaluator::class),
-            'guide:guide_daily_challenge_wins' => app(GuideDailyChallengeWinsEvaluator::class),
             'creator:creator_community_publications' => app(CreatorCommunityPublicationEvaluator::class),
             'creator:creator_consistency' => app(CreatorConsistencyEvaluator::class),
             'creator:creator_community_reach' => app(CreatorCommunityReachEvaluator::class),

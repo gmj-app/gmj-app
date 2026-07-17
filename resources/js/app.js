@@ -101,16 +101,3 @@ window.addEventListener('pageshow', () => {
     resetModalState();
     requestAnimationFrame(resetModalState);
 });
-
-document.querySelectorAll('[data-daily-journey]').forEach((root) => {
-    const countdown = root.querySelector('[data-game-countdown]');
-    const tick = () => { const left = Math.max(0, new Date(countdown.dataset.endsAt).getTime() - Date.now()); const seconds = Math.floor(left / 1000); countdown.textContent = `${String(Math.floor(seconds / 3600)).padStart(2, '0')}:${String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; };
-    tick(); setInterval(tick, 1000);
-    root.querySelector('[data-game-play]')?.addEventListener('click', async () => {
-        if (root.dataset.authenticated !== '1') { window.location.assign(root.dataset.loginUrl); return; }
-        const expanded = root.querySelector('[data-game-expanded]'); expanded.hidden = false; expanded.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-        if (expanded.dataset.mounted) return; expanded.dataset.mounted = '1';
-        try { const { mountDailyJourney } = await import('./daily-journey/index.js'); await mountDailyJourney(root); }
-        catch (error) { expanded.dataset.mounted = ''; root.querySelector('[data-game-status]').textContent = error.message || 'Could not start a new run. Please try again.'; }
-    });
-});

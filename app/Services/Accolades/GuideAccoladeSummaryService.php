@@ -5,7 +5,6 @@ namespace App\Services\Accolades;
 use App\Models\AccoladeProgress;
 use App\Models\User;
 use App\Models\UserAccolade;
-use App\Services\DailyJourney\AccessService;
 use Illuminate\Support\Collection;
 
 class GuideAccoladeSummaryService
@@ -16,7 +15,7 @@ class GuideAccoladeSummaryService
         'guide_creator_exploration',
     ];
 
-    public function __construct(private readonly AccoladeDefinitionRepository $definitions, private readonly AccessService $dailyJourneyAccess) {}
+    public function __construct(private readonly AccoladeDefinitionRepository $definitions) {}
 
     /** @return array<string, mixed> */
     public function forDashboard(User $user): array
@@ -29,7 +28,6 @@ class GuideAccoladeSummaryService
     {
         $tracks = collect(config('accolades.tracks', []))
             ->filter(fn (array $track) => $track['subject_type'] === 'guide')
-            ->when(! $this->dailyJourneyAccess->allows(auth()->user()), fn (Collection $tracks) => $tracks->except(config('daily_journey.accolade_track')))
             ->sortBy('display_order')
             ->keys()->all();
 
@@ -49,7 +47,6 @@ class GuideAccoladeSummaryService
             ->latest('awarded_at')
             ->latest('id')
             ->get()
-            ->reject(fn (UserAccolade $award) => $award->track === config('daily_journey.accolade_track') && ! $this->dailyJourneyAccess->allows(auth()->user()))
             ->map(fn (UserAccolade $award) => [
                 'award' => $award,
                 'definition' => $this->definitions->find($award->accolade_key),
