@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser from 'phaser/dist/phaser-arcade-physics.min.js';
 import { ProceduralRunnerCharacter } from './characters/ProceduralRunnerCharacter.js';
 import { CHARACTER_CONFIG } from './characters/procedural-runner-pose.js';
 

@@ -1,4 +1,3 @@
-import { createGame } from './game';
 import { COUNTDOWN_STEPS, formatHud, GameUiStateMachine, submissionPresentation } from './ui-state';
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -156,6 +155,7 @@ export async function mountDailyJourney(root) {
         ui?.beginLoading();
         try {
             const session = await post(base, {});
+            const { createGame } = await import('./game.js');
             ui ||= new GameUiController(root, { config: session.config.ui, tone, isMuted: () => muted, setMuted: value => { muted = value; localStorage.setItem('dailyJourneyMuted', muted ? '1' : '0'); }, restart: launch, exit });
             ui.helpers.config = session.config.ui; ui.beginLoading();
             game = createGame(parent, session, { base, post, tone, personalBest: Number(root.dataset.personalBest || 0), leaderScore: Number(root.dataset.leaderScore || 0), restart: launch, ui });
