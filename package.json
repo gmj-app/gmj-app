@@ -5,6 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "test:creator-accordion": "node --test tests/js/creator-request-accordion.test.js",
         "test:game-ui": "node --test tests/js/daily-journey-ui.test.js tests/js/procedural-runner-character.test.js tests/js/daily-journey-build-boundary.test.js"
     },
     "devDependencies": {

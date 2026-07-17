@@ -243,6 +243,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->addPicks($creator, $newer, 3);
 
         $this->get(route('creator.queue', $creator))
+            ->assertViewHas('initialExpandedRequestId', $older->id)
             ->assertSeeInOrder([$older->title, $newer->title]);
 
         $extraVote = UserPick::factory()->create([
@@ -252,11 +253,13 @@ class PublicCreatorQueueTest extends TestCase
         ]);
 
         $this->get(route('creator.queue', $creator))
+            ->assertViewHas('initialExpandedRequestId', $newer->id)
             ->assertSeeInOrder([$newer->title, $older->title]);
 
         $extraVote->delete();
 
         $this->get(route('creator.queue', $creator))
+            ->assertViewHas('initialExpandedRequestId', $older->id)
             ->assertSeeInOrder([$older->title, $newer->title]);
     }
 
@@ -305,6 +308,8 @@ class PublicCreatorQueueTest extends TestCase
             $recommendations->skip(25)->pluck('id')->all(),
             $secondPage->viewData('recommendations')->getCollection()->pluck('id')->all(),
         );
+        $this->assertSame($recommendations->first()->id, $firstPage->viewData('initialExpandedRequestId'));
+        $this->assertSame($recommendations->get(25)->id, $secondPage->viewData('initialExpandedRequestId'));
         $secondPage->assertSee('26th')->assertSee('27th');
     }
 
@@ -356,13 +361,69 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('focus-visible:ring-emerald-500', false)
             ->assertSee('border-emerald-400 ring-2 ring-emerald-300/70 dark:border-emerald-500 dark:ring-emerald-500/40', false)
             ->assertSee('rotate-180 text-emerald-600 dark:text-emerald-300', false)
-            ->assertSee('x-data="{ open: false }"', false)
-            ->assertSee('x-data="{ open: true }"', false)
-            ->assertSee('data-recommendation-action-feedback', false)
-            ->assertSee('Your vote was added.');
+            ->assertSee('data-creator-request-accordion', false)
+            ->assertSee('x-data="creatorRequestAccordion(', false)
+            ->assertSee('x-effect="if (open) loadDetails()"', false);
 
+        $this->assertSame($second->id, $response->viewData('initialExpandedRequestId'));
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$first->id.'"'));
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
+    }
+
+    public function test_first_visible_request_is_server_rendered_expanded_and_all_others_are_collapsed(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'initial-expanded']);
+        $first = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
+        $second = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
+        $this->addPicks($creator, $first, 2);
+        $this->addPicks($creator, $second, 1);
+
+        $response = $this->get(route('creator.queue', $creator))->assertOk();
+        $html = $response->getContent();
+        $firstStart = strpos($html, 'id="recommendation-'.$first->id.'"');
+        $secondStart = strpos($html, 'id="recommendation-'.$second->id.'"');
+        $firstRow = substr($html, $firstStart, $secondStart - $firstStart);
+        $secondRow = substr($html, $secondStart);
+
+        $this->assertSame($first->id, $response->viewData('initialExpandedRequestId'));
+        $this->assertStringContainsString('aria-expanded="true"', $firstRow);
+        $this->assertStringNotContainsString('x-cloak style="display: none;"', $firstRow);
+        $this->assertStringContainsString('aria-expanded="false"', $secondRow);
+        $this->assertStringContainsString('x-cloak style="display: none;"', $secondRow);
+        $this->assertSame(1, substr_count($html, 'aria-expanded="true"'));
+        $this->assertStringNotContainsString('<iframe', $html);
+        $this->assertStringNotContainsString('autoplay', $html);
+    }
+
+    public function test_single_empty_and_filtered_result_sets_choose_their_first_visible_request_safely(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'result-states']);
+        $rock = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+            'category' => 'rock',
+        ]);
+        $jazz = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'approved',
+            'category' => 'jazz',
+        ]);
+
+        $this->get(route('creator.queue', [$creator, 'category' => 'jazz']))
+            ->assertOk()
+            ->assertViewHas('initialExpandedRequestId', $jazz->id)
+            ->assertSee('aria-expanded="true"', false)
+            ->assertDontSee('id="recommendation-'.$rock->id.'"', false);
+
+        $this->get(route('creator.queue', [$creator, 'category' => 'missing']))
+            ->assertOk()
+            ->assertViewHas('initialExpandedRequestId', null)
+            ->assertSee('No requests found.');
+
+        $rock->delete();
+        $this->get(route('creator.queue', [$creator, 'category' => 'jazz']))
+            ->assertOk()
+            ->assertViewHas('initialExpandedRequestId', $jazz->id);
     }
 
     public function test_folded_request_rows_show_only_meaningful_public_status_badges(): void

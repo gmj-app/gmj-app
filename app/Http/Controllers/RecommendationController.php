@@ -132,6 +132,16 @@ class RecommendationController extends Controller
         $recommendations = $recommendationsQuery
             ->paginate(25)
             ->withQueryString();
+        $initialExpandedRequestId = $recommendations->first()?->id;
+
+        $recommendationAction = session('recommendation_action');
+        $actionRecommendationId = is_array($recommendationAction)
+            ? (int) ($recommendationAction['recommendation_id'] ?? 0)
+            : null;
+
+        if ($actionRecommendationId && $recommendations->getCollection()->contains('id', $actionRecommendationId)) {
+            $initialExpandedRequestId = $actionRecommendationId;
+        }
         $tagOptions = $creator->creatorTags()
             ->whereHas('recommendations', fn ($query) => $query
                 ->activePubliclyVisible())
@@ -154,6 +164,7 @@ class RecommendationController extends Controller
             'creatorAccolades',
             'filters',
             'header',
+            'initialExpandedRequestId',
             'isFavorited',
             'ownsCreator',
             'publicRecommendationsCount',

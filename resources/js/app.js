@@ -1,6 +1,7 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import { creatorRequestAccordion } from './creator-request-accordion.js';
 
 window.Alpine = Alpine;
 
@@ -57,6 +58,8 @@ Alpine.data('siteNavigation', () => ({
         }
     },
 }));
+
+Alpine.data('creatorRequestAccordion', creatorRequestAccordion);
 
 const resetModalState = () => {
     document.body.classList.remove('overflow-hidden', 'overflow-y-hidden', 'pointer-events-none');

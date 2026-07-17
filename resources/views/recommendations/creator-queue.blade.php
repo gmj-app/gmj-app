@@ -385,8 +385,27 @@
                         $actionRecommendationId = is_array($recommendationAction)
                             ? (int) ($recommendationAction['recommendation_id'] ?? 0)
                             : null;
+                        $visibleRecommendationIds = $recommendations->getCollection()
+                            ->pluck('id')
+                            ->map(fn ($id) => (int) $id)
+                            ->values();
                     @endphp
 
+                    <div
+                        data-creator-request-accordion
+                        class="space-y-5"
+                        x-data="creatorRequestAccordion(@js($visibleRecommendationIds), @js($initialExpandedRequestId))"
+                        x-init="
+                            if (window.location.hash && openHashRequest()) {
+                                $nextTick(() => document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: 'start' }));
+                            }
+                        "
+                        x-on:hashchange.window="
+                            if (openHashRequest()) {
+                                $nextTick(() => document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: 'start' }));
+                            }
+                        "
+                    >
                     @forelse ($recommendations as $recommendation)
                         @php
                             $rank = ($recommendations->firstItem() ?? 1) + $loop->index;
@@ -407,17 +426,21 @@
                                 default => 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-200',
                             };
                             $isActionTarget = $actionRecommendationId === $recommendation->id;
+                            $isInitiallyExpanded = $initialExpandedRequestId === $recommendation->id;
                         @endphp
 
                         <div
                             data-creator-request-row
                             id="recommendation-{{ $recommendation->id }}"
                             x-data="{
-                                open: @js($isActionTarget),
+                                requestId: @js($recommendation->id),
                                 loaded: false,
                                 loading: false,
                                 error: false,
                                 detailsHtml: '',
+                                get open() {
+                                    return this.expandedRequestId === this.requestId;
+                                },
                                 async loadDetails() {
                                     if (this.loaded || this.loading) return;
                                     this.loading = true;
@@ -437,36 +460,17 @@
                                     }
                                 },
                                 toggleDetails() {
-                                    this.open = ! this.open;
-                                    if (this.open) this.loadDetails();
+                                    this.toggleRequest(this.requestId);
                                 },
                             }"
-                            x-init="
-                                const expandIfHashTarget = () => {
-                                    if (window.location.hash === '#recommendation-{{ $recommendation->id }}') {
-                                        open = true;
-                                        loadDetails();
-                                        $nextTick(() => $el.scrollIntoView({ block: 'start' }));
-                                    }
-                                };
-
-                                expandIfHashTarget();
-                                if (open) loadDetails();
-                            "
-                            x-on:hashchange.window="
-                                if (window.location.hash === '#recommendation-{{ $recommendation->id }}') {
-                                    open = true;
-                                    loadDetails();
-                                    $nextTick(() => $el.scrollIntoView({ block: 'start' }));
-                                }
-                            "
-                            class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:border-emerald-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700"
+                            x-effect="if (open) loadDetails()"
+                            class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 motion-reduce:transition-none hover:border-emerald-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700"
                             x-bind:class="open ? 'border-emerald-400 ring-2 ring-emerald-300/70 dark:border-emerald-500 dark:ring-emerald-500/40' : ''"
                         >
                             <button
                                 type="button"
                                 x-on:click="toggleDetails()"
-                                aria-expanded="false"
+                                aria-expanded="{{ $isInitiallyExpanded ? 'true' : 'false' }}"
                                 x-bind:aria-expanded="open.toString()"
                                 aria-controls="recommendation-details-{{ $recommendation->id }}"
                                 class="group flex min-h-14 w-full min-w-0 cursor-pointer items-center gap-2.5 px-3 py-2 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:hover:bg-emerald-950/20 sm:min-h-[66px] sm:gap-4 sm:px-5"
@@ -496,7 +500,7 @@
                                 </span>
 
                                 <svg
-                                    class="size-5 shrink-0 text-slate-400 transition-transform duration-200"
+                                    class="size-5 shrink-0 text-slate-400 transition-transform duration-200 motion-reduce:transition-none"
                                     x-bind:class="{ 'rotate-180 text-emerald-600 dark:text-emerald-300': open }"
                                     viewBox="0 0 24 24"
                                     fill="none"
@@ -511,24 +515,24 @@
                             <div
                                 id="recommendation-details-{{ $recommendation->id }}"
                                 x-show="open"
-                                x-cloak
+                                @if (! $isInitiallyExpanded) x-cloak style="display: none;" @endif
                                 x-transition:enter="transition ease-out duration-200"
                                 x-transition:enter-start="opacity-0 -translate-y-1"
                                 x-transition:enter-end="opacity-100 translate-y-0"
                                 x-transition:leave="transition ease-in duration-150"
                                 x-transition:leave-start="opacity-100 translate-y-0"
                                 x-transition:leave-end="opacity-0 -translate-y-1"
-                                class="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40 sm:p-4"
+                                class="border-t border-slate-200 bg-slate-50 p-3 motion-reduce:transition-none dark:border-slate-800 dark:bg-slate-950/40 sm:p-4"
                                 x-bind:aria-busy="loading.toString()"
                             >
                                 <div x-show="loading" class="flex min-h-32 items-center justify-center text-sm font-semibold text-slate-500 dark:text-slate-400" role="status">
                                     Loading request details&hellip;
                                 </div>
-                                <div x-show="error" class="rounded-xl border border-red-200 bg-red-50 p-5 text-center dark:border-red-900 dark:bg-red-950/30" role="alert">
+                                <div x-show="error" style="display: none;" class="rounded-xl border border-red-200 bg-red-50 p-5 text-center dark:border-red-900 dark:bg-red-950/30" role="alert">
                                     <p class="text-sm font-semibold text-red-800 dark:text-red-200">Request details could not be loaded.</p>
                                     <button type="button" x-on:click="loadDetails()" class="mt-3 rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">Try again</button>
                                 </div>
-                                <div x-show="loaded" x-html="detailsHtml"></div>
+                                <div x-show="loaded" style="display: none;" x-html="detailsHtml"></div>
                             </div>
                         </div>
                     @empty
@@ -549,6 +553,7 @@
                             @endif
                         </div>
                     @endforelse
+                    </div>
 
                     @if ($recommendations->hasPages())
                         <div class="pt-2">
