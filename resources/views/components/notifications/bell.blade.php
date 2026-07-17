@@ -1,7 +1,11 @@
 @php
     $notificationUser = auth()->user();
-    $notificationUnreadCount = $notificationUser->unreadNotifications()->count();
-    $notificationItems = $notificationUser->notifications()->latest()->limit(10)->get()->map(fn ($item) => new \App\Presenters\NotificationPresenter($item));
+    $canAccessDailyJourney = app(\App\Services\DailyJourney\AccessService::class)->allows($notificationUser);
+    $visibleNotifications = fn ($query) => $query->when(! $canAccessDailyJourney, fn ($query) => $query->where(function ($query): void {
+        $query->whereNull('data->notification_key')->orWhere('data->notification_key', 'not like', 'game.%');
+    }));
+    $notificationUnreadCount = $visibleNotifications($notificationUser->unreadNotifications())->count();
+    $notificationItems = $visibleNotifications($notificationUser->notifications())->latest()->limit(10)->get()->map(fn ($item) => new \App\Presenters\NotificationPresenter($item));
 @endphp
 <div class="relative" @click.outside="notificationsOpen = false">
     <button type="button" @click="toggleNotifications()" :aria-expanded="notificationsOpen.toString()" aria-controls="notification-dropdown" aria-label="Notifications{{ $notificationUnreadCount ? ', '.$notificationUnreadCount.' unread' : '' }}" class="relative inline-flex size-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">

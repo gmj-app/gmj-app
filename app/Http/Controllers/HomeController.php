@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Creator;
 use App\Models\HomepageAdvertisement;
+use App\Services\DailyJourney\AccessService;
 use App\Services\DailyJourney\HomepageGameService;
 use App\Services\HomepageTopRequestsQuery;
 use App\Services\PopularCreatorGridService;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function index(Request $request, HomepageTopRequestsQuery $topRequestsQuery, PopularCreatorGridService $gridService, HomepageGameService $game): View
+    public function index(Request $request, HomepageTopRequestsQuery $topRequestsQuery, PopularCreatorGridService $gridService, HomepageGameService $game, AccessService $gameAccess): View
     {
         $search = trim((string) $request->query('q', ''));
 
@@ -50,8 +51,9 @@ class HomeController extends Controller
             ? HomepageAdvertisement::active()->orderBy('placement')->orderBy('id')->get()
             : collect();
         $gridItems = $gridService->compose($creators->getCollection(), $advertisements, $search === '');
-        $dailyJourney = $game->data($request->user()?->id);
+        $canAccessDailyJourney = $gameAccess->allows($request->user());
+        $dailyJourney = $canAccessDailyJourney ? $game->data($request->user()->id) : null;
 
-        return view('home', compact('creators', 'gridItems', 'search', 'topRequests', 'dailyJourney'));
+        return view('home', compact('creators', 'gridItems', 'search', 'topRequests', 'dailyJourney', 'canAccessDailyJourney'));
     }
 }

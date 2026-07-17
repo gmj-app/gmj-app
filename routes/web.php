@@ -37,13 +37,15 @@ use App\Http\Middleware\EnsurePublicProfileIsComplete;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/game/daily-journey', [DailyJourneyController::class, 'leaderboard'])->name('game.leaderboard');
-Route::get('/game/daily-journey/today', [DailyJourneyController::class, 'today'])->middleware('throttle:60,1')->name('game.today');
-Route::get('/game/daily-journey/champions', [DailyJourneyController::class, 'champions'])->middleware('throttle:60,1')->name('game.champions');
-Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->prefix('game/daily-journey/runs')->name('game.runs.')->group(function () {
-    Route::post('/', [DailyJourneyController::class, 'issue'])->middleware('throttle:20,1')->name('issue');
-    Route::post('/{session}/start', [DailyJourneyController::class, 'start'])->middleware('throttle:30,1')->name('start');
-    Route::post('/{session}/finish', [DailyJourneyController::class, 'finish'])->middleware('throttle:30,1')->name('finish');
+Route::middleware(['auth', 'daily-journey-access'])->prefix('game/daily-journey')->name('game.')->group(function () {
+    Route::get('/', [DailyJourneyController::class, 'leaderboard'])->name('leaderboard');
+    Route::get('/today', [DailyJourneyController::class, 'today'])->middleware('throttle:60,1')->name('today');
+    Route::get('/champions', [DailyJourneyController::class, 'champions'])->middleware('throttle:60,1')->name('champions');
+    Route::middleware(EnsurePublicProfileIsComplete::class)->prefix('runs')->name('runs.')->group(function () {
+        Route::post('/', [DailyJourneyController::class, 'issue'])->middleware('throttle:20,1')->name('issue');
+        Route::post('/{session}/start', [DailyJourneyController::class, 'start'])->middleware('throttle:30,1')->name('start');
+        Route::post('/{session}/finish', [DailyJourneyController::class, 'finish'])->middleware('throttle:30,1')->name('finish');
+    });
 });
 Route::get('/ads/{advertisement}/click', AdvertisementClickController::class)->name('ads.click');
 Route::get('/search', SearchController::class)->name('search.index');

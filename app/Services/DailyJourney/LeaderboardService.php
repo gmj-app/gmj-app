@@ -9,10 +9,12 @@ use Illuminate\Support\Facades\Cache;
 
 class LeaderboardService
 {
+    public function __construct(private readonly AccessService $access) {}
+
     public function rows(GameDay $day, ?int $userId = null): array
     {
         $all = Cache::remember(
-            'daily-journey:leaderboard:'.$day->id,
+            'daily-journey:leaderboard:'.$this->accessCacheKey().':'.$day->id,
             (int) config('daily_journey.cache_seconds'),
             fn () => GameDailyBest::query()
                 ->where('game_day_id', $day->id)
@@ -22,6 +24,7 @@ class LeaderboardService
                 ->orderBy('accepted_at')
                 ->orderBy('id')
                 ->get()
+                ->filter(fn ($best) => ! $this->access->isPrivate() || $this->access->allows($best->user))
                 ->values()
                 ->map(fn ($best, $index) => $this->present($best, $index + 1))
                 ->all(),
@@ -38,13 +41,20 @@ class LeaderboardService
 
     public function champions(): array
     {
-        return Cache::remember('daily-journey:champions', (int) config('daily_journey.cache_seconds'), fn () => GameDailyChampion::query()->with('user')->latest('local_date')->limit(100)->get()->map(fn ($c) => ['date' => $c->local_date->toDateString(), 'score' => $c->score, 'distance' => $c->distance, 'guide' => $this->guide($c->user)])->all());
+        return Cache::remember('daily-journey:champions:'.$this->accessCacheKey(), (int) config('daily_journey.cache_seconds'), fn () => GameDailyChampion::query()->with('user')->latest('local_date')->limit(100)->get()->filter(fn ($champion) => ! $this->access->isPrivate() || $this->access->allows($champion->user))->values()->map(fn ($c) => ['date' => $c->local_date->toDateString(), 'score' => $c->score, 'distance' => $c->distance, 'guide' => $this->guide($c->user)])->all());
     }
 
     public function forget(GameDay $day): void
     {
-        Cache::forget('daily-journey:leaderboard:'.$day->id);
-        Cache::forget('daily-journey:champions');
+        Cache::forget('daily-journey:leaderboard:'.$this->accessCacheKey().':'.$day->id);
+        Cache::forget('daily-journey:champions:'.$this->accessCacheKey());
+    }
+
+    private function accessCacheKey(): string
+    {
+        return $this->access->isPrivate()
+            ? 'private-'.sha1(implode('|', config('super_admin.emails', [])))
+            : 'public';
     }
 
     private function present($best, int $rank): array

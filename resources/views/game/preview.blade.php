@@ -22,7 +22,7 @@
                 </div>
             </div>
             <div class="flex flex-wrap gap-3 lg:justify-end">
-                <button type="button" data-game-play class="min-h-12 rounded-xl bg-amber-400 px-6 py-3 font-extrabold text-slate-950 shadow-lg hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">{{ auth()->check() ? 'Play now' : 'Log in to play' }}</button>
+                <button type="button" data-game-play class="min-h-12 rounded-xl bg-amber-400 px-6 py-3 font-extrabold text-slate-950 shadow-lg hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Play now</button>
                 <a href="{{ route('game.leaderboard') }}" class="min-h-12 rounded-xl border border-white/20 px-5 py-3 text-center font-bold hover:bg-white/10">View leaderboard</a>
             </div>
         </div>

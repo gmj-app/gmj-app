@@ -1,5 +1,23 @@
 # Daily Journey Challenge — Phase 1 operations
 
+## Private-development access
+
+The feature is fail-closed by default. With `DAILY_JOURNEY_PUBLIC_ENABLED=false`, only authenticated users recognized by the canonical `SUPER_ADMIN_EMAILS` allowlist may render the homepage preview, access game/leaderboard endpoints, issue or submit runs, receive game awards/notifications, or see game accolade tracks. Non-admin authenticated requests to game URLs return 404; unauthenticated web requests follow Laravel's normal login redirect and JSON requests return 401.
+
+Set both variables in Laravel Cloud; never place real addresses in source control:
+
+```dotenv
+SUPER_ADMIN_EMAILS=admin@example.com
+DAILY_JOURNEY_PUBLIC_ENABLED=false
+```
+
+After either value changes, rebuild cached configuration and restart long-running workers:
+
+```sh
+php artisan config:cache
+php artisan queue:restart
+```
+
 ## Architecture
 
 The homepage renders only a lightweight preview and countdown. Clicking Play dynamically imports `resources/js/daily-journey/index.js`; that chunk imports Phaser and creates a 1280×720 FIT-scaled canvas. The production build measured 93.91 kB (34.73 kB gzip) for the shared initial JavaScript and 1,220.35 kB (336.64 kB gzip) for the lazy game chunk. Phaser is therefore absent from the initial execution path.
@@ -43,6 +61,7 @@ php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+php artisan queue:restart
 ```
 
 Verify the managed scheduler with `php artisan schedule:list`, then run `php artisan game:ensure-current-day` and `php artisan game:audit-day`. Confirm the Cloud scheduler invokes `php artisan schedule:run` every minute. Verify the configured worker with `php artisan queue:monitor default` (or Cloud's worker health panel), dispatch an existing test notification, and confirm `php artisan queue:failed` is empty.

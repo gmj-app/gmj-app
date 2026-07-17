@@ -7,15 +7,17 @@ use App\Models\GameRun;
 use App\Models\GameRunSession;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class RunService
 {
-    public function __construct(private GameDayService $days, private RunValidationService $validator, private LeaderboardService $leaderboard) {}
+    public function __construct(private GameDayService $days, private RunValidationService $validator, private LeaderboardService $leaderboard, private AccessService $access) {}
 
     public function issue(User $user): GameRunSession
     {
+        $this->assertAuthorized($user, 'issue');
         $day = $this->days->current();
 
         return GameRunSession::query()->create(['public_token' => (string) Str::uuid(), 'user_id' => $user->id, 'game_day_id' => $day->id, 'game_key' => config('daily_journey.key'), 'status' => 'issued', 'random_seed' => random_int(1, PHP_INT_MAX), 'game_version' => config('daily_journey.version'), 'issued_at' => now(), 'expires_at' => now()->addMinutes((int) config('daily_journey.session_minutes'))]);
@@ -23,6 +25,7 @@ class RunService
 
     public function start(GameRunSession $s, User $user): GameRunSession
     {
+        $this->assertAuthorized($user, 'start', $s);
         $this->assertOwned($s, $user);
         if ($s->status !== 'issued' || $s->expires_at->isPast()) {
             throw ValidationException::withMessages(['run' => 'This run session is no longer available.']);
@@ -33,6 +36,8 @@ class RunService
 
     public function finish(GameRunSession $s, User $user, array $data): GameRun
     {
+        $this->assertAuthorized($user, 'finish', $s);
+
         return DB::transaction(function () use ($s, $user, $data) {
             $s = GameRunSession::query()->lockForUpdate()->findOrFail($s->id);
             $this->assertOwned($s, $user);
@@ -76,5 +81,19 @@ class RunService
         if ($s->user_id !== $u->id) {
             abort(404);
         }
+    }
+
+    private function assertAuthorized(User $user, string $action, ?GameRunSession $session = null): void
+    {
+        if ($this->access->allows($user)) {
+            return;
+        }
+
+        Log::warning('Unauthorized private Daily Journey run action denied', [
+            'action' => $action,
+            'user_id' => $user->id,
+            'game_run_session_id' => $session?->id,
+        ]);
+        abort(404);
     }
 }

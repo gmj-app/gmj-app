@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'public_enabled' => (bool) env('DAILY_JOURNEY_PUBLIC_ENABLED', false),
     'key' => env('DAILY_JOURNEY_KEY', 'daily-journey'),
     'title' => env('DAILY_JOURNEY_TITLE', 'Daily Journey Challenge'),
     'timezone' => env('DAILY_JOURNEY_TIMEZONE', 'Asia/Manila'),

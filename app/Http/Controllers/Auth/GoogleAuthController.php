@@ -112,46 +112,13 @@ class GoogleAuthController extends Controller
     private function configureGoogleService(): void
     {
         config([
-            'services.google.client_id' => $this->firstFilled([
-                config('services.google.client_id'),
-                env('GOOGLE_CLIENT_ID'),
-                getenv('GOOGLE_CLIENT_ID') ?: null,
-                $_SERVER['GOOGLE_CLIENT_ID'] ?? null,
-            ]),
-            'services.google.client_secret' => $this->firstFilled([
-                config('services.google.client_secret'),
-                env('GOOGLE_CLIENT_SECRET'),
-                getenv('GOOGLE_CLIENT_SECRET') ?: null,
-                $_SERVER['GOOGLE_CLIENT_SECRET'] ?? null,
-            ]),
             'services.google.redirect' => $this->normalizeGoogleRedirectUri(),
         ]);
     }
 
-    /**
-     * @param  array<int, mixed>  $values
-     */
-    private function firstFilled(array $values): ?string
-    {
-        foreach ($values as $value) {
-            $value = trim((string) $value);
-
-            if ($value !== '') {
-                return $value;
-            }
-        }
-
-        return null;
-    }
-
     private function normalizeGoogleRedirectUri(): string
     {
-        $redirect = $this->firstFilled([
-            config('services.google.redirect'),
-            env('GOOGLE_REDIRECT_URI'),
-            getenv('GOOGLE_REDIRECT_URI') ?: null,
-            $_SERVER['GOOGLE_REDIRECT_URI'] ?? null,
-        ]);
+        $redirect = trim((string) config('services.google.redirect'));
 
         $callbackPath = '/auth/google/callback';
 
