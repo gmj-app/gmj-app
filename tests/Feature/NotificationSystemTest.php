@@ -165,7 +165,17 @@ class NotificationSystemTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('home'));
 
-        $response->assertOk()->assertSee('99+')->assertSee('Bell item 101');
+        $response
+            ->assertOk()
+            ->assertSee('99+')
+            ->assertSee('Bell item 101')
+            ->assertSee('data-header-circle-trigger="notifications"', false)
+            ->assertSee('relative inline-flex size-11 shrink-0 items-center justify-center', false)
+            ->assertSee('leading-none', false)
+            ->assertSee('focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2', false)
+            ->assertSee('data-notification-bell-icon class="block size-5 shrink-0" viewBox="0 0 24 24" width="20" height="20"', false)
+            ->assertSee('data-notification-unread-badge class="absolute -right-1 -top-1', false)
+            ->assertSee('<span class="sr-only">101 unread notifications</span>', false);
         $this->assertSame(10, substr_count($response->getContent(), 'class="block border-b border-slate-100'));
     }
 

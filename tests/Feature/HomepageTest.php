@@ -107,8 +107,15 @@ class HomepageTest extends TestCase
             ->assertSee('aria-haspopup="menu"', false)
             ->assertSee(':aria-expanded="accountOpen.toString()"', false)
             ->assertSee('aria-label="Open account menu"', false)
+            ->assertSee('data-header-utility-cluster', false)
+            ->assertSee('data-header-notification-control class="relative flex shrink-0 items-center"', false)
+            ->assertSee('data-header-account-control class="relative flex shrink-0 items-center"', false)
+            ->assertSee('data-header-circle-trigger="notifications"', false)
+            ->assertSee('data-header-circle-trigger="account"', false)
+            ->assertSee('inline-flex size-11 shrink-0 items-center justify-center', false)
             ->assertSee('src="https://example.com/avatar.jpg"', false)
             ->assertSee('alt="Public Guide avatar"', false)
+            ->assertSee('data-header-avatar-image class="block h-full w-full rounded-full object-cover" width="44" height="44"', false)
             ->assertSee('Public Guide')
             ->assertSee($user->email)
             ->assertSee('Profile')
@@ -120,6 +127,15 @@ class HomepageTest extends TestCase
             ->assertDontSee('Sign in')
             ->assertSee(route('profile.edit'), false)
             ->assertSee(route('logout'), false);
+
+        $fallbackResponse = $this->actingAs(User::factory()->create(['avatar_url' => null]))
+            ->get('/')
+            ->assertOk()
+            ->assertSee('data-header-avatar-fallback class="inline-flex h-full w-full items-center justify-center rounded-full"', false)
+            ->assertDontSee('data-notification-unread-badge', false);
+
+        $this->assertSame(2, substr_count($fallbackResponse->getContent(), 'data-header-circle-trigger='));
+        $this->assertSame(2, substr_count($fallbackResponse->getContent(), 'size-11 shrink-0 items-center justify-center'));
     }
 
     public function test_header_shows_live_platform_stats_while_homepage_search_is_centered_independently(): void
@@ -176,6 +192,8 @@ class HomepageTest extends TestCase
         $response
             ->assertSee('md:grid-cols-[1fr_auto_1fr]', false)
             ->assertSee('gap-2.5', false)
+            ->assertSee('data-header-utility-cluster class="flex shrink-0 items-center justify-end gap-2.5"', false)
+            ->assertSee('class="absolute right-0 mt-3 w-64', false)
             ->assertSee('notification-dropdown')
             ->assertSee('account-menu');
     }

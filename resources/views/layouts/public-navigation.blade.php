@@ -27,7 +27,7 @@
             <a href="{{ route('faq') }}" class="{{ $navLinkClass(request()->routeIs('faq')) }}">FAQ</a>
         </div>
 
-        <div class="flex shrink-0 items-center justify-end gap-2.5">
+        <div data-header-utility-cluster class="flex shrink-0 items-center justify-end gap-2.5">
             <x-platform-stats
                 :creator-count="$platformStats['creatorCount']"
                 :guide-count="$platformStats['guideCount']"
@@ -36,20 +36,21 @@
             @auth
                 @php($accountUser = auth()->user())
                 <x-notifications.bell />
-                <div class="relative" @click.outside="accountOpen = false">
+                <div data-header-account-control class="relative flex shrink-0 items-center" @click.outside="accountOpen = false">
                     <button
                         type="button"
                         @click="toggleAccountMenu()"
-                        class="inline-flex size-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-sm font-extrabold text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-200 dark:hover:border-indigo-500 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-950"
+                        data-header-circle-trigger="account"
+                        class="inline-flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white leading-none text-sm font-extrabold text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-200 dark:hover:border-indigo-500 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-950"
                         aria-haspopup="menu"
                         aria-controls="account-menu"
                         :aria-expanded="accountOpen.toString()"
                         aria-label="Open account menu"
                     >
                         @if (filled($accountUser->avatar_url))
-                            <img src="{{ $accountUser->avatar_url }}" alt="{{ $accountUser->publicName() }} avatar" class="h-full w-full object-cover" referrerpolicy="no-referrer">
+                            <img src="{{ $accountUser->avatar_url }}" alt="{{ $accountUser->publicName() }} avatar" data-header-avatar-image class="block h-full w-full rounded-full object-cover" width="44" height="44" referrerpolicy="no-referrer">
                         @else
-                            <span>{{ $accountUser->initialsForAvatar() }}</span>
+                            <span data-header-avatar-fallback class="inline-flex h-full w-full items-center justify-center rounded-full">{{ $accountUser->initialsForAvatar() }}</span>
                         @endif
                     </button>
 
