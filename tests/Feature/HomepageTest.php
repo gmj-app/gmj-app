@@ -587,22 +587,25 @@ class HomepageTest extends TestCase
             'submission_instructions' => null,
         ]);
 
-        $this->get('/')
+        $response = $this->get('/')
             ->assertOk()
             ->assertSee('A focused creator biography for the discovery card.')
             ->assertDontSee('This should not be shown when a bio exists.')
             ->assertSee('Suggest thoughtful documentaries and interviews.')
             ->assertSee("Help guide this creator's journey.")
-            ->assertSee('line-clamp-2 text-sm leading-5', false)
-            ->assertSee('lg:line-clamp-1', false);
+            ->assertSee('data-home-card-bio class="mt-2 min-h-[3.75rem] line-clamp-3 text-sm leading-5', false)
+            ->assertDontSee('lg:line-clamp-1', false);
+
+        $this->assertSame(3, substr_count($response->getContent(), 'data-home-card-bio'));
     }
 
     public function test_popular_creator_grid_uses_the_canonical_container_and_three_desktop_columns(): void
     {
         Creator::factory()->count(4)->create();
+        $longBio = trim(str_repeat('A long biography remains available while its visual preview is clamped. ', 4));
         Creator::factory()->create([
             'display_name' => 'A deliberately long creator display name that must truncate safely',
-            'bio' => str_repeat('A long biography remains available while its visual preview is clamped. ', 4),
+            'bio' => $longBio,
         ]);
 
         $response = $this->get('/')->assertOk();
@@ -625,8 +628,10 @@ class HomepageTest extends TestCase
             ->assertSee('2xl:h-20', false)
             ->assertSee('2xl:h-14 2xl:w-14', false)
             ->assertSee('title="A deliberately long creator display name that must truncate safely"', false)
-            ->assertSee('line-clamp-2', false)
-            ->assertSee('lg:line-clamp-1', false)
+            ->assertSee($longBio)
+            ->assertSee('data-home-card-bio', false)
+            ->assertSee('min-h-[3.75rem] line-clamp-3', false)
+            ->assertDontSee('lg:line-clamp-1', false)
             ->assertSee('flex flex-wrap items-center justify-center', false)
             ->assertSee('2xl:grid 2xl:grid-cols-3', false)
             ->assertSee('2xl:hidden', false)

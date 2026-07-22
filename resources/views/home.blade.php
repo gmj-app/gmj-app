@@ -94,8 +94,8 @@
                                     </div>
                                 </div>
 
-                                <p class="mt-2 line-clamp-2 text-sm leading-5 text-slate-600 dark:text-slate-400 lg:line-clamp-1">
-                                    {{ $creator->card_description }}
+                                <p data-home-card-bio class="mt-2 min-h-[3.75rem] line-clamp-3 text-sm leading-5 text-slate-600 dark:text-slate-400">
+                                    {{ $creator->full_card_description }}
                                 </p>
 
                                 <div class="mt-auto border-t border-slate-200/80 pt-4 dark:border-slate-800 2xl:pt-3">

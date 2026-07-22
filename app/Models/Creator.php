@@ -111,6 +111,11 @@ class Creator extends Model
 
     public function getCardDescriptionAttribute(): string
     {
+        return Str::limit($this->full_card_description, 120);
+    }
+
+    public function getFullCardDescriptionAttribute(): string
+    {
         $description = filled($this->bio)
             ? $this->bio
             : $this->submission_instructions;
@@ -121,7 +126,7 @@ class Creator extends Model
 
         $description = preg_replace('/\s+/', ' ', strip_tags((string) $description));
 
-        return Str::limit(trim((string) $description), 120);
+        return trim((string) $description);
     }
 
     public function autoApprovesRecommendations(): bool

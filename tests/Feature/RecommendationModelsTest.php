@@ -150,6 +150,7 @@ class RecommendationModelsTest extends TestCase
         );
         $this->assertSame("Help guide this creator's journey.", $creatorWithoutDescription->card_description);
         $this->assertLessThanOrEqual(123, mb_strlen($creatorWithLongBio->card_description));
+        $this->assertSame(trim(str_repeat('Long creator biography text. ', 10)), $creatorWithLongBio->full_card_description);
     }
 
     public function test_creator_default_recommendation_status_uses_the_approval_mode(): void
