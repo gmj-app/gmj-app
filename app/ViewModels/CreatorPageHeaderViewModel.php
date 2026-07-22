@@ -29,7 +29,13 @@ class CreatorPageHeaderViewModel
             ->validHistoricalSupport()
             ->whereHas('recommendation', fn ($query) => $query->publiclyVisible())
             ->sum('vote_count');
-        $publishedCount = $creator->recommendations()->where('status', 'published')->count();
+        $progressCounts = $creator->recommendations()
+            ->whereIn('status', ['recorded', 'published'])
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+        $recordedCount = (int) $progressCounts->get('recorded', 0);
+        $publishedCount = (int) $progressCounts->get('published', 0);
 
         return [
             'identity' => [
@@ -59,6 +65,9 @@ class CreatorPageHeaderViewModel
                 ['label' => 'Followers', 'value' => $followerCount],
                 ['label' => 'Votes', 'value' => $voteCount],
                 ['label' => 'Published', 'value' => $publishedCount],
+            ],
+            'progress' => [
+                'recorded_count' => $recordedCount,
             ],
             'featured_accolades' => $showcase['featured']->take(2)->values(),
             'accolade_showcase' => $showcase,

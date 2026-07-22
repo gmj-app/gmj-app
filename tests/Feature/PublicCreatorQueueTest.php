@@ -299,18 +299,25 @@ class PublicCreatorQueueTest extends TestCase
 
         $firstPage = $this->get(route('creator.queue', $creator))->assertOk();
         $secondPage = $this->get(route('creator.queue', ['creator' => $creator, 'page' => 2]))->assertOk();
+        $thirdPage = $this->get(route('creator.queue', ['creator' => $creator, 'page' => 3]))->assertOk();
 
         $this->assertSame(
-            $recommendations->take(25)->pluck('id')->all(),
+            $recommendations->take(10)->pluck('id')->all(),
             $firstPage->viewData('recommendations')->getCollection()->pluck('id')->all(),
         );
         $this->assertSame(
-            $recommendations->skip(25)->pluck('id')->all(),
+            $recommendations->slice(10, 10)->pluck('id')->all(),
             $secondPage->viewData('recommendations')->getCollection()->pluck('id')->all(),
         );
+        $this->assertSame(
+            $recommendations->skip(20)->pluck('id')->all(),
+            $thirdPage->viewData('recommendations')->getCollection()->pluck('id')->all(),
+        );
         $this->assertSame($recommendations->first()->id, $firstPage->viewData('initialExpandedRequestId'));
-        $this->assertSame($recommendations->get(25)->id, $secondPage->viewData('initialExpandedRequestId'));
-        $secondPage->assertSee('26th')->assertSee('27th');
+        $this->assertSame($recommendations->get(10)->id, $secondPage->viewData('initialExpandedRequestId'));
+        $this->assertSame($recommendations->get(20)->id, $thirdPage->viewData('initialExpandedRequestId'));
+        $secondPage->assertSee('11th')->assertSee('20th')->assertDontSee('21st');
+        $thirdPage->assertSee('21st')->assertSee('27th')->assertDontSee('20th');
     }
 
     public function test_recommendations_render_as_ranked_expandable_leaderboard_rows(): void
@@ -1086,7 +1093,39 @@ class PublicCreatorQueueTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSee('Recently Published')
-            ->assertSee('No published requests yet.');
+            ->assertSee('No published requests yet.')
+            ->assertDontSee('data-recorded-progress', false);
+    }
+
+    public function test_creator_page_surfaces_recorded_requests_as_visible_journey_progress(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'recorded-progress']);
+        Recommendation::factory()->count(2)->create([
+            'creator_id' => $creator->id,
+            'status' => 'recorded',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'published',
+        ]);
+
+        $response = $this->get(route('creator.queue', $creator));
+
+        $response
+            ->assertOk()
+            ->assertSee('data-recorded-progress', false)
+            ->assertSee('Journey progress')
+            ->assertSee('2 recorded requests moving toward publication')
+            ->assertSee('Recording is complete. Publication is the next step')
+            ->assertSee('See recorded requests')
+            ->assertSee(route('creator.queue', ['creator' => $creator, 'status' => 'recorded']), false)
+            ->assertSee('>1</dd>', false);
+
+        $this->get(route('creator.queue', ['creator' => $creator, 'status' => 'recorded']))
+            ->assertOk()
+            ->assertSee('Showing recorded requests')
+            ->assertSee('data-active-filter-count="1"', false)
+            ->assertDontSee('See recorded requests');
     }
 
     public function test_exhausted_vote_alert_explains_when_votes_return(): void

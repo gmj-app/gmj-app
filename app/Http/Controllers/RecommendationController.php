@@ -58,12 +58,13 @@ class RecommendationController extends Controller
         $filters['sort'] = in_array($filters['sort'], ['votes', 'newest', 'status', 'scheduled'], true)
             ? $filters['sort']
             : 'votes';
-        $filters['tag'] = $creator->creatorTags()
-            ->where('slug', $filters['tag'])
-            ->value('slug') ?? '';
+        $filters['tag'] = $filters['tag'] !== ''
+            ? ($creator->creatorTags()->where('slug', $filters['tag'])->value('slug') ?? '')
+            : '';
 
         $header = $this->creatorPageHeader->forCreator($creator, $request->user());
         $publicRecommendationsCount = $header['metrics'][0]['value'];
+        $recordedRecommendationsCount = $header['progress']['recorded_count'];
         $ownsCreator = $header['context']['is_creator_owner'];
         $topRequestedId = $creator->recommendations()
             ->activePubliclyVisible()
@@ -130,7 +131,7 @@ class RecommendationController extends Controller
         };
 
         $recommendations = $recommendationsQuery
-            ->paginate(25)
+            ->paginate(10)
             ->withQueryString();
         $initialExpandedRequestId = $recommendations->first()?->id;
 
@@ -168,6 +169,7 @@ class RecommendationController extends Controller
             'isFavorited',
             'ownsCreator',
             'publicRecommendationsCount',
+            'recordedRecommendationsCount',
             'recentPublishedRecommendations',
             'recommendations',
             'statusOptions',

@@ -53,7 +53,7 @@ class CreatorPagePerformanceTest extends TestCase
         ));
 
         $response->assertOk();
-        $this->assertSame(25, substr_count($html, 'data-creator-request-row'));
+        $this->assertSame(10, substr_count($html, 'data-creator-request-row'));
         $this->assertLessThanOrEqual(20, $queries);
         $this->assertLessThan(350 * 1024, strlen($html));
         $this->assertStringNotContainsString('data-recommendation-expanded-card', $html);

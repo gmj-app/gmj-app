@@ -248,6 +248,52 @@
                 </aside>
 
                 <div class="order-1 min-w-0 space-y-5">
+                    @if ($recordedRecommendationsCount > 0)
+                        <section
+                            data-recorded-progress
+                            aria-labelledby="recorded-progress-title"
+                            class="overflow-hidden rounded-2xl border border-amber-300/70 bg-gradient-to-r from-amber-50 via-orange-50 to-white shadow-sm dark:border-amber-500/30 dark:from-amber-950/45 dark:via-orange-950/25 dark:to-slate-900"
+                        >
+                            <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                                <div class="flex min-w-0 items-start gap-3.5">
+                                    <span class="relative mt-0.5 inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm shadow-amber-900/20" aria-hidden="true">
+                                        <span class="absolute inset-0 animate-ping rounded-full bg-amber-400/25 motion-reduce:animate-none"></span>
+                                        <svg class="relative size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v3m0 12v3M3 12h3m12 0h3" />
+                                            <circle cx="12" cy="12" r="4" />
+                                        </svg>
+                                    </span>
+
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">Journey progress</p>
+                                        <h2 id="recorded-progress-title" class="mt-1 text-base font-extrabold text-slate-950 dark:text-white sm:text-lg">
+                                            {{ $recordedRecommendationsCount }} recorded {{ Str::plural('request', $recordedRecommendationsCount) }} moving toward publication
+                                        </h2>
+                                        <p class="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">
+                                            Recording is complete. Publication is the next step, so these community requests are getting close to the finish line.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                @if ($filters['status'] === 'recorded')
+                                    <span class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
+                                        Showing recorded requests
+                                    </span>
+                                @else
+                                    <a
+                                        href="{{ route('creator.queue', ['creator' => $creator, 'status' => 'recorded']) }}"
+                                        class="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:bg-amber-500 dark:text-slate-950 dark:hover:bg-amber-400 dark:focus-visible:ring-offset-slate-900"
+                                    >
+                                        See recorded requests
+                                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
+                                        </svg>
+                                    </a>
+                                @endif
+                            </div>
+                        </section>
+                    @endif
+
                     @php
                         $activeFilterCount = collect([
                             $filters['q'],
