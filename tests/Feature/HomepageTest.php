@@ -7,7 +7,6 @@ use App\Models\CreatorFavorite;
 use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserPick;
-use App\Services\HomepageTopRequestsQuery;
 use App\Services\PlatformStatisticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -268,7 +267,7 @@ class HomepageTest extends TestCase
             ->assertSee('Guide My Journey')
             ->assertSee('sm:pb-8 sm:pt-12', false)
             ->assertSee('sm:pb-14 sm:pt-8', false)
-            ->assertSee('mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3', false)
+            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3', false)
             ->assertDontSee('sm:pb-24 sm:pt-20', false)
             ->assertDontSee('sm:py-20', false)
             ->assertSeeInOrder(['Fans ', '>REQUEST</span>.', 'Communities ', '>VOTE</span>.', 'Creators ', '>DECIDE</span>.'], false)
@@ -281,8 +280,8 @@ class HomepageTest extends TestCase
             ->assertSee(route('creators.create'), false)
             ->assertSee('aria-label="Add Creator Account"', false)
             ->assertSee('Verified')
-            ->assertSee('Top requests')
-            ->assertSee('Visible top request')
+            ->assertDontSee('Top requests')
+            ->assertDontSee('Visible top request')
             ->assertSee(route('creator.queue', $popularCreator), false)
             ->assertSee('aria-label="View Popular Creator"', false)
             ->assertDontSee('aria-label="View Popular Creator\'s journey"', false)
@@ -290,8 +289,12 @@ class HomepageTest extends TestCase
             ->assertSee('loading="lazy"', false)
             ->assertSee('bg-gradient-to-br from-indigo-600 via-sky-600 to-violet-600', false)
             ->assertSee('ring-4 ring-white dark:ring-slate-900', false)
+            ->assertSee('min-h-[15.5rem]', false)
+            ->assertSee('h-24 shrink-0', false)
             ->assertSee('src="https://example.com/popular-creator.jpg"', false)
             ->assertSee('alt="Popular Creator avatar"', false)
+            ->assertSee('width="64"', false)
+            ->assertSee('height="64"', false)
             ->assertSee('onerror="this.previousElementSibling.removeAttribute(\'aria-hidden\'); this.remove()"', false)
             ->assertSee('aria-label="Second Creator avatar"', false)
             ->assertSee('>SC</span>', false)
@@ -308,7 +311,7 @@ class HomepageTest extends TestCase
             ]);
     }
 
-    public function test_requester_badge_is_consistent_on_homepage_and_search_results(): void
+    public function test_requester_badge_is_removed_from_homepage_but_remains_in_search_results(): void
     {
         $guide = User::factory()->create();
         $creator = Creator::factory()->create(['display_name' => 'Badge Search Creator']);
@@ -320,132 +323,55 @@ class HomepageTest extends TestCase
             'status' => 'approved',
         ]);
 
-        $this->actingAs($guide)->get(route('home'))->assertOk()->assertSee('You requested');
+        $this->actingAs($guide)->get(route('home'))->assertOk()->assertDontSee('You requested')->assertDontSee('Historical Badge Needle');
         $this->actingAs($guide)->get(route('search.index', ['q' => 'Badge Needle']))->assertOk()->assertSee('You requested');
         $this->actingAs(User::factory()->create())->get(route('search.index', ['q' => 'Badge Needle']))->assertOk()->assertDontSee('You requested');
     }
 
-    public function test_homepage_shows_up_to_three_top_public_requests_per_creator(): void
+    public function test_homepage_creator_cards_do_not_render_request_detail_content(): void
     {
         $creator = Creator::factory()->create([
             'display_name' => 'Three Request Creator',
             'slug' => 'three-request-creator',
         ]);
 
-        $newestTopRequest = Recommendation::factory()->create([
+        $request = Recommendation::factory()->create([
             'creator_id' => $creator->id,
-            'title' => 'Newest tied top request',
+            'title' => 'Homepage request title must stay hidden',
             'status' => 'approved',
-            'created_at' => now(),
-        ]);
-        $olderTopRequest = Recommendation::factory()->create([
-            'creator_id' => $creator->id,
-            'title' => 'Older tied top request',
-            'status' => 'approved',
-            'created_at' => now()->subDay(),
-        ]);
-        $thirdRequest = Recommendation::factory()->create([
-            'creator_id' => $creator->id,
-            'title' => 'Third highest public request',
-            'status' => 'approved',
-            'created_at' => now()->subDays(2),
-        ]);
-        $fourthRequest = Recommendation::factory()->create([
-            'creator_id' => $creator->id,
-            'title' => 'Fourth public request',
-            'status' => 'passed',
-            'created_at' => now()->subDays(3),
-        ]);
-        $hiddenRequest = Recommendation::factory()->create([
-            'creator_id' => $creator->id,
-            'title' => 'Hidden request must not appear',
-            'status' => 'hidden',
         ]);
 
-        $this->addVotes($newestTopRequest, 3);
-        $this->addVotes($olderTopRequest, 3);
-        $this->addVotes($thirdRequest, 2);
-        $this->addVotes($fourthRequest, 1);
-        $this->addVotes($hiddenRequest, 10);
+        $this->addVotes($request, 3);
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Top requests')
-            ->assertSeeInOrder([
-                'Newest tied top request',
-                'Older tied top request',
-                'Third highest public request',
-            ])
-            ->assertSee('line-clamp-2 min-w-0 text-sm font-medium leading-5', false)
-            ->assertDontSee('Fourth public request')
-            ->assertDontSee('Hidden request must not appear');
+            ->assertSee('Three Request Creator')
+            ->assertDontSee('Top requests')
+            ->assertDontSee('Homepage request title must stay hidden')
+            ->assertDontSee('You requested')
+            ->assertDontSee('requested-by-you-badge');
     }
 
-    public function test_homepage_top_request_projection_is_bounded_ranked_and_mysql_safe(): void
+    public function test_homepage_does_not_issue_a_top_request_query_or_introduce_n_plus_one_queries(): void
     {
-        $first = Creator::factory()->create(['display_name' => 'Projection One']);
-        $second = Creator::factory()->create(['display_name' => 'Projection Two']);
-        $empty = Creator::factory()->create(['display_name' => 'Projection Empty']);
-
-        $requests = collect();
-        foreach ([$first, $second] as $creator) {
-            foreach (range(1, 5) as $position) {
-                $recommendation = Recommendation::factory()->create([
-                    'creator_id' => $creator->id,
-                    'title' => "{$creator->display_name} request {$position}",
-                    'status' => 'approved',
-                    'created_at' => now()->subMinutes($position),
-                ]);
-                $this->addVotes($recommendation, 6 - $position);
-                $requests->push($recommendation);
-            }
+        $creators = Creator::factory()->count(12)->create();
+        foreach ($creators as $creator) {
+            Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
         }
 
-        foreach (['pending', 'published', 'passed', 'already_seen', 'hidden', 'withdrawn'] as $status) {
-            Recommendation::factory()->create([
-                'creator_id' => $first->id,
-                'title' => "Excluded {$status}",
-                'status' => $status,
-            ]);
-        }
-        Recommendation::factory()->create([
-            'creator_id' => $first->id,
-            'title' => 'Excluded moderated spam',
-            'status' => 'approved',
-            'moderation_status' => 'removed',
-        ]);
-
-        $projection = app(HomepageTopRequestsQuery::class);
-        $result = $projection->get(collect([$first->id, $second->id, $empty->id]));
-
-        $this->assertCount(3, $result->get($first->id));
-        $this->assertCount(3, $result->get($second->id));
-        $this->assertFalse($result->has($empty->id));
-        $this->assertSame(
-            ['Projection One request 1', 'Projection One request 2', 'Projection One request 3'],
-            $result->get($first->id)->pluck('title')->all(),
-        );
-        $this->assertSame([5, 4, 3], $result->get($first->id)->pluck('user_picks_count')->map(fn ($value) => (int) $value)->all());
-        $this->assertFalse($result->flatten()->contains(fn (Recommendation $request) => str_starts_with($request->title, 'Excluded')));
-
-        $sql = strtolower($projection->builder([$first->id, $second->id])->toSql());
-        $this->assertStringContainsString('row_number() over', $sql);
-        $this->assertMatchesRegularExpression(
-            '/row_number\(\) over .*user_picks_count.* from \(select .* as ["`]user_picks_count["`]/s',
-            $sql,
-            'The window must read the aggregate alias from a nested derived table, not define and order by it in the same SQL scope.',
-        );
-        $this->assertGreaterThanOrEqual(2, substr_count($sql, 'from ('));
-
-        $queryCount = 0;
-        DB::listen(function () use (&$queryCount): void {
-            $queryCount++;
+        $queries = [];
+        DB::listen(function ($query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
         });
-        $this->get('/')->assertOk()->assertSee('Projection Empty');
-        $this->assertLessThanOrEqual(12, $queryCount);
+
+        $this->get('/')->assertOk()->assertSee($creators->first()->display_name);
+
+        $this->assertLessThanOrEqual(10, count($queries));
+        $this->assertFalse(collect($queries)->contains(fn (string $sql): bool => str_contains($sql, 'row_number() over')));
+        $this->assertFalse(collect($queries)->contains(fn (string $sql): bool => str_contains($sql, 'ranked_requests')));
     }
 
-    public function test_homepage_top_requests_only_show_votable_recommendations(): void
+    public function test_homepage_metrics_include_authoritative_request_and_published_counts_without_titles(): void
     {
         $creator = Creator::factory()->create([
             'display_name' => 'Votable Request Creator',
@@ -486,7 +412,7 @@ class HomepageTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Open approved request')
+            ->assertDontSee('Open approved request')
             ->assertDontSee('Published finished request')
             ->assertDontSee('Recorded finished request')
             ->assertDontSee('Scheduled finished request')
@@ -540,7 +466,7 @@ class HomepageTest extends TestCase
             ->assertSee('>0</strong> published', false);
     }
 
-    public function test_homepage_hides_the_top_requests_panel_when_there_are_no_public_open_requests(): void
+    public function test_homepage_never_renders_an_empty_top_requests_panel(): void
     {
         Creator::factory()->create([
             'display_name' => 'Creator Without Requests',
@@ -574,7 +500,7 @@ class HomepageTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Approved public request')
+            ->assertDontSee('Approved public request')
             ->assertDontSee('Private pending request')
             ->assertSee('>0</strong> followers', false)
             ->assertSee('>1</strong> request', false);
@@ -585,7 +511,7 @@ class HomepageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertDontSee('Approved public request')
-            ->assertSee('Private pending request')
+            ->assertDontSee('Private pending request')
             ->assertSee('>0</strong> followers', false)
             ->assertSee('>1</strong> request', false);
     }
@@ -649,7 +575,53 @@ class HomepageTest extends TestCase
             ->assertDontSee('This should not be shown when a bio exists.')
             ->assertSee('Suggest thoughtful documentaries and interviews.')
             ->assertSee("Help guide this creator's journey.")
-            ->assertSee('line-clamp-2 text-sm leading-5', false);
+            ->assertSee('line-clamp-2 text-sm leading-5', false)
+            ->assertSee('lg:line-clamp-1', false);
+    }
+
+    public function test_compact_creator_grid_is_responsive_and_add_tile_matches_card_height(): void
+    {
+        Creator::factory()->count(4)->create();
+        Creator::factory()->create([
+            'display_name' => 'A deliberately long creator display name that must truncate safely',
+            'bio' => str_repeat('A long biography remains available while its visual preview is clamped. ', 4),
+        ]);
+
+        $response = $this->get('/')->assertOk();
+
+        $response
+            ->assertSee('data-popular-creators-grid', false)
+            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3', false)
+            ->assertSee('data-creator-card', false)
+            ->assertSee('data-add-creator-card', false)
+            ->assertSee('min-h-[15.5rem]', false)
+            ->assertSee('title="A deliberately long creator display name that must truncate safely"', false)
+            ->assertSee('line-clamp-2', false)
+            ->assertSee('lg:line-clamp-1', false)
+            ->assertSee('flex flex-wrap items-center justify-center', false)
+            ->assertSee('tabular-nums', false)
+            ->assertSee('dark:border-slate-800', false)
+            ->assertSee('dark:bg-slate-900', false);
+
+        $this->assertSame(5, substr_count($response->getContent(), 'data-creator-card'));
+        $this->assertSame(6, substr_count($response->getContent(), 'min-h-[15.5rem]'));
+    }
+
+    public function test_empty_and_single_creator_homepage_rows_render_without_stale_request_content(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('data-popular-creators-grid', false)
+            ->assertSee('Add Creator Account')
+            ->assertDontSee('Top requests');
+
+        Creator::factory()->create(['display_name' => 'Only Creator']);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Only Creator')
+            ->assertSee('Add Creator Account')
+            ->assertDontSee('Top requests');
     }
 
     public function test_search_filters_creators_and_changes_the_results_heading(): void

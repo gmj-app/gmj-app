@@ -4,14 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Creator;
 use App\Models\HomepageAdvertisement;
-use App\Services\HomepageTopRequestsQuery;
 use App\Services\PopularCreatorGridService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function index(Request $request, HomepageTopRequestsQuery $topRequestsQuery, PopularCreatorGridService $gridService): View
+    public function index(Request $request, PopularCreatorGridService $gridService): View
     {
         $search = trim((string) $request->query('q', ''));
 
@@ -43,13 +42,11 @@ class HomeController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $topRequests = $topRequestsQuery->get($creators->pluck('id'));
-
         $advertisements = $search === ''
             ? HomepageAdvertisement::active()->orderBy('placement')->orderBy('id')->get()
             : collect();
         $gridItems = $gridService->compose($creators->getCollection(), $advertisements, $search === '');
 
-        return view('home', compact('creators', 'gridItems', 'search', 'topRequests'));
+        return view('home', compact('creators', 'gridItems', 'search'));
     }
 }
