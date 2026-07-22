@@ -37,13 +37,19 @@ class CreatorRecommendationController extends Controller
             'status' => ['nullable', Rule::in(Recommendation::STATUSES)],
             'category' => ['nullable', Rule::in(['music', 'documentary', 'culture', 'interview', 'other'])],
             'tag' => ['nullable', 'string', 'max:60'],
-            'sort' => ['nullable', Rule::in(['newest', 'votes', 'status', 'scheduled'])],
+            'sort' => ['nullable', 'string', 'max:30'],
         ]);
-        $filters['tag'] = $creator->creatorTags()
-            ->where('slug', $filters['tag'] ?? '')
-            ->value('slug');
+        $filters['tag'] = filled($filters['tag'] ?? null)
+            ? $creator->creatorTags()->where('slug', $filters['tag'])->value('slug')
+            : null;
 
-        $sort = $filters['sort'] ?? 'newest';
+        $requestedSort = ($filters['sort'] ?? null) === 'votes'
+            ? 'most_voted'
+            : ($filters['sort'] ?? null);
+        $sort = in_array($requestedSort, ['most_voted', 'newest', 'oldest', 'status', 'scheduled'], true)
+            ? $requestedSort
+            : 'most_voted';
+        $filters['sort'] = $sort;
 
         $recommendations = $creator->recommendations()
             ->with(['submittedBy:id,name,email', 'creatorTags:id,creator_id,name,slug', 'presentationRevisions' => fn ($query) => $query->with('actor:id,name')->latest()->limit(5), 'identityCorrections' => fn ($query) => $query->where('status', 'pending')->with('requester:id,name,email')->latest()])
@@ -65,12 +71,14 @@ class CreatorRecommendationController extends Controller
                 ->whereHas('creatorTags', fn ($query) => $query
                     ->where('creator_tags.creator_id', $creator->id)
                     ->where('creator_tags.slug', $tag)))
-            ->when($sort === 'votes', fn ($query) => $query->orderByDesc('user_picks_count')->latest())
+            ->when($sort === 'most_voted', fn ($query) => $query->orderByEffectiveVoteRank())
             ->when($sort === 'status', fn ($query) => $query->orderBy('status')->latest())
             ->when($sort === 'scheduled', fn ($query) => $query->orderByRaw('scheduled_for is null')->orderBy('scheduled_for')->latest())
             ->when($sort === 'newest', fn ($query) => $query->latest())
+            ->when($sort === 'oldest', fn ($query) => $query->oldest()->orderBy('id'))
             ->paginate(25)
-            ->withQueryString();
+            ->withQueryString()
+            ->appends(['sort' => $sort]);
 
         $categories = ['music', 'documentary', 'culture', 'interview', 'other'];
         $statuses = Recommendation::STATUSES;

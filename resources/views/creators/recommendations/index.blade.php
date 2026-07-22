@@ -71,8 +71,9 @@
                 <div>
                     <label for="sort" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Sort</label>
                     <select id="sort" name="sort" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-                        <option value="newest" @selected(($filters['sort'] ?? 'newest') === 'newest')>Newest</option>
-                        <option value="votes" @selected(($filters['sort'] ?? '') === 'votes')>Most votes</option>
+                        <option value="most_voted" @selected(($filters['sort'] ?? 'most_voted') === 'most_voted')>Most Voted</option>
+                        <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Newest</option>
+                        <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Oldest</option>
                         <option value="status" @selected(($filters['sort'] ?? '') === 'status')>Status</option>
                         <option value="scheduled" @selected(($filters['sort'] ?? '') === 'scheduled')>Scheduled date</option>
                     </select>

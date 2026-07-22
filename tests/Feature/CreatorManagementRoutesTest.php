@@ -305,14 +305,14 @@ class CreatorManagementRoutesTest extends TestCase
                 'q' => 'synth',
                 'status' => 'approved',
                 'category' => 'music',
-                'sort' => 'votes',
+                'sort' => 'most_voted',
             ]))
             ->assertOk()
             ->assertSee('Massive synth anthem')
             ->assertDontSee('Quiet folk ballad')
             ->assertDontSee('Ocean documentary')
             ->assertSee('value="synth"', false)
-            ->assertSee('Most votes');
+            ->assertSee('Most Voted');
 
         $this->get(route('creators.recommendations.index', [
             'creator' => $creator,

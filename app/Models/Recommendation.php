@@ -540,6 +540,15 @@ class Recommendation extends Model
         );
     }
 
+    /** @param Builder<Recommendation> $query */
+    public function scopeOrderByEffectiveVoteRank(Builder $query): Builder
+    {
+        return $query
+            ->orderByDesc('user_picks_count')
+            ->orderBy('created_at')
+            ->orderBy('id');
+    }
+
     /**
      * @param  Builder<Recommendation>  $query
      * @return Builder<Recommendation>

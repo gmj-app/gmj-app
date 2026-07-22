@@ -70,9 +70,7 @@ class RecommendationController extends Controller
             ->activePubliclyVisible()
             ->votable()
             ->withEffectiveVoteTotal()
-            ->orderByDesc('user_picks_count')
-            ->orderBy('created_at')
-            ->orderBy('id')
+            ->orderByEffectiveVoteRank()
             ->first()
             ?->id;
 
@@ -125,9 +123,7 @@ class RecommendationController extends Controller
                 ->orderBy('created_at')
                 ->orderBy('id'),
             default => $recommendationsQuery
-                ->orderByDesc('user_picks_count')
-                ->orderBy('created_at')
-                ->orderBy('id'),
+                ->orderByEffectiveVoteRank(),
         };
 
         $recommendations = $recommendationsQuery
