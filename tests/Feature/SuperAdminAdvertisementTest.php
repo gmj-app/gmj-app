@@ -96,6 +96,42 @@ class SuperAdminAdvertisementTest extends TestCase
         $this->assertSame(1, $ad->fresh()->click_count);
     }
 
+    public function test_matching_sponsored_campaign_decorates_the_standard_creator_card(): void
+    {
+        $creator = Creator::factory()->create([
+            'display_name' => 'Missioned Souls',
+            'bio' => 'Purposeful music and stories for a growing community.',
+            'avatar_path' => null,
+        ]);
+        $ad = HomepageAdvertisement::create([
+            'internal_name' => 'Missioned Souls campaign',
+            'advertiser_name' => 'Missioned Souls',
+            'image_path' => 'advertisements/homepage/missioned-souls.jpg',
+            'destination_url' => 'https://example.com/missioned-souls',
+            'alt_text' => 'Tour Announcement with Ticket Links',
+            'cta_label' => 'Listen now',
+            'placement' => 1,
+            'is_active' => true,
+        ]);
+        Storage::disk('public')->put($ad->image_path, 'image');
+
+        $response = $this->get('/')->assertOk();
+
+        $response
+            ->assertSee('data-sponsored-card', false)
+            ->assertSee('data-home-card-identity', false)
+            ->assertSee('data-home-card-avatar', false)
+            ->assertSee('Missioned Souls')
+            ->assertSee('Purposeful music and stories for a growing community.')
+            ->assertDontSee('Tour Announcement with Ticket Links')
+            ->assertSee('followers')
+            ->assertSee('requests')
+            ->assertSee('published')
+            ->assertSee('rounded-full', false);
+        $this->assertSame(1, substr_count($response->getContent(), 'Missioned Souls avatar'));
+        $this->assertSame(1, substr_count($response->getContent(), 'data-home-compact-card'));
+    }
+
     public function test_scheduling_and_disabled_state_exclude_ads(): void
     {
         foreach ([

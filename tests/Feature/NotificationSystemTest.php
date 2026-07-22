@@ -175,6 +175,13 @@ class NotificationSystemTest extends TestCase
             ->assertSee('focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2', false)
             ->assertSee('data-notification-bell-icon class="block size-5 shrink-0" viewBox="0 0 24 24" width="20" height="20"', false)
             ->assertSee('data-notification-unread-badge class="absolute -right-1 -top-1', false)
+            ->assertSee('data-header-notification-control class="relative flex shrink-0 items-center"', false)
+            ->assertSee('data-notification-panel role="region"', false)
+            ->assertSee('fixed inset-x-3 top-[4.5rem]', false)
+            ->assertSee('sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96', false)
+            ->assertSee('sm:max-w-[calc(100vw-2rem)]', false)
+            ->assertSee('sm:max-h-[min(70vh,35rem)]', false)
+            ->assertSee('overflow-y-auto overscroll-contain', false)
             ->assertSee('<span class="sr-only">101 unread notifications</span>', false);
         $this->assertSame(10, substr_count($response->getContent(), 'class="block border-b border-slate-100'));
     }

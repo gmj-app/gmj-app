@@ -6,10 +6,11 @@
 
 @php
     $isSponsored = $advertisement !== null;
-    $name = $isSponsored
+    $isCreatorCard = $creator !== null;
+    $name = ! $isCreatorCard
         ? ($advertisement->advertiser_name ?: $advertisement->alt_text)
         : $creator->display_name;
-    $description = $isSponsored
+    $description = ! $isCreatorCard
         ? $advertisement->alt_text
         : $creator->full_card_description;
     $href = $isSponsored
@@ -52,26 +53,26 @@
         @endif
     </div>
 
-    <div class="flex flex-1 flex-col p-4 pt-0 2xl:p-3 2xl:pt-0">
-        <div class="-mt-5 flex min-w-0 items-end gap-3">
-            @if ($isSponsored)
-                <span class="relative inline-flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-xl font-extrabold text-white shadow-sm ring-4 ring-white dark:ring-slate-900 2xl:h-14 2xl:w-14 2xl:text-lg">
-                    <span aria-hidden="true">{{ $sponsoredInitials }}</span>
-                    @if (filled($bannerUrl))
-                        <img src="{{ $bannerUrl }}" alt="" width="64" height="64" loading="lazy" class="absolute inset-0 block h-full w-full object-cover" onerror="this.remove()">
-                    @endif
-                </span>
-            @else
-                <x-creator-avatar :creator="$creator" size="home" class="ring-4 ring-white dark:ring-slate-900" />
-            @endif
+    <div data-home-card-body class="relative flex flex-1 flex-col p-4 pt-3 2xl:p-3 2xl:pt-3">
+        <div data-home-card-identity class="relative min-h-14 min-w-0 pl-[4.75rem] 2xl:pl-[4.25rem]">
+            <div data-home-card-avatar class="absolute -top-8 left-0 z-10">
+                @if (! $isCreatorCard)
+                    <span class="relative inline-flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xl font-extrabold text-white shadow-sm ring-4 ring-white dark:ring-slate-900 2xl:h-14 2xl:w-14 2xl:text-lg">
+                        <span aria-hidden="true">{{ $sponsoredInitials }}</span>
+                        @if (filled($bannerUrl))
+                            <img src="{{ $bannerUrl }}" alt="" width="64" height="64" loading="lazy" class="absolute inset-0 block h-full w-full object-cover" onerror="this.remove()">
+                        @endif
+                    </span>
+                @else
+                    <x-creator-avatar :creator="$creator" size="home" shape="circle" class="ring-4 ring-white dark:ring-slate-900" />
+                @endif
+            </div>
 
-            <div class="min-w-0 flex-1 pb-1">
-                <div class="flex min-w-0 items-start gap-2">
-                    <h3 data-home-card-name class="line-clamp-2 min-h-14 min-w-0 flex-1 text-lg font-bold leading-7 text-slate-950 dark:text-white">{{ $name }}</h3>
-                    @if (! $isSponsored && $creator->verification_status === 'verified')
-                        <span class="mt-1 shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Verified</span>
-                    @endif
-                </div>
+            <div class="flex min-h-14 min-w-0 items-start gap-2">
+                <h3 data-home-card-name title="{{ $name }}" class="line-clamp-2 min-h-14 min-w-0 flex-1 break-words text-lg font-bold leading-7 text-slate-950 dark:text-white">{{ $name }}</h3>
+                @if ($isCreatorCard && $creator->verification_status === 'verified')
+                    <span class="mt-1 shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Verified</span>
+                @endif
             </div>
         </div>
 
@@ -80,7 +81,7 @@
         </p>
 
         <div data-home-card-footer class="mt-auto border-t border-slate-200/80 pt-4 dark:border-slate-800 2xl:pt-3">
-            @if ($isSponsored)
+            @if (! $isCreatorCard)
                 <div class="flex min-h-8 min-w-0 items-center justify-between gap-3 text-sm leading-5">
                     <span class="truncate text-slate-500 dark:text-slate-400">Sponsored</span>
                     <span class="shrink-0 font-bold text-indigo-600 transition group-hover:text-indigo-500 dark:text-indigo-300">{{ $advertisement->cta_label ?: 'Learn more' }} →</span>

@@ -1,6 +1,7 @@
 @props([
     'creator',
     'size' => 'md',
+    'shape' => 'rounded',
 ])
 
 @php
@@ -22,7 +23,9 @@
 
 <span
     {{ $attributes->class([
-        'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 font-extrabold text-white shadow-sm',
+        'relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 font-extrabold text-white shadow-sm',
+        'rounded-full' => $shape === 'circle',
+        'rounded-2xl' => $shape !== 'circle',
         $sizeClasses[$size] ?? $sizeClasses['md'],
     ]) }}
 >

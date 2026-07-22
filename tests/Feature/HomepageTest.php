@@ -629,7 +629,10 @@ class HomepageTest extends TestCase
             ->assertSee('h-24 shrink-0', false)
             ->assertSee('2xl:h-20', false)
             ->assertSee('2xl:h-14 2xl:w-14', false)
-            ->assertSee('data-home-card-name class="line-clamp-2 min-h-14 min-w-0 flex-1 text-lg font-bold leading-7', false)
+            ->assertSee('data-home-card-body class="relative flex flex-1 flex-col', false)
+            ->assertSee('data-home-card-identity class="relative min-h-14 min-w-0 pl-[4.75rem]', false)
+            ->assertSee('data-home-card-avatar class="absolute -top-8 left-0 z-10"', false)
+            ->assertSee('data-home-card-name title="A deliberately long creator display name that must truncate safely" class="line-clamp-2 min-h-14 min-w-0 flex-1 break-words text-lg font-bold leading-7', false)
             ->assertSee('A deliberately long creator display name that must truncate safely')
             ->assertSee($longBio)
             ->assertSee('data-home-card-bio', false)
@@ -648,6 +651,31 @@ class HomepageTest extends TestCase
         $this->assertSame(5, substr_count($response->getContent(), 'data-home-compact-card'));
         $this->assertSame(6, substr_count($response->getContent(), 'data-home-grid-tile'));
         $this->assertSame(6, substr_count($response->getContent(), 'min-h-[19rem] md:h-[19rem] 2xl:h-72'));
+    }
+
+    public function test_compact_creator_identity_keeps_long_names_in_the_body_and_clear_of_the_avatar(): void
+    {
+        foreach (['Jfragment, From Metal To Manila', 'Russell Reacts OPM', 'Peace Beats With Dan Blackwell'] as $name) {
+            Creator::factory()->create(['display_name' => $name]);
+        }
+
+        $response = $this->get('/')->assertOk();
+
+        $response
+            ->assertSee('Jfragment, From Metal To Manila')
+            ->assertSee('Russell Reacts OPM')
+            ->assertSee('Peace Beats With Dan Blackwell')
+            ->assertSee('data-home-card-banner', false)
+            ->assertSee('data-home-card-body', false)
+            ->assertSee('data-home-card-identity', false)
+            ->assertSee('pl-[4.75rem]', false)
+            ->assertDontSee('-mt-5 flex min-w-0 items-end', false);
+
+        $html = $response->getContent();
+        $bannerEnd = strpos($html, 'data-home-card-body');
+        $firstName = strpos($html, 'data-home-card-name');
+        $this->assertNotFalse($bannerEnd);
+        $this->assertGreaterThan($bannerEnd, $firstName);
     }
 
     public function test_empty_and_single_creator_homepage_rows_render_without_stale_request_content(): void
