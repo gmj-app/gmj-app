@@ -51,7 +51,39 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(AnnouncementPublished::class, DistributeAnnouncementNotifications::class);
 
         View::composer('layouts.public-navigation', function ($view): void {
-            $view->with('platformStats', app(PlatformStatisticsService::class)->publicCounts());
+            $user = request()->user();
+            $creatorMenu = null;
+
+            if ($user) {
+                $ownedCreators = $user->ownedCreators()
+                    ->wherePivot('role', 'owner')
+                    ->availableForGuides()
+                    ->orderBy('display_name')
+                    ->get(['creators.id', 'creators.slug', 'creators.display_name']);
+
+                if ($ownedCreators->isNotEmpty()) {
+                    $routeCreator = request()->route('creator');
+                    $activeCreator = $ownedCreators->count() === 1
+                        ? $ownedCreators->first()
+                        : ($routeCreator instanceof Creator
+                            ? $ownedCreators->firstWhere('id', $routeCreator->id)
+                            : null);
+
+                    $creatorMenu = [
+                        'manage_requests_url' => $activeCreator
+                            ? route('creators.recommendations.index', $activeCreator)
+                            : route('creators.index'),
+                        'settings_url' => $activeCreator
+                            ? route('creators.settings.edit', $activeCreator)
+                            : route('creators.index'),
+                    ];
+                }
+            }
+
+            $view->with([
+                'creatorMenu' => $creatorMenu,
+                'platformStats' => app(PlatformStatisticsService::class)->publicCounts(),
+            ]);
         });
 
         $forgetPlatformStatistics = fn (): mixed => app(PlatformStatisticsService::class)->forget();

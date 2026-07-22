@@ -133,7 +133,7 @@ class MyActivityTest extends TestCase
 
         $response->assertSeeInOrder(['Newer Creator', 'Older Creator']);
         $this->assertSame(1, substr_count($response->getContent(), 'x-data="{ open: true }"'));
-        $this->assertLessThanOrEqual(9, collect(DB::getQueryLog())->count());
+        $this->assertLessThanOrEqual(12, collect(DB::getQueryLog())->count());
     }
 
     public function test_avatar_menu_contains_my_hub_first_and_preserves_account_actions(): void
