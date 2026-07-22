@@ -285,7 +285,7 @@ class HomepageTest extends TestCase
             ->assertSee('Guide My Journey')
             ->assertSee('sm:pb-8 sm:pt-12', false)
             ->assertSee('sm:pb-14 sm:pt-8', false)
-            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5', false)
+            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-3', false)
             ->assertDontSee('sm:pb-24 sm:pt-20', false)
             ->assertDontSee('sm:py-20', false)
             ->assertSeeInOrder(['Fans ', '>REQUEST</span>.', 'Communities ', '>VOTE</span>.', 'Creators ', '>DECIDE</span>.'], false)
@@ -597,7 +597,7 @@ class HomepageTest extends TestCase
             ->assertSee('lg:line-clamp-1', false);
     }
 
-    public function test_popular_creator_grid_uses_five_readable_columns_and_matching_tile_heights(): void
+    public function test_popular_creator_grid_uses_the_canonical_container_and_three_desktop_columns(): void
     {
         Creator::factory()->count(4)->create();
         Creator::factory()->create([
@@ -608,9 +608,12 @@ class HomepageTest extends TestCase
         $response = $this->get('/')->assertOk();
 
         $response
+            ->assertSee('data-popular-creators-container class="mx-auto max-w-5xl"', false)
             ->assertSee('data-popular-creators-grid', false)
-            ->assertSee('mx-auto max-w-[100rem]', false)
-            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5', false)
+            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-3', false)
+            ->assertDontSee('max-w-[100rem]', false)
+            ->assertDontSee('xl:grid-cols-4', false)
+            ->assertDontSee('2xl:grid-cols-5', false)
             ->assertDontSee('col-span-', false)
             ->assertDontSee('gridTemplateColumns', false)
             ->assertSee('data-home-grid-tile', false)

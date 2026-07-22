@@ -39,7 +39,7 @@
     </section>
 
     <section class="border-t border-slate-200 bg-white/60 px-4 py-10 dark:border-slate-800 dark:bg-slate-900/40 sm:px-6 sm:pb-14 sm:pt-8 lg:px-8 lg:pt-6">
-        <div class="mx-auto max-w-[100rem]">
+        <div data-popular-creators-container class="mx-auto max-w-5xl">
             <x-section-header eyebrow="Creator journeys" :title="$search !== '' ? 'Search results' : 'Popular creators'">
                 @if ($search !== '')
                     <x-slot:actions><a href="{{ route('home') }}" class="shrink-0 text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">Clear search</a></x-slot:actions>
@@ -52,7 +52,7 @@
                     <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Try another creator name, channel, or slug.</p>
                 </div>
             @else
-                <div data-popular-creators-grid class="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                <div data-popular-creators-grid class="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
                     @foreach ($gridItems as $gridItem)
                         @if ($gridItem['type'] === 'creator')
                         @php($creator = $gridItem['item'])
