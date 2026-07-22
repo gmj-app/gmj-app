@@ -8,12 +8,14 @@
         'sm' => 'h-8 w-8 text-xs',
         'md' => 'h-12 w-12 text-sm',
         'lg' => 'h-16 w-16 text-xl',
+        'home' => 'h-16 w-16 text-xl 2xl:h-14 2xl:w-14 2xl:text-lg',
         'xl' => 'h-20 w-20 text-2xl md:h-24 md:w-24 md:text-3xl',
     ];
     $sizePixels = [
         'sm' => 32,
         'md' => 48,
         'lg' => 64,
+        'home' => 64,
         'xl' => 96,
     ];
 @endphp

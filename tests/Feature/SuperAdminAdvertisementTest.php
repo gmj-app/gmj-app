@@ -74,7 +74,14 @@ class SuperAdminAdvertisementTest extends TestCase
         $ad = HomepageAdvertisement::create(['internal_name' => 'Ad', 'image_path' => 'advertisements/homepage/ad.jpg', 'destination_url' => 'https://example.com', 'alt_text' => 'Sponsor creative', 'placement' => 1, 'is_active' => true]);
         Storage::disk('public')->put($ad->image_path, 'image');
 
-        $this->get('/')->assertOk()->assertSeeInOrder(['Sponsored', 'First Creator', 'Second Creator', 'Add Creator Account'])->assertSee('rel="noopener noreferrer sponsored"', false)->assertSee('absolute bottom-4 right-4 rounded-full bg-indigo-600', false)->assertDontSee('absolute left-4 top-4', false);
+        $this->get('/')
+            ->assertOk()
+            ->assertSeeInOrder(['Sponsored', 'First Creator', 'Second Creator', 'Add Creator Account'])
+            ->assertSee('rel="noopener noreferrer sponsored"', false)
+            ->assertSee('data-home-grid-tile data-sponsored-card', false)
+            ->assertSee('2xl:min-h-56', false)
+            ->assertSee('absolute bottom-4 right-4 rounded-full bg-indigo-600', false)
+            ->assertDontSee('absolute left-4 top-4', false);
         $this->get(route('ads.click', $ad))->assertRedirect('https://example.com');
         $this->assertSame(1, $ad->fresh()->click_count);
     }

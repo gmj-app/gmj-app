@@ -39,7 +39,7 @@
     </section>
 
     <section class="border-t border-slate-200 bg-white/60 px-4 py-10 dark:border-slate-800 dark:bg-slate-900/40 sm:px-6 sm:pb-14 sm:pt-8 lg:px-8 lg:pt-6">
-        <div class="mx-auto max-w-7xl">
+        <div class="mx-auto max-w-[100rem]">
             <x-section-header eyebrow="Creator journeys" :title="$search !== '' ? 'Search results' : 'Popular creators'">
                 @if ($search !== '')
                     <x-slot:actions><a href="{{ route('home') }}" class="shrink-0 text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">Clear search</a></x-slot:actions>
@@ -52,17 +52,18 @@
                     <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Try another creator name, channel, or slug.</p>
                 </div>
             @else
-                <div data-popular-creators-grid class="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div data-popular-creators-grid class="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                     @foreach ($gridItems as $gridItem)
                         @if ($gridItem['type'] === 'creator')
                         @php($creator = $gridItem['item'])
                         <a
                             href="{{ route('creator.queue', $creator) }}"
                             aria-label="View {{ $creator->display_name }}"
+                            data-home-grid-tile
                             data-creator-card
-                            class="group flex h-full min-h-[15.5rem] min-w-0 cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/60 dark:focus-visible:ring-offset-slate-950"
+                            class="group flex h-full min-h-[15.5rem] min-w-0 cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/60 dark:focus-visible:ring-offset-slate-950 2xl:min-h-56"
                         >
-                            <div class="relative h-24 shrink-0 overflow-hidden bg-gradient-to-br from-indigo-600 via-sky-600 to-violet-600">
+                            <div class="relative h-24 shrink-0 overflow-hidden bg-gradient-to-br from-indigo-600 via-sky-600 to-violet-600 2xl:h-20">
                                 @if (filled($creator->hero_url))
                                     <img
                                         src="{{ $creator->hero_url }}"
@@ -79,9 +80,9 @@
                                 <div class="absolute inset-0 bg-gradient-to-r from-slate-950/45 via-slate-950/10 to-transparent"></div>
                             </div>
 
-                            <div class="flex flex-1 flex-col p-4 pt-0">
+                            <div class="flex flex-1 flex-col p-4 pt-0 2xl:p-3 2xl:pt-0">
                                 <div class="-mt-5 flex min-w-0 items-end gap-3">
-                                    <x-creator-avatar :creator="$creator" size="lg" class="ring-4 ring-white dark:ring-slate-900" />
+                                    <x-creator-avatar :creator="$creator" size="home" class="ring-4 ring-white dark:ring-slate-900" />
 
                                     <div class="min-w-0 flex-1 pb-1">
                                         <div class="flex min-w-0 items-center gap-2">
@@ -97,20 +98,20 @@
                                     {{ $creator->card_description }}
                                 </p>
 
-                                <div class="mt-auto border-t border-slate-200/80 pt-4 dark:border-slate-800">
-                                    <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-xs tabular-nums text-slate-500 dark:text-slate-400 sm:text-sm">
-                                        <span><strong class="text-slate-950 dark:text-white">{{ number_format((int) $creator->followers_count) }}</strong> {{ Str::plural('follower', (int) $creator->followers_count) }}</span>
-                                        <span aria-hidden="true" class="text-slate-300 dark:text-slate-700">|</span>
-                                        <span><strong class="text-slate-950 dark:text-white">{{ (int) $creator->visible_recommendations_count }}</strong> {{ Str::plural('request', (int) $creator->visible_recommendations_count) }}</span>
-                                        <span aria-hidden="true" class="text-slate-300 dark:text-slate-700">|</span>
-                                        <span><strong class="text-slate-950 dark:text-white">{{ (int) ($creator->published_recommendations_count ?? 0) }}</strong> published</span>
+                                <div class="mt-auto border-t border-slate-200/80 pt-4 dark:border-slate-800 2xl:pt-3">
+                                    <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-xs tabular-nums text-slate-500 dark:text-slate-400 sm:text-sm 2xl:grid 2xl:grid-cols-3 2xl:gap-0 2xl:text-xs">
+                                        <span class="min-w-0 2xl:flex 2xl:flex-col"><strong class="text-slate-950 dark:text-white">{{ number_format((int) $creator->followers_count) }}</strong> <span class="truncate">{{ Str::plural('follower', (int) $creator->followers_count) }}</span></span>
+                                        <span aria-hidden="true" class="text-slate-300 dark:text-slate-700 2xl:hidden">|</span>
+                                        <span class="min-w-0 2xl:flex 2xl:flex-col"><strong class="text-slate-950 dark:text-white">{{ (int) $creator->visible_recommendations_count }}</strong> <span class="truncate">{{ Str::plural('request', (int) $creator->visible_recommendations_count) }}</span></span>
+                                        <span aria-hidden="true" class="text-slate-300 dark:text-slate-700 2xl:hidden">|</span>
+                                        <span class="min-w-0 2xl:flex 2xl:flex-col"><strong class="text-slate-950 dark:text-white">{{ (int) ($creator->published_recommendations_count ?? 0) }}</strong> <span class="truncate">published</span></span>
                                     </div>
                                 </div>
                             </div>
                         </a>
                         @elseif ($gridItem['type'] === 'advertisement')
                             @php($advertisement = $gridItem['item'])
-                            <a href="{{ route('ads.click', $advertisement) }}" target="_blank" rel="noopener noreferrer sponsored" aria-label="Sponsored: {{ $advertisement->advertiser_name ?: $advertisement->alt_text }}" class="group relative flex min-h-[15.5rem] min-w-0 overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:focus-visible:ring-offset-slate-950">
+                            <a href="{{ route('ads.click', $advertisement) }}" target="_blank" rel="noopener noreferrer sponsored" aria-label="Sponsored: {{ $advertisement->advertiser_name ?: $advertisement->alt_text }}" data-home-grid-tile data-sponsored-card class="group relative flex min-h-[15.5rem] min-w-0 overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:focus-visible:ring-offset-slate-950 2xl:min-h-56">
                                 <img src="{{ $advertisement->imageUrl() }}" alt="{{ $advertisement->alt_text }}" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105">
                                 @if ($advertisement->advertiser_name || $advertisement->cta_label)
                                     <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-5 pr-32 pt-20 text-white">
@@ -126,16 +127,17 @@
                         <a
                             href="{{ route('creators.create') }}"
                             aria-label="Add Creator Account"
+                            data-home-grid-tile
                             data-add-creator-card
-                            class="group flex h-full min-h-[15.5rem] min-w-0 cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-300 bg-white p-5 text-center shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-400 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-indigo-500/70 dark:focus-visible:ring-offset-slate-950"
+                            class="group flex h-full min-h-[15.5rem] min-w-0 cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-300 bg-white p-5 text-center shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-400 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-indigo-500/70 dark:focus-visible:ring-offset-slate-950 2xl:min-h-56 2xl:p-3"
                         >
-                            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-4xl font-extrabold leading-none text-indigo-600 transition duration-200 group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-500/10 dark:text-indigo-300 dark:group-hover:bg-indigo-500 dark:group-hover:text-white" aria-hidden="true">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-4xl font-extrabold leading-none text-indigo-600 transition duration-200 group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-500/10 dark:text-indigo-300 dark:group-hover:bg-indigo-500 dark:group-hover:text-white 2xl:h-12 2xl:w-12 2xl:text-3xl" aria-hidden="true">
                                 +
                             </div>
 
                             <h3 class="mt-4 text-lg font-extrabold text-slate-950 dark:text-white">Add Creator Account</h3>
-                            <p class="mt-2 max-w-xs text-sm leading-5 text-slate-600 dark:text-slate-400">
-                                Create a page where fans can suggest, vote, and guide what you make next.
+                            <p class="mt-2 line-clamp-2 max-w-xs text-sm leading-5 text-slate-600 dark:text-slate-400">
+                                Create a page where fans can guide what you make next.
                             </p>
                             <span class="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition duration-200 group-hover:bg-indigo-600 dark:bg-white dark:text-slate-950 dark:group-hover:bg-indigo-400">
                                 Get started

@@ -267,7 +267,7 @@ class HomepageTest extends TestCase
             ->assertSee('Guide My Journey')
             ->assertSee('sm:pb-8 sm:pt-12', false)
             ->assertSee('sm:pb-14 sm:pt-8', false)
-            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3', false)
+            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5', false)
             ->assertDontSee('sm:pb-24 sm:pt-20', false)
             ->assertDontSee('sm:py-20', false)
             ->assertSeeInOrder(['Fans ', '>REQUEST</span>.', 'Communities ', '>VOTE</span>.', 'Creators ', '>DECIDE</span>.'], false)
@@ -417,8 +417,8 @@ class HomepageTest extends TestCase
             ->assertDontSee('Recorded finished request')
             ->assertDontSee('Scheduled finished request')
             ->assertDontSee('Passed finished request')
-            ->assertSee('>5</strong> requests', false)
-            ->assertSee('>1</strong> published', false);
+            ->assertSee('>5</strong> <span class="truncate">requests</span>', false)
+            ->assertSee('>1</strong> <span class="truncate">published</span>', false);
     }
 
     public function test_homepage_creator_cards_show_published_recommendation_counts(): void
@@ -458,12 +458,12 @@ class HomepageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Published Stats Creator')
-            ->assertSee('>0</strong> followers', false)
-            ->assertSee('>3</strong> requests', false)
-            ->assertSee('>1</strong> published', false)
+            ->assertSee('>0</strong> <span class="truncate">followers</span>', false)
+            ->assertSee('>3</strong> <span class="truncate">requests</span>', false)
+            ->assertSee('>1</strong> <span class="truncate">published</span>', false)
             ->assertSee('No Published Creator')
-            ->assertSee('>1</strong> request', false)
-            ->assertSee('>0</strong> published', false);
+            ->assertSee('>1</strong> <span class="truncate">request</span>', false)
+            ->assertSee('>0</strong> <span class="truncate">published</span>', false);
     }
 
     public function test_homepage_never_renders_an_empty_top_requests_panel(): void
@@ -502,8 +502,8 @@ class HomepageTest extends TestCase
             ->assertOk()
             ->assertDontSee('Approved public request')
             ->assertDontSee('Private pending request')
-            ->assertSee('>0</strong> followers', false)
-            ->assertSee('>1</strong> request', false);
+            ->assertSee('>0</strong> <span class="truncate">followers</span>', false)
+            ->assertSee('>1</strong> <span class="truncate">request</span>', false);
 
         $approved->update(['status' => 'hidden']);
         $pending->update(['status' => 'approved']);
@@ -512,8 +512,8 @@ class HomepageTest extends TestCase
             ->assertOk()
             ->assertDontSee('Approved public request')
             ->assertDontSee('Private pending request')
-            ->assertSee('>0</strong> followers', false)
-            ->assertSee('>1</strong> request', false);
+            ->assertSee('>0</strong> <span class="truncate">followers</span>', false)
+            ->assertSee('>1</strong> <span class="truncate">request</span>', false);
     }
 
     public function test_homepage_creator_cards_show_only_current_valid_followers_with_correct_pluralization(): void
@@ -544,9 +544,9 @@ class HomepageTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('>0</strong> followers', false)
-            ->assertSee('>1</strong> follower', false)
-            ->assertSee('>2</strong> followers', false)
+            ->assertSee('>0</strong> <span class="truncate">followers</span>', false)
+            ->assertSee('>1</strong> <span class="truncate">follower</span>', false)
+            ->assertSee('>2</strong> <span class="truncate">followers</span>', false)
             ->assertDontSee('</strong> vote', false);
     }
 
@@ -579,7 +579,7 @@ class HomepageTest extends TestCase
             ->assertSee('lg:line-clamp-1', false);
     }
 
-    public function test_compact_creator_grid_is_responsive_and_add_tile_matches_card_height(): void
+    public function test_popular_creator_grid_uses_five_readable_columns_and_matching_tile_heights(): void
     {
         Creator::factory()->count(4)->create();
         Creator::factory()->create([
@@ -591,20 +591,32 @@ class HomepageTest extends TestCase
 
         $response
             ->assertSee('data-popular-creators-grid', false)
-            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3', false)
+            ->assertSee('mx-auto max-w-[100rem]', false)
+            ->assertSee('grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5', false)
+            ->assertDontSee('col-span-', false)
+            ->assertDontSee('gridTemplateColumns', false)
+            ->assertSee('data-home-grid-tile', false)
             ->assertSee('data-creator-card', false)
             ->assertSee('data-add-creator-card', false)
             ->assertSee('min-h-[15.5rem]', false)
+            ->assertSee('2xl:min-h-56', false)
+            ->assertSee('h-24 shrink-0', false)
+            ->assertSee('2xl:h-20', false)
+            ->assertSee('2xl:h-14 2xl:w-14', false)
             ->assertSee('title="A deliberately long creator display name that must truncate safely"', false)
             ->assertSee('line-clamp-2', false)
             ->assertSee('lg:line-clamp-1', false)
             ->assertSee('flex flex-wrap items-center justify-center', false)
+            ->assertSee('2xl:grid 2xl:grid-cols-3', false)
+            ->assertSee('2xl:hidden', false)
             ->assertSee('tabular-nums', false)
             ->assertSee('dark:border-slate-800', false)
             ->assertSee('dark:bg-slate-900', false);
 
         $this->assertSame(5, substr_count($response->getContent(), 'data-creator-card'));
+        $this->assertSame(6, substr_count($response->getContent(), 'data-home-grid-tile'));
         $this->assertSame(6, substr_count($response->getContent(), 'min-h-[15.5rem]'));
+        $this->assertSame(6, substr_count($response->getContent(), '2xl:min-h-56'));
     }
 
     public function test_empty_and_single_creator_homepage_rows_render_without_stale_request_content(): void
