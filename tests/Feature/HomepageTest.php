@@ -307,7 +307,7 @@ class HomepageTest extends TestCase
             ->assertSee('loading="lazy"', false)
             ->assertSee('bg-gradient-to-br from-indigo-600 via-sky-600 to-violet-600', false)
             ->assertSee('ring-4 ring-white dark:ring-slate-900', false)
-            ->assertSee('min-h-[15.5rem]', false)
+            ->assertSee('min-h-[19rem] md:h-[19rem] 2xl:h-72', false)
             ->assertSee('h-24 shrink-0', false)
             ->assertSee('src="https://example.com/popular-creator.jpg"', false)
             ->assertSee('alt="Popular Creator avatar"', false)
@@ -593,7 +593,7 @@ class HomepageTest extends TestCase
             ->assertDontSee('This should not be shown when a bio exists.')
             ->assertSee('Suggest thoughtful documentaries and interviews.')
             ->assertSee("Help guide this creator's journey.")
-            ->assertSee('data-home-card-bio class="mt-2 min-h-[3.75rem] line-clamp-3 text-sm leading-5', false)
+            ->assertSee('data-home-card-bio class="mb-3 mt-2 min-h-[3.75rem] line-clamp-3 text-sm leading-5', false)
             ->assertDontSee('lg:line-clamp-1', false);
 
         $this->assertSame(3, substr_count($response->getContent(), 'data-home-card-bio'));
@@ -620,19 +620,24 @@ class HomepageTest extends TestCase
             ->assertDontSee('col-span-', false)
             ->assertDontSee('gridTemplateColumns', false)
             ->assertSee('data-home-grid-tile', false)
+            ->assertSee('data-home-compact-card', false)
             ->assertSee('data-creator-card', false)
             ->assertSee('data-add-creator-card', false)
-            ->assertSee('min-h-[15.5rem]', false)
-            ->assertSee('2xl:min-h-56', false)
+            ->assertSee('min-h-[19rem] md:h-[19rem] 2xl:h-72', false)
+            ->assertDontSee('min-h-[15.5rem]', false)
+            ->assertDontSee('2xl:min-h-56', false)
             ->assertSee('h-24 shrink-0', false)
             ->assertSee('2xl:h-20', false)
             ->assertSee('2xl:h-14 2xl:w-14', false)
-            ->assertSee('title="A deliberately long creator display name that must truncate safely"', false)
+            ->assertSee('data-home-card-name class="line-clamp-2 min-h-14 min-w-0 flex-1 text-lg font-bold leading-7', false)
+            ->assertSee('A deliberately long creator display name that must truncate safely')
             ->assertSee($longBio)
             ->assertSee('data-home-card-bio', false)
+            ->assertSee('mb-3 mt-2', false)
             ->assertSee('min-h-[3.75rem] line-clamp-3', false)
             ->assertDontSee('lg:line-clamp-1', false)
-            ->assertSee('flex flex-wrap items-center justify-center', false)
+            ->assertSee('data-home-card-footer class="mt-auto border-t', false)
+            ->assertSee('flex min-h-8 flex-wrap items-center justify-center', false)
             ->assertSee('2xl:grid 2xl:grid-cols-3', false)
             ->assertSee('2xl:hidden', false)
             ->assertSee('tabular-nums', false)
@@ -640,9 +645,9 @@ class HomepageTest extends TestCase
             ->assertSee('dark:bg-slate-900', false);
 
         $this->assertSame(5, substr_count($response->getContent(), 'data-creator-card'));
+        $this->assertSame(5, substr_count($response->getContent(), 'data-home-compact-card'));
         $this->assertSame(6, substr_count($response->getContent(), 'data-home-grid-tile'));
-        $this->assertSame(6, substr_count($response->getContent(), 'min-h-[15.5rem]'));
-        $this->assertSame(6, substr_count($response->getContent(), '2xl:min-h-56'));
+        $this->assertSame(6, substr_count($response->getContent(), 'min-h-[19rem] md:h-[19rem] 2xl:h-72'));
     }
 
     public function test_empty_and_single_creator_homepage_rows_render_without_stale_request_content(): void

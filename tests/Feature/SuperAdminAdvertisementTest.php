@@ -71,17 +71,27 @@ class SuperAdminAdvertisementTest extends TestCase
     {
         Creator::factory()->create(['display_name' => 'First Creator']);
         Creator::factory()->create(['display_name' => 'Second Creator']);
-        $ad = HomepageAdvertisement::create(['internal_name' => 'Ad', 'image_path' => 'advertisements/homepage/ad.jpg', 'destination_url' => 'https://example.com', 'alt_text' => 'Sponsor creative', 'placement' => 1, 'is_active' => true]);
+        $ad = HomepageAdvertisement::create(['internal_name' => 'Missioned Souls campaign', 'advertiser_name' => 'Missioned Souls', 'image_path' => 'advertisements/homepage/ad.jpg', 'destination_url' => 'https://example.com', 'alt_text' => 'Music and stories created with purpose for a growing community.', 'cta_label' => 'Listen now', 'placement' => 1, 'is_active' => true]);
         Storage::disk('public')->put($ad->image_path, 'image');
 
-        $this->get('/')
+        $response = $this->get('/')
             ->assertOk()
             ->assertSeeInOrder(['Sponsored', 'First Creator', 'Second Creator', 'Add Creator Account'])
             ->assertSee('rel="noopener noreferrer sponsored"', false)
-            ->assertSee('data-home-grid-tile data-sponsored-card', false)
-            ->assertSee('2xl:min-h-56', false)
+            ->assertSee('data-home-grid-tile', false)
+            ->assertSee('data-home-compact-card', false)
+            ->assertSee('data-sponsored-card', false)
+            ->assertSee('min-h-[19rem] md:h-[19rem] 2xl:h-72', false)
+            ->assertSee('data-home-card-banner', false)
+            ->assertSee('data-home-card-name', false)
+            ->assertSee('Missioned Souls')
+            ->assertSee('data-home-card-bio', false)
+            ->assertSee('Music and stories created with purpose for a growing community.')
+            ->assertSee('data-home-card-footer', false)
+            ->assertSee('Listen now')
             ->assertSee('absolute bottom-4 right-4 rounded-full bg-indigo-600', false)
             ->assertDontSee('absolute left-4 top-4', false);
+        $this->assertSame(3, substr_count($response->getContent(), 'data-home-compact-card'));
         $this->get(route('ads.click', $ad))->assertRedirect('https://example.com');
         $this->assertSame(1, $ad->fresh()->click_count);
     }
