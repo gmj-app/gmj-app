@@ -58,9 +58,9 @@
                         @if ($gridItem['type'] === 'creator')
                             <x-home-creator-card :creator="$gridItem['item']" :height-classes="$homeGridTileHeight" />
                         @elseif ($gridItem['type'] === 'sponsored_creator')
-                            <x-home-creator-card :creator="$gridItem['item']" :advertisement="$gridItem['advertisement']" :height-classes="$homeGridTileHeight" />
+                            <x-homepage-sponsored-tile :advertisement="$gridItem['advertisement']" :height-classes="$homeGridTileHeight" />
                         @elseif ($gridItem['type'] === 'advertisement')
-                            <x-home-creator-card :advertisement="$gridItem['item']" :height-classes="$homeGridTileHeight" />
+                            <x-homepage-sponsored-tile :advertisement="$gridItem['item']" :height-classes="$homeGridTileHeight" />
                         @elseif ($gridItem['type'] === 'add_creator')
                         <a
                             href="{{ route('creators.create') }}"

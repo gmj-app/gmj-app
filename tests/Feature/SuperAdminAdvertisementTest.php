@@ -80,23 +80,27 @@ class SuperAdminAdvertisementTest extends TestCase
             ->assertSee('rel="noopener noreferrer sponsored"', false)
             ->assertSee('data-home-grid-tile', false)
             ->assertSee('data-home-compact-card', false)
-            ->assertSee('data-sponsored-card', false)
+            ->assertSee('data-sponsored-tile', false)
             ->assertSee('min-h-[19rem] md:h-[19rem] 2xl:h-72', false)
-            ->assertSee('data-home-card-banner', false)
-            ->assertSee('data-home-card-name', false)
+            ->assertSee('data-sponsored-image', false)
+            ->assertSee('absolute inset-0 h-full w-full object-cover object-center', false)
+            ->assertSee('data-sponsored-overlay', false)
+            ->assertSee('data-sponsored-title', false)
             ->assertSee('Missioned Souls')
-            ->assertSee('data-home-card-bio', false)
+            ->assertSee('data-sponsored-copy', false)
             ->assertSee('Music and stories created with purpose for a growing community.')
-            ->assertSee('data-home-card-footer', false)
+            ->assertSee('data-sponsored-cta', false)
             ->assertSee('Listen now')
-            ->assertSee('absolute bottom-4 right-4 rounded-full bg-indigo-600', false)
-            ->assertDontSee('absolute left-4 top-4', false);
-        $this->assertSame(3, substr_count($response->getContent(), 'data-home-compact-card'));
+            ->assertSee('absolute right-4 top-4', false)
+            ->assertSee('line-clamp-2', false)
+            ->assertSee('motion-reduce:transform-none', false)
+            ->assertSee('dark:border-slate-800', false);
+        $this->assertSame(2, substr_count($response->getContent(), 'data-home-compact-card'));
         $this->get(route('ads.click', $ad))->assertRedirect('https://example.com');
         $this->assertSame(1, $ad->fresh()->click_count);
     }
 
-    public function test_matching_sponsored_campaign_decorates_the_standard_creator_card(): void
+    public function test_matching_sponsored_campaign_uses_a_dedicated_full_bleed_tile(): void
     {
         $creator = Creator::factory()->create([
             'display_name' => 'Missioned Souls',
@@ -109,7 +113,7 @@ class SuperAdminAdvertisementTest extends TestCase
             'image_path' => 'advertisements/homepage/missioned-souls.jpg',
             'destination_url' => 'https://example.com/missioned-souls',
             'alt_text' => 'Tour Announcement with Ticket Links',
-            'cta_label' => 'Listen now',
+            'cta_label' => null,
             'placement' => 1,
             'is_active' => true,
         ]);
@@ -118,18 +122,28 @@ class SuperAdminAdvertisementTest extends TestCase
         $response = $this->get('/')->assertOk();
 
         $response
-            ->assertSee('data-sponsored-card', false)
-            ->assertSee('data-home-card-identity', false)
-            ->assertSee('data-home-card-avatar', false)
+            ->assertSee('data-sponsored-tile', false)
+            ->assertSee('data-sponsored-image', false)
+            ->assertSee('data-sponsored-overlay', false)
+            ->assertSee('data-sponsored-content', false)
             ->assertSee('Missioned Souls')
-            ->assertSee('Purposeful music and stories for a growing community.')
-            ->assertDontSee('Tour Announcement with Ticket Links')
-            ->assertSee('followers')
-            ->assertSee('requests')
-            ->assertSee('published')
-            ->assertSee('rounded-full', false);
-        $this->assertSame(1, substr_count($response->getContent(), 'Missioned Souls avatar'));
-        $this->assertSame(1, substr_count($response->getContent(), 'data-home-compact-card'));
+            ->assertSee('Tour Announcement with Ticket Links')
+            ->assertSee('Learn more')
+            ->assertDontSee('Purposeful music and stories for a growing community.')
+            ->assertDontSee('data-home-card-identity', false)
+            ->assertDontSee('data-home-card-avatar', false)
+            ->assertDontSee('data-home-card-bio', false)
+            ->assertDontSee('data-home-card-footer', false)
+            ->assertDontSee('followers')
+            ->assertDontSee('requests')
+            ->assertDontSee('published');
+        $this->assertSame(0, substr_count($response->getContent(), 'Missioned Souls avatar'));
+        $this->assertSame(0, substr_count($response->getContent(), 'data-home-compact-card'));
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $sponsoredTile = (new \DOMXPath($document))->query('//a[@data-sponsored-tile]')->item(0);
+        $this->assertNotNull($sponsoredTile);
+        $this->assertSame(0, $sponsoredTile->getElementsByTagName('a')->length);
     }
 
     public function test_scheduling_and_disabled_state_exclude_ads(): void
