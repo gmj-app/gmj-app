@@ -52,6 +52,27 @@ class AccountMenuCreatorNavigationTest extends TestCase
         $this->assertStringNotContainsString(route('profile.edit').'">Creator Settings', $html);
     }
 
+    public function test_desktop_account_menu_is_anchored_below_its_avatar_without_clipping_or_upward_offsets(): void
+    {
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->get(route('about'))->assertOk();
+        $html = $response->getContent();
+        $menu = $this->desktopAccountMenu($html);
+
+        $response
+            ->assertSee('data-header-account-control class="relative flex shrink-0 items-center"', false)
+            ->assertSee('data-header-account-panel', false)
+            ->assertSee('absolute right-0 top-full z-50 mt-2', false)
+            ->assertSee('max-w-[calc(100vw-2rem)]', false)
+            ->assertSee('max-h-[calc(100dvh-5.25rem)]', false)
+            ->assertSee('overflow-x-hidden overflow-y-auto overscroll-contain', false);
+
+        $this->assertStringNotContainsString('bottom-full', $menu);
+        $this->assertStringNotContainsString('-translate-y-', $menu);
+        $this->assertStringNotContainsString('-mt-', $menu);
+        $this->assertTrue(strpos($menu, 'My Hub') < strpos($menu, 'Log out'));
+    }
+
     public function test_inactive_soft_deleted_and_non_owner_relations_do_not_expose_creator_links(): void
     {
         $user = User::factory()->create();

@@ -193,7 +193,8 @@ class HomepageTest extends TestCase
             ->assertSee('md:grid-cols-[1fr_auto_1fr]', false)
             ->assertSee('gap-2.5', false)
             ->assertSee('data-header-utility-cluster class="flex shrink-0 items-center justify-end gap-2.5"', false)
-            ->assertSee('class="absolute right-0 mt-3 w-64', false)
+            ->assertSee('data-header-account-panel', false)
+            ->assertSee('class="absolute right-0 top-full z-50 mt-2 max-h-[calc(100dvh-5.25rem)] w-64 max-w-[calc(100vw-2rem)] overflow-x-hidden overflow-y-auto overscroll-contain', false)
             ->assertSee('notification-dropdown')
             ->assertSee('account-menu');
     }

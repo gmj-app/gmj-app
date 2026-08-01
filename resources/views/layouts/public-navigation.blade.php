@@ -60,7 +60,8 @@
                         x-cloak
                         x-transition.origin.top.right
                         role="menu"
-                        class="absolute right-0 mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 text-sm font-semibold text-slate-700 shadow-xl shadow-slate-950/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:shadow-black/30"
+                        data-header-account-panel
+                        class="absolute right-0 top-full z-50 mt-2 max-h-[calc(100dvh-5.25rem)] w-64 max-w-[calc(100vw-2rem)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white py-2 text-sm font-semibold text-slate-700 shadow-xl shadow-slate-950/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:shadow-black/30"
                     >
                         <div class="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                             <p class="truncate font-extrabold text-slate-950 dark:text-white">{{ $accountUser->publicName() }}</p>
