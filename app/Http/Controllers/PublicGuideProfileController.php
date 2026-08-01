@@ -13,15 +13,8 @@ use Illuminate\View\View;
 
 class PublicGuideProfileController extends Controller
 {
-    public function __invoke(Request $request, string $handle, PublicGuideAccoladeViewModel $accolades, PublicGuideMetricsService $metrics): View
+    public function show(Request $request, User $guide, PublicGuideAccoladeViewModel $accolades, PublicGuideMetricsService $metrics): View
     {
-        $guide = User::query()
-            ->where('public_handle', strtolower($handle))
-            ->where('public_profile_enabled', true)
-            ->whereNotNull('public_display_name')
-            ->with('guideAccolades')
-            ->firstOrFail();
-
         $publicSuggestions = $guide->recommendationsSubmitted()
             ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
             ->publiclyVisible();

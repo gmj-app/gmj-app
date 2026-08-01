@@ -286,8 +286,8 @@ class PublicGuideProfileTest extends TestCase
 
         $this->get(route('guides.show', ['handle' => $guide->public_handle]))
             ->assertOk()
-            ->assertSee('Collision Guide')
-            ->assertDontSee('Collision Creator');
+            ->assertSee('Collision Creator')
+            ->assertDontSee('Collision Guide');
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()

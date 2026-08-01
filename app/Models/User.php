@@ -158,7 +158,7 @@ class User extends Authenticatable
     public function publicGuideProfileUrl(): ?string
     {
         return $this->hasPublicGuideProfile()
-            ? route('guides.show', ['handle' => $this->public_handle])
+            ? route('creator.queue', ['creator' => $this->public_handle])
             : null;
     }
 

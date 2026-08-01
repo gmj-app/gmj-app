@@ -1,4 +1,4 @@
-<x-public-layout :title="$guide->publicName().' | Guide Profile'">
+<x-public-layout :title="$guide->publicName().' | Guide Profile'" :canonical="$guide->publicGuideProfileUrl()">
     <main class="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div class="mx-auto min-w-0 max-w-5xl space-y-6">
             <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">

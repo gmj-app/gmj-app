@@ -1,4 +1,4 @@
-@props(['title' => config('app.name', 'Guide My Journey')])
+@props(['title' => config('app.name', 'Guide My Journey'), 'canonical' => null])
 @php
     $accountTheme = auth()->check() && in_array(auth()->user()->theme_preference, ['light', 'dark'], true) ? auth()->user()->theme_preference : null;
     $browserTheme = in_array(request()->cookie('theme'), ['light', 'dark'], true) ? request()->cookie('theme') : null;
@@ -16,6 +16,10 @@
         @endauth
 
         <title>{{ $title }}</title>
+        @if ($canonical)
+            <link rel="canonical" href="{{ $canonical }}">
+            <meta property="og:url" content="{{ $canonical }}">
+        @endif
         <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
 
         @include('layouts.theme-script', ['accountTheme' => $accountTheme])

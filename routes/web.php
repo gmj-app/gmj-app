@@ -14,10 +14,11 @@ use App\Http\Controllers\GuideAccoladeIndexController;
 use App\Http\Controllers\GuideRequestPresentationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalPlanTestingController;
+use App\Http\Controllers\LegacyPublicProfileController;
 use App\Http\Controllers\MyActivityController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PublicGuideProfileController;
+use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SearchController;
@@ -32,6 +33,7 @@ use App\Http\Controllers\ThemePreferenceController;
 use App\Http\Controllers\ToolsAdminController;
 use App\Http\Controllers\YoutubeToolsController;
 use App\Http\Middleware\EnsurePublicProfileIsComplete;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -207,9 +209,14 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verifie
     Route::resource('ads', HomepageAdvertisementController::class)->parameters(['ads' => 'advertisement'])->except('show');
 });
 
-Route::get('/@{handle}', PublicGuideProfileController::class)
+Route::get('/@{handle}', PublicProfileController::class)
     ->where('handle', '[A-Za-z0-9_-]+')
     ->name('guides.show');
+
+Route::get('/@{creator:slug}', PublicProfileController::class)
+    ->where('creator', '[A-Za-z0-9_-]+')
+    ->withoutMiddleware(SubstituteBindings::class)
+    ->name('creator.queue');
 
 Route::get('/{creator:slug}/published', [RecommendationController::class, 'published'])
     ->name('creators.published');
@@ -225,5 +232,6 @@ Route::get('/requests/{recommendation}/supporters', [RecommendationController::c
     ->whereNumber('recommendation')
     ->name('requests.supporters');
 
-Route::get('/{creator:slug}', [RecommendationController::class, 'showCreatorQueue'])
-    ->name('creator.queue');
+Route::get('/{handle}', LegacyPublicProfileController::class)
+    ->where('handle', '[A-Za-z0-9_-]+')
+    ->name('profiles.legacy');

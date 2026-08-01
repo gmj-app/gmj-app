@@ -1,4 +1,4 @@
-<x-public-layout :title="$creator->display_name.' | '.config('app.name', 'Guide My Journey')">
+<x-public-layout :title="$creator->display_name.' | '.config('app.name', 'Guide My Journey')" :canonical="route('creator.queue', $creator)">
     <section class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         <div class="mx-auto min-w-0 max-w-5xl">
             <div
