@@ -337,6 +337,71 @@ class CreatorManagementRoutesTest extends TestCase
         $this->assertSame(4, $documentary->creator->recommendations()->count());
     }
 
+    public function test_default_management_queue_excludes_published_and_explicit_filters_restore_it(): void
+    {
+        [$creator, $owner] = $this->creatorWithOwner();
+        foreach (['approved', 'recorded', 'coming_soon'] as $status) {
+            Recommendation::factory()->create([
+                'creator_id' => $creator->id,
+                'title' => "Visible {$status}",
+                'status' => $status,
+            ]);
+        }
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Completed publication',
+            'status' => 'published',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('creators.recommendations.index', $creator))
+            ->assertOk()
+            ->assertSee('All active statuses')
+            ->assertSee('Visible approved')
+            ->assertSee('Visible recorded')
+            ->assertSee('Visible coming_soon')
+            ->assertDontSee('Completed publication')
+            ->assertSee('Most Voted');
+
+        $this->get(route('creators.recommendations.index', [$creator, 'status' => 'published']))
+            ->assertOk()
+            ->assertSee('Completed publication')
+            ->assertDontSee('Visible approved');
+
+        $this->get(route('creators.recommendations.index', [$creator, 'status' => 'all']))
+            ->assertOk()
+            ->assertSee('Completed publication')
+            ->assertSee('Visible approved');
+
+        $this->get(route('creators.recommendations.index', [$creator, 'status' => 'invalid']))
+            ->assertOk()
+            ->assertDontSee('Completed publication')
+            ->assertSee('Visible approved');
+    }
+
+    public function test_publishing_preserves_existing_timestamp_and_rejects_malformed_timestamp(): void
+    {
+        [$creator, $owner] = $this->creatorWithOwner();
+        $recommendation = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'recorded',
+            'published_at' => '2026-07-20 09:15:00',
+        ]);
+
+        $this->actingAs($owner)
+            ->patch(route('creators.recommendations.status', [$creator, $recommendation]), [
+                'status' => 'published',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('2026-07-20 09:15', $recommendation->fresh()->published_at->format('Y-m-d H:i'));
+
+        $this->patch(route('creators.recommendations.status', [$creator, $recommendation]), [
+            'status' => 'published',
+            'published_at' => 'not-a-date',
+        ])->assertSessionHasErrors('published_at');
+    }
+
     public function test_recommendation_management_table_shows_thumbnails_only_for_youtube_videos(): void
     {
         [$creator, $owner] = $this->creatorWithOwner();

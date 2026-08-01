@@ -2,6 +2,7 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import { creatorRequestAccordion } from './creator-request-accordion.js';
+import { creatorPublicationStatusForm } from './creator-publication-status-form.js';
 
 window.Alpine = Alpine;
 
@@ -60,6 +61,7 @@ Alpine.data('siteNavigation', () => ({
 }));
 
 Alpine.data('creatorRequestAccordion', creatorRequestAccordion);
+Alpine.data('creatorPublicationStatusForm', creatorPublicationStatusForm);
 
 const resetModalState = () => {
     document.body.classList.remove('overflow-hidden', 'overflow-y-hidden', 'pointer-events-none');

@@ -581,6 +581,12 @@ class Recommendation extends Model
     }
 
     /** @param Builder<Recommendation> $query */
+    public function scopeActiveManagementQueue(Builder $query): Builder
+    {
+        return $query->where('status', '!=', 'published');
+    }
+
+    /** @param Builder<Recommendation> $query */
     public function scopePublicPublished(Builder $query): Builder
     {
         return $query->where('status', 'published')

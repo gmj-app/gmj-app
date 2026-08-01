@@ -34,11 +34,15 @@ class CreatorRecommendationController extends Controller
 
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', Rule::in(Recommendation::STATUSES)],
+            'status' => ['nullable', 'string', 'max:30'],
             'category' => ['nullable', Rule::in(['music', 'documentary', 'culture', 'interview', 'other'])],
             'tag' => ['nullable', 'string', 'max:60'],
             'sort' => ['nullable', 'string', 'max:30'],
         ]);
+        $status = $filters['status'] ?? null;
+        $filters['status'] = in_array($status, [...Recommendation::STATUSES, 'all'], true)
+            ? $status
+            : null;
         $filters['tag'] = filled($filters['tag'] ?? null)
             ? $creator->creatorTags()->where('slug', $filters['tag'])->value('slug')
             : null;
@@ -65,7 +69,11 @@ class CreatorRecommendationController extends Controller
                         ->orWhere('youtube_url', 'like', "%{$search}%");
                 });
             })
-            ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
+            ->when(
+                blank($filters['status']),
+                fn ($query) => $query->activeManagementQueue(),
+                fn ($query) => $query->when($filters['status'] !== 'all', fn ($query) => $query->where('status', $filters['status'])),
+            )
             ->when($filters['category'] ?? null, fn ($query, string $category) => $query->where('category', $category))
             ->when($filters['tag'] ?? null, fn ($query, string $tag) => $query
                 ->whereHas('creatorTags', fn ($query) => $query

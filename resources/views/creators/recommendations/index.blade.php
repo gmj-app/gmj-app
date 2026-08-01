@@ -37,7 +37,8 @@
                 <div>
                     <label for="status-filter" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Status</label>
                     <select id="status-filter" name="status" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-                        <option value="">All statuses</option>
+                        <option value="">All active statuses</option>
+                        <option value="all" @selected(($filters['status'] ?? '') === 'all')>All statuses</option>
                         @foreach ($statuses as $status)
                             <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>
                                 {{ \App\Models\Recommendation::STATUS_LABELS[$status] }}
@@ -182,12 +183,12 @@
                                             method="POST"
                                             action="{{ route('creators.recommendations.status', [$creator, $recommendation]) }}"
                                             class="space-y-2"
-                                            x-data="{ status: '{{ in_array($recommendation->status, $statuses, true) ? $recommendation->status : 'coming_soon' }}' }"
+                                            x-data="creatorPublicationStatusForm(@js(in_array($recommendation->status, $statuses, true) ? $recommendation->status : 'coming_soon'), @js(now()->format('Y-m-d\TH:i')))"
                                         >
                                             @csrf
                                             @method('PATCH')
 
-                                            <select name="status" x-model="status" class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                                            <select name="status" x-model="status" x-on:change="statusChanged()" class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
                                                 @foreach ($statuses as $status)
                                                     <option value="{{ $status }}">{{ \App\Models\Recommendation::STATUS_LABELS[$status] }}</option>
                                                 @endforeach
@@ -220,9 +221,11 @@
                                                     id="published-at-{{ $recommendation->id }}"
                                                     name="published_at"
                                                     type="datetime-local"
+                                                    x-ref="publishedAt"
                                                     value="{{ $recommendation->published_at?->format('Y-m-d\TH:i') }}"
                                                     class="block w-full min-w-0 rounded-md border-gray-300 bg-white text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                                 >
+                                                <p class="sr-only" aria-live="polite" x-text="publicationTimeAnnouncement"></p>
                                             </div>
 
                                             <button class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">Save status</button>
