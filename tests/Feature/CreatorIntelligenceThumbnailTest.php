@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CreatorChannel;
 use App\Models\CreatorVideo;
+use App\Models\User;
 use App\Models\VideoPerformanceSnapshot;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -56,5 +57,56 @@ class CreatorIntelligenceThumbnailTest extends TestCase
         $this->assertStringContainsString("image.addEventListener('error', attempt", $source);
         $this->assertStringContainsString('image.naturalWidth <= 120', $source);
         $this->assertStringContainsString("fallback.textContent = 'No image'", $source);
+        $this->assertStringContainsString('[customUrl, ...variants].filter(Boolean)', $source);
+        $this->assertStringContainsString("'[data-creator-intelligence-thumbnail]'", $source);
+        $this->assertStringNotContainsString("querySelectorAll('table tbody tr')", $source);
+    }
+
+    public function test_metadata_queue_renders_the_shared_thumbnail_component_with_stored_and_derived_sources(): void
+    {
+        $channel = CreatorChannel::factory()->create();
+        CreatorVideo::factory()->for($channel, 'channel')->create([
+            'platform_video_id' => 'NiDToOrsUeI',
+            'thumbnail_url' => 'https://cdn.example.com/preferred.jpg',
+            'title' => 'Shared thumbnail test',
+        ]);
+
+        $this->actingAs($this->admin())->get(route('superadmin.creator-intelligence.metadata-queue.index'))
+            ->assertOk()
+            ->assertSee('data-creator-intelligence-thumbnail', false)
+            ->assertSee('data-video-id="NiDToOrsUeI"', false)
+            ->assertSee('data-thumbnail-url="https://cdn.example.com/preferred.jpg"', false)
+            ->assertSee('data-title="Shared thumbnail test"', false);
+    }
+
+    public function test_all_creator_intelligence_video_surfaces_invoke_the_canonical_component(): void
+    {
+        foreach ([
+            'videos/index.blade.php',
+            'metadata-queue/index.blade.php',
+            'videos/show.blade.php',
+            'metadata-suggestions/index.blade.php',
+            'subjects/show.blade.php',
+            'content-items/show.blade.php',
+        ] as $view) {
+            $source = file_get_contents(resource_path('views/super-admin/creator-intelligence/'.$view));
+            $this->assertStringContainsString('x-creator-intelligence-thumbnail', $source, $view);
+            $this->assertStringNotContainsString('$video->thumbnail_url)<img', $source, $view);
+        }
+    }
+
+    public function test_shared_component_keeps_neutral_placeholder_for_an_invalid_identity(): void
+    {
+        $video = CreatorVideo::factory()->make(['platform_video_id' => 'fingerprint:invalid', 'thumbnail_url' => null, 'title' => 'Unavailable thumbnail']);
+
+        $this->blade('<x-creator-intelligence-thumbnail :video="$video" />', ['video' => $video])
+            ->assertSee('data-creator-intelligence-thumbnail', false)
+            ->assertSee('No image')
+            ->assertDontSee('<img', false);
+    }
+
+    private function admin(): User
+    {
+        return User::factory()->create(['can_manage_creator_intelligence' => true]);
     }
 }

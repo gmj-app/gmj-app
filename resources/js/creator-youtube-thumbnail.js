@@ -1,5 +1,3 @@
-const youtubeHosts = new Set(['i.ytimg.com', 'img.youtube.com']);
-
 export const youtubeThumbnailVariants = (videoId) => [
     `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
     `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,
@@ -7,18 +5,9 @@ export const youtubeThumbnailVariants = (videoId) => [
     `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
 ];
 
-const isCustomUrl = (value) => {
-    if (!value) return false;
-    try {
-        return !youtubeHosts.has(new URL(value, window.location.origin).hostname.toLowerCase());
-    } catch {
-        return false;
-    }
-};
-
 export const mountYoutubeThumbnail = (container, { videoId, title, customUrl = null, large = false }) => {
     const variants = youtubeThumbnailVariants(videoId);
-    const sources = isCustomUrl(customUrl) ? [customUrl, ...variants] : variants;
+    const sources = [...new Set([customUrl, ...variants].filter(Boolean))];
     let index = 0;
 
     container.replaceChildren();
@@ -53,20 +42,14 @@ export const mountYoutubeThumbnail = (container, { videoId, title, customUrl = n
 };
 
 export const enhanceCreatorYoutubeThumbnails = (root = document) => {
-    root.querySelectorAll('table tbody tr').forEach((row) => {
-        const cells = row.querySelectorAll(':scope > td');
-        if (cells.length < 2) return;
-        const id = cells[1].querySelector('span.text-xs')?.textContent?.trim();
-        if (!/^[A-Za-z0-9_-]{11}$/.test(id || '')) return;
-        const title = cells[1].querySelector('a')?.textContent?.trim() || 'video';
-        const existing = cells[0].querySelector('img')?.getAttribute('src');
-        mountYoutubeThumbnail(cells[0], { videoId: id, title, customUrl: existing });
-    });
-
-    root.querySelectorAll('img[src*="i.ytimg.com/vi/"], img[src*="img.youtube.com/vi/"]').forEach((image) => {
-        if (image.parentElement?.dataset.youtubeThumbnail) return;
-        const id = image.src.match(/\/vi\/([A-Za-z0-9_-]{11})\//)?.[1];
-        if (!id) return;
-        mountYoutubeThumbnail(image.parentElement, { videoId: id, title: image.alt.replace(/^Thumbnail for /, ''), customUrl: image.src, large: image.classList.contains('w-full') });
+    root.querySelectorAll('[data-creator-intelligence-thumbnail]').forEach((container) => {
+        const videoId = container.dataset.videoId?.trim();
+        if (!/^[A-Za-z0-9_-]{11}$/.test(videoId || '')) return;
+        mountYoutubeThumbnail(container, {
+            videoId,
+            title: container.dataset.title || 'video',
+            customUrl: container.dataset.thumbnailUrl || null,
+            large: container.dataset.large === 'true',
+        });
     });
 };
