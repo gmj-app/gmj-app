@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\VideoPerformanceSnapshot;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class CreatorIntelligenceMilestoneOneTest extends TestCase
@@ -115,5 +116,25 @@ class CreatorIntelligenceMilestoneOneTest extends TestCase
         $this->assertDatabaseCount('creator_channels', 0);
         $this->assertDatabaseCount('creator_videos', 0);
         $this->assertDatabaseCount('video_performance_snapshots', 0);
+    }
+
+    public function test_migration_recovers_after_a_partial_mysql_style_schema_commit(): void
+    {
+        Schema::drop('video_performance_snapshots');
+
+        $migration = require database_path('migrations/2026_08_01_000100_create_creator_intelligence_tables.php');
+        $migration->up();
+        $migration->up();
+
+        $this->assertTrue(Schema::hasTable('creator_profiles'));
+        $this->assertTrue(Schema::hasTable('creator_channels'));
+        $this->assertTrue(Schema::hasTable('creator_videos'));
+        $this->assertTrue(Schema::hasTable('video_performance_snapshots'));
+
+        $video = CreatorVideo::factory()->create();
+        VideoPerformanceSnapshot::create(['creator_video_id' => $video->id, 'snapshot_date' => '2026-08-01', 'source' => 'manual']);
+
+        $this->expectException(QueryException::class);
+        VideoPerformanceSnapshot::create(['creator_video_id' => $video->id, 'snapshot_date' => '2026-08-01', 'source' => 'manual']);
     }
 }
