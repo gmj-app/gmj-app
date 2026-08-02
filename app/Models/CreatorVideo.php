@@ -19,7 +19,7 @@ class CreatorVideo extends Model
     /** @use HasFactory<CreatorVideoFactory> */
     use HasFactory;
 
-    protected $fillable = ['creator_channel_id', 'platform_video_id', 'title', 'description', 'video_url', 'thumbnail_url', 'published_at', 'duration_seconds', 'video_format', 'content_type', 'is_premiere', 'is_live', 'is_short', 'is_documentary', 'is_interview', 'is_monetized', 'copyright_status', 'metadata_completion_percentage', 'metadata_completion_status', 'metadata_completion_calculated_at'];
+    protected $fillable = ['creator_channel_id', 'platform_video_id', 'title', 'description', 'video_url', 'thumbnail_url', 'published_at', 'duration_seconds', 'video_format', 'content_type', 'is_premiere', 'is_live', 'is_short', 'is_documentary', 'is_interview', 'is_monetized', 'copyright_status', 'content_item_not_applicable', 'content_item_not_applicable_by_user_id', 'content_item_not_applicable_at', 'metadata_completion_percentage', 'metadata_completion_status', 'metadata_completion_calculated_at'];
 
     protected function casts(): array
     {
@@ -35,6 +35,8 @@ class CreatorVideo extends Model
             'is_documentary' => 'boolean',
             'is_interview' => 'boolean',
             'is_monetized' => 'boolean',
+            'content_item_not_applicable' => 'boolean',
+            'content_item_not_applicable_at' => 'datetime',
             'metadata_completion_percentage' => 'integer',
             'metadata_completion_status' => MetadataCompletionStatus::class,
             'metadata_completion_calculated_at' => 'datetime',
@@ -89,5 +91,10 @@ class CreatorVideo extends Model
     public function editorialMetadata(): HasOne
     {
         return $this->hasOne(VideoEditorialMetadata::class);
+    }
+
+    public function metadataSuggestions(): HasMany
+    {
+        return $this->hasMany(MetadataSuggestion::class);
     }
 }

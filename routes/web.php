@@ -42,6 +42,7 @@ use App\Http\Controllers\SuperAdmin\CreatorIntelligence\CreatorVideoTitleMetadat
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\ImportBatchController as CreatorIntelligenceImportBatchController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\MetadataBulkUpdateController as CreatorIntelligenceMetadataBulkUpdateController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\MetadataQueueController as CreatorIntelligenceMetadataQueueController;
+use App\Http\Controllers\SuperAdmin\CreatorIntelligence\MetadataSuggestionController as CreatorIntelligenceMetadataSuggestionController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\OverviewController as CreatorIntelligenceOverviewController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\SubjectController as CreatorIntelligenceSubjectController;
 use App\Http\Controllers\SuperAdmin\CreatorRequestController as SuperAdminCreatorRequestController;
@@ -239,6 +240,9 @@ Route::prefix('superadmin/creator-intelligence')->name('superadmin.creator-intel
     Route::resource('content-items', CreatorIntelligenceContentItemController::class)->parameters(['content-items' => 'contentItem']);
     Route::get('metadata-queue', CreatorIntelligenceMetadataQueueController::class)->name('metadata-queue.index');
     Route::post('metadata-queue/bulk-update', CreatorIntelligenceMetadataBulkUpdateController::class)->name('metadata-queue.bulk-update');
+    Route::get('metadata-suggestions', [CreatorIntelligenceMetadataSuggestionController::class, 'index'])->name('metadata-suggestions.index');
+    Route::post('metadata-suggestions/generate', [CreatorIntelligenceMetadataSuggestionController::class, 'generate'])->name('metadata-suggestions.generate');
+    Route::post('metadata-suggestions/bulk', [CreatorIntelligenceMetadataSuggestionController::class, 'bulk'])->name('metadata-suggestions.bulk');
     Route::get('videos/export', CreatorIntelligenceVideoExportController::class)->name('videos.export');
     Route::get('videos/{creatorVideo}/snapshots/export', CreatorIntelligenceVideoSnapshotExportController::class)->name('videos.snapshots.export');
     Route::get('videos/{creatorVideo}/snapshots', CreatorIntelligenceVideoSnapshotController::class)->name('videos.snapshots.index');

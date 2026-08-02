@@ -15,11 +15,11 @@ class Subject extends Model
     /** @use HasFactory<SubjectFactory> */
     use HasFactory;
 
-    protected $fillable = ['creator_channel_id', 'name', 'normalized_name', 'slug', 'subject_type', 'country_code', 'notes', 'is_active'];
+    protected $fillable = ['creator_channel_id', 'name', 'normalized_name', 'slug', 'aliases', 'subject_type', 'country_code', 'notes', 'is_active'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['aliases' => 'array', 'is_active' => 'boolean'];
     }
 
     protected function name(): Attribute

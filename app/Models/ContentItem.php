@@ -14,11 +14,11 @@ class ContentItem extends Model
     /** @use HasFactory<ContentItemFactory> */
     use HasFactory;
 
-    protected $fillable = ['creator_channel_id', 'subject_id', 'name', 'normalized_name', 'slug', 'content_item_type', 'release_date', 'notes', 'is_active'];
+    protected $fillable = ['creator_channel_id', 'subject_id', 'name', 'normalized_name', 'slug', 'aliases', 'content_item_type', 'release_date', 'notes', 'is_active'];
 
     protected function casts(): array
     {
-        return ['release_date' => 'date', 'is_active' => 'boolean'];
+        return ['aliases' => 'array', 'release_date' => 'date', 'is_active' => 'boolean'];
     }
 
     protected function name(): Attribute

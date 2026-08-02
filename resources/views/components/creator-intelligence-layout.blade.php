@@ -20,6 +20,7 @@
                     'analytics' => ['Analytics', route('superadmin.creator-intelligence.analytics.index')],
                     'videos' => ['Videos', route('superadmin.creator-intelligence.videos.index')],
                     'metadata-queue' => ['Metadata Queue', route('superadmin.creator-intelligence.metadata-queue.index')],
+                    'metadata-suggestions' => ['Metadata Suggestions', route('superadmin.creator-intelligence.metadata-suggestions.index')],
                     'subjects' => [$navigationLabels->subjectPlural(), route('superadmin.creator-intelligence.subjects.index', array_filter(['creator_channel_id'=>$configuredChannel?->id]))],
                     'content-items' => [$navigationLabels->contentItemPlural(), route('superadmin.creator-intelligence.content-items.index', array_filter(['creator_channel_id'=>$configuredChannel?->id]))],
                     'profiles' => ['Creator Profiles', route('superadmin.creator-intelligence.profiles.index')],

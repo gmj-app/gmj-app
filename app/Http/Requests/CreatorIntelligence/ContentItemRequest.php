@@ -15,12 +15,13 @@ class ContentItemRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['is_active' => $this->boolean('is_active')]);
+        $aliases = collect(preg_split('/[\r\n,]+/u', (string) $this->input('aliases')))->map(fn ($alias) => trim($alias))->filter()->unique()->values()->all();
+        $this->merge(['aliases' => $aliases, 'is_active' => $this->boolean('is_active')]);
     }
 
     public function rules(): array
     {
-        return ['creator_channel_id' => ['required', 'integer', 'exists:creator_channels,id'], 'subject_id' => ['nullable', 'integer', 'exists:subjects,id'], 'name' => ['required', 'string', 'max:255'], 'content_item_type' => ['nullable', 'string', 'max:100'], 'release_date' => ['nullable', 'date'], 'notes' => ['nullable', 'string', 'max:10000'], 'is_active' => ['required', 'boolean']];
+        return ['creator_channel_id' => ['required', 'integer', 'exists:creator_channels,id'], 'subject_id' => ['nullable', 'integer', 'exists:subjects,id'], 'name' => ['required', 'string', 'max:255'], 'aliases' => ['array', 'max:100'], 'aliases.*' => ['string', 'max:255'], 'content_item_type' => ['nullable', 'string', 'max:100'], 'release_date' => ['nullable', 'date'], 'notes' => ['nullable', 'string', 'max:10000'], 'is_active' => ['required', 'boolean']];
     }
 
     public function after(): array

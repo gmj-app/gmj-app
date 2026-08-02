@@ -13,7 +13,7 @@ class MetadataCompletionService
         $score = 0;
         if ($video->primarySubject->isNotEmpty()) {
             $score += 20;
-        } if ($video->primaryContentItem->isNotEmpty()) {
+        } if ($video->primaryContentItem->isNotEmpty() || $video->content_item_not_applicable) {
             $score += 15;
         }
         if ($video->titleMetadata?->reviewed_at && $video->titleMetadata?->title_template) {
