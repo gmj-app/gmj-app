@@ -2,6 +2,7 @@
 
 namespace App\Services\CreatorIntelligence\Analytics;
 
+use App\Enums\MetadataCompletionStatus;
 use App\Models\ContentItem;
 use App\Models\Subject;
 use Carbon\CarbonImmutable;
@@ -27,7 +28,14 @@ class AnalyticsReportService
             default => $this->periodGroups($rows, $context),
         };
 
-        return ['rows' => $rows, 'coverage' => $coverage, 'summary' => $this->metrics($rows), 'groups' => $groups, 'comparison' => $report === 'subjects' ? $this->subjectComparison($rows, $context) : null];
+        return [
+            'rows' => $rows,
+            'coverage' => $coverage,
+            'summary' => $this->metrics($rows),
+            'metadata_status_counts' => $this->metadataStatusCounts($rows),
+            'groups' => $groups,
+            'comparison' => $report === 'subjects' ? $this->subjectComparison($rows, $context) : null,
+        ];
     }
 
     public function metrics(Collection $rows): array
@@ -43,7 +51,37 @@ class AnalyticsReportService
 
     private function coverage(Collection $rows): array
     {
-        return ['videos' => $rows->count(), 'views' => $rows->whereNotNull('metric_views')->count(), 'ctr' => $rows->whereNotNull('metric_impressions_ctr')->count(), 'hype' => $rows->whereNotNull('metric_hype_points')->count(), 'reviewed_titles' => $rows->whereNotNull('title_reviewed_at')->count(), 'reviewed_thumbnails' => $rows->whereNotNull('thumbnail_reviewed_at')->count(), 'reviewed_editorial' => $rows->whereNotNull('editorial_reviewed_at')->count()];
+        $hypeReported = $rows->whereNotNull('metric_hype_points');
+        $hypePositive = $hypeReported->filter(fn ($row) => (float) $row->metric_hype_points > 0)->count();
+
+        return [
+            'videos' => $rows->count(),
+            'views' => $rows->whereNotNull('metric_views')->count(),
+            'ctr' => $rows->whereNotNull('metric_impressions_ctr')->count(),
+            'hype' => $hypeReported->count(),
+            'hype_reported' => $hypeReported->count(),
+            'hype_positive' => $hypePositive,
+            'hype_receiving_percentage' => $hypeReported->isEmpty() ? null : ($hypePositive / $hypeReported->count()) * 100,
+            'reviewed_titles' => $rows->whereNotNull('title_reviewed_at')->count(),
+            'reviewed_thumbnails' => $rows->whereNotNull('thumbnail_reviewed_at')->count(),
+            'reviewed_editorial' => $rows->whereNotNull('editorial_reviewed_at')->count(),
+        ];
+    }
+
+    /** @return array{complete: int, in_progress: int, not_started: int} */
+    private function metadataStatusCounts(Collection $rows): array
+    {
+        $counts = ['complete' => 0, 'in_progress' => 0, 'not_started' => 0];
+
+        foreach ($rows as $row) {
+            $status = $row->metadata_completion_status;
+            $value = $status instanceof MetadataCompletionStatus ? $status->value : (string) $status;
+            if (array_key_exists($value, $counts)) {
+                $counts[$value]++;
+            }
+        }
+
+        return $counts;
     }
 
     private function finishGroups(Collection $groups, AnalyticsContext $context): Collection

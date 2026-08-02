@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 
 class AnalyticsDataset
 {
-    public const METRICS = ['views', 'impressions', 'impressions_ctr', 'watch_time_minutes', 'average_view_duration_seconds', 'average_percentage_viewed', 'likes', 'comments', 'subscribers_gained', 'estimated_revenue', 'rpm', 'hype_points'];
+    public const METRICS = ['views', 'impressions', 'impressions_ctr', 'watch_time_minutes', 'average_view_duration_seconds', 'average_percentage_viewed', 'likes', 'comments', 'subscribers_gained', 'estimated_revenue', 'rpm', 'cpm', 'hype_points'];
 
     public function __construct(private readonly LatestSnapshotResolver $latest) {}
 
