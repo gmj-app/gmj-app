@@ -4,15 +4,22 @@ namespace App\Http\Controllers\SuperAdmin\CreatorIntelligence;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatorIntelligence\BulkUpdateVideoMetadataRequest;
-use App\Jobs\BulkUpdateVideoMetadata;
+use App\Services\CreatorIntelligence\Metadata\MetadataBulkUpdateService;
 use Illuminate\Http\RedirectResponse;
 
 class MetadataBulkUpdateController extends Controller
 {
-    public function __invoke(BulkUpdateVideoMetadataRequest $r): RedirectResponse
+    public function __invoke(BulkUpdateVideoMetadataRequest $request, MetadataBulkUpdateService $updates): RedirectResponse
     {
-        BulkUpdateVideoMetadata::dispatch($r->validated('video_ids'), $r->validated('operation'), $r->validated('value'), $r->validated('mode'), $r->user()->id);
+        $result = $updates->apply(
+            $request->validated('video_ids'),
+            $request->validated('operation'),
+            $request->validated('value'),
+            $request->validated('mode'),
+            $request->user()->id,
+        );
 
-        return back()->with('success', 'Bulk metadata update queued for '.count($r->validated('video_ids')).' videos.');
+        return redirect()->route('superadmin.creator-intelligence.metadata-queue.index', $request->query())
+            ->with('success', "Bulk update complete: {$result['updated']} videos updated; {$result['skipped']} skipped.");
     }
 }

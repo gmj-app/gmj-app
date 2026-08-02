@@ -4,6 +4,7 @@ import Alpine from 'alpinejs';
 import { creatorRequestAccordion } from './creator-request-accordion.js';
 import { creatorPublicationStatusForm } from './creator-publication-status-form.js';
 import { enhanceCreatorYoutubeThumbnails } from './creator-youtube-thumbnail.js';
+import { metadataQueue } from './metadata-queue.js';
 
 window.Alpine = Alpine;
 
@@ -63,6 +64,7 @@ Alpine.data('siteNavigation', () => ({
 
 Alpine.data('creatorRequestAccordion', creatorRequestAccordion);
 Alpine.data('creatorPublicationStatusForm', creatorPublicationStatusForm);
+Alpine.data('metadataQueue', metadataQueue);
 
 const resetModalState = () => {
     document.body.classList.remove('overflow-hidden', 'overflow-y-hidden', 'pointer-events-none');
