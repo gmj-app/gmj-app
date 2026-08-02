@@ -2,14 +2,26 @@
 
 namespace App\Http\Controllers\SuperAdmin\CreatorIntelligence;
 
+use App\Enums\CreatorExpression;
+use App\Enums\CreatorSentiment;
+use App\Enums\MetadataScale;
+use App\Enums\ReactionStyle;
+use App\Enums\SubjectRelationshipType;
+use App\Enums\ThumbnailBackgroundStyle;
+use App\Enums\ThumbnailLayoutStyle;
+use App\Enums\ThumbnailTextPosition;
+use App\Enums\TitleTemplate;
 use App\Enums\VideoContentType;
 use App\Enums\VideoCopyrightStatus;
 use App\Enums\VideoFormat;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatorIntelligence\UpdateCreatorVideoRequest;
+use App\Models\ContentItem;
 use App\Models\CreatorChannel;
 use App\Models\CreatorProfile;
 use App\Models\CreatorVideo;
+use App\Models\Subject;
+use App\Services\CreatorIntelligence\Metadata\MetadataReviewInvalidator;
 use App\Services\CreatorIntelligence\Videos\CreatorVideoDataQualityService;
 use App\Services\CreatorIntelligence\Videos\CreatorVideoQuery;
 use App\Services\CreatorIntelligence\Videos\LatestSnapshotResolver;
@@ -28,10 +40,10 @@ class CreatorVideoController extends Controller
 
     public function show(CreatorVideo $creatorVideo, LatestSnapshotResolver $latest, CreatorVideoDataQualityService $quality): View
     {
-        $creatorVideo->load('channel.profile');
+        $creatorVideo->load(['channel.profile', 'subjects', 'contentItems', 'titleMetadata.reviewedBy', 'thumbnailMetadata', 'editorialMetadata']);
         $snapshot = $latest->resolve($creatorVideo);
 
-        return view('super-admin.creator-intelligence.videos.show', ['video' => $creatorVideo, 'latest' => $snapshot, 'quality' => $quality->evaluate($creatorVideo, $snapshot), 'format' => app(MetricFormatter::class), 'snapshots' => $creatorVideo->performanceSnapshots()->orderByDesc('snapshot_date')->orderBy('source')->paginate(25, ['*'], 'snapshots_page'), 'imports' => $creatorVideo->importRows()->with(['batch.uploadedBy', 'snapshot'])->latest()->paginate(25, ['*'], 'imports_page')]);
+        return view('super-admin.creator-intelligence.videos.show', ['video' => $creatorVideo, 'latest' => $snapshot, 'quality' => $quality->evaluate($creatorVideo, $snapshot), 'format' => app(MetricFormatter::class), 'snapshots' => $creatorVideo->performanceSnapshots()->orderByDesc('snapshot_date')->orderBy('source')->paginate(25, ['*'], 'snapshots_page'), 'imports' => $creatorVideo->importRows()->with(['batch.uploadedBy', 'snapshot'])->latest()->paginate(25, ['*'], 'imports_page'), 'availableSubjects' => Subject::where('creator_channel_id', $creatorVideo->creator_channel_id)->orderBy('name')->get(), 'availableItems' => ContentItem::where('creator_channel_id', $creatorVideo->creator_channel_id)->orderBy('name')->get(), 'relationshipTypes' => SubjectRelationshipType::cases(), 'titleTemplates' => TitleTemplate::cases(), 'expressions' => CreatorExpression::cases(), 'backgrounds' => ThumbnailBackgroundStyle::cases(), 'layouts' => ThumbnailLayoutStyle::cases(), 'textPositions' => ThumbnailTextPosition::cases(), 'sentiments' => CreatorSentiment::cases(), 'reactionStyles' => ReactionStyle::cases(), 'scales' => MetadataScale::cases()]);
     }
 
     public function edit(CreatorVideo $creatorVideo): View
@@ -39,11 +51,14 @@ class CreatorVideoController extends Controller
         return view('super-admin.creator-intelligence.videos.edit', ['video' => $creatorVideo, 'formats' => VideoFormat::cases(), 'types' => VideoContentType::cases(), 'copyrights' => VideoCopyrightStatus::cases()]);
     }
 
-    public function update(UpdateCreatorVideoRequest $request, CreatorVideo $creatorVideo): RedirectResponse
+    public function update(UpdateCreatorVideoRequest $request, CreatorVideo $creatorVideo, MetadataReviewInvalidator $reviewInvalidator): RedirectResponse
     {
         $creatorVideo->fill($request->validated());
+        $titleChanged = $creatorVideo->isDirty('title');
+        $thumbnailChanged = $creatorVideo->isDirty('thumbnail_url');
         $changed = array_keys($creatorVideo->getDirty());
         $creatorVideo->save();
+        $reviewInvalidator->apply($creatorVideo, $titleChanged, $thumbnailChanged);
         Log::info('Creator Intelligence video metadata corrected.', ['creator_video_id' => $creatorVideo->id, 'user_id' => $request->user()->id, 'changed_fields' => $changed]);
 
         return redirect()->route('superadmin.creator-intelligence.videos.show', $creatorVideo)->with('success', 'Video metadata updated.');

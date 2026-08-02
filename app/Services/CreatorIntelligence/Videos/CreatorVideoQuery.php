@@ -21,7 +21,7 @@ class CreatorVideoQuery
 
     public function build(Request $request): Builder
     {
-        $query = CreatorVideo::query()->with(['channel.profile'])->withCount('importRows')->select('creator_videos.*');
+        $query = CreatorVideo::query()->with(['channel.profile', 'subjects', 'contentItems', 'primarySubject', 'primaryContentItem', 'titleMetadata', 'thumbnailMetadata', 'editorialMetadata'])->withCount('importRows')->select('creator_videos.*');
         foreach (LatestSnapshotResolver::FIELDS as $field) {
             $query->selectSub($this->latest->subquery($field), 'latest_'.$field);
         }
@@ -36,6 +36,22 @@ class CreatorVideoQuery
         $this->enumFilter($query, $request, 'video_format', VideoFormat::class);
         $this->enumFilter($query, $request, 'content_type', VideoContentType::class);
         $this->enumFilter($query, $request, 'copyright_status', VideoCopyrightStatus::class);
+        foreach (['subject_id' => 'subjects', 'primary_subject_id' => 'primarySubject', 'content_item_id' => 'contentItems'] as $parameter => $relationship) {
+            $this->integerFilter($query, $request, $parameter, fn (Builder $q, int $value) => $q->whereHas($relationship, fn (Builder $relation) => $relation->whereKey($value)));
+        }
+        if (in_array($request->input('metadata_completion_status'), ['not_started', 'in_progress', 'complete'], true)) {
+            $query->where('metadata_completion_status', $request->input('metadata_completion_status'));
+        }
+        foreach (['min_metadata_completion_percentage' => '>=', 'max_metadata_completion_percentage' => '<='] as $parameter => $operator) {
+            if (is_numeric($request->input($parameter))) {
+                $query->where('metadata_completion_percentage', $operator, $request->input($parameter));
+            }
+        }
+        foreach (['creator_sentiment', 'reaction_style'] as $field) {
+            if ($request->filled($field)) {
+                $query->whereHas('editorialMetadata', fn (Builder $metadata) => $metadata->where($field, $request->input($field)));
+            }
+        }
         foreach (['is_premiere', 'is_live', 'is_short', 'is_documentary', 'is_interview'] as $field) {
             $this->booleanFilter($query, $request, $field);
         }

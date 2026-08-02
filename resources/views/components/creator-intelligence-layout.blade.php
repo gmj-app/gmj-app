@@ -8,6 +8,9 @@
                 @foreach ([
                     'overview' => ['Overview', route('superadmin.creator-intelligence.overview')],
                     'videos' => ['Videos', route('superadmin.creator-intelligence.videos.index')],
+                    'metadata-queue' => ['Metadata Queue', route('superadmin.creator-intelligence.metadata-queue.index')],
+                    'subjects' => ['Subjects', route('superadmin.creator-intelligence.subjects.index')],
+                    'content-items' => ['Content Items', route('superadmin.creator-intelligence.content-items.index')],
                     'profiles' => ['Creator Profiles', route('superadmin.creator-intelligence.profiles.index')],
                     'channels' => ['Creator Channels', route('superadmin.creator-intelligence.channels.index')],
                     'imports' => ['Imports', route('superadmin.creator-intelligence.imports.index')],

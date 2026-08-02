@@ -9,14 +9,16 @@ use Database\Factories\CreatorVideoFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CreatorVideo extends Model
 {
     /** @use HasFactory<CreatorVideoFactory> */
     use HasFactory;
 
-    protected $fillable = ['creator_channel_id', 'platform_video_id', 'title', 'description', 'video_url', 'thumbnail_url', 'published_at', 'duration_seconds', 'video_format', 'content_type', 'is_premiere', 'is_live', 'is_short', 'is_documentary', 'is_interview', 'is_monetized', 'copyright_status'];
+    protected $fillable = ['creator_channel_id', 'platform_video_id', 'title', 'description', 'video_url', 'thumbnail_url', 'published_at', 'duration_seconds', 'video_format', 'content_type', 'is_premiere', 'is_live', 'is_short', 'is_documentary', 'is_interview', 'is_monetized', 'copyright_status', 'metadata_completion_percentage', 'metadata_completion_status', 'metadata_completion_calculated_at'];
 
     protected function casts(): array
     {
@@ -32,6 +34,8 @@ class CreatorVideo extends Model
             'is_documentary' => 'boolean',
             'is_interview' => 'boolean',
             'is_monetized' => 'boolean',
+            'metadata_completion_percentage' => 'integer',
+            'metadata_completion_calculated_at' => 'datetime',
         ];
     }
 
@@ -48,5 +52,40 @@ class CreatorVideo extends Model
     public function importRows(): HasMany
     {
         return $this->hasMany(ImportBatchRow::class);
+    }
+
+    public function subjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'creator_video_subject')->withPivot(['relationship_type', 'is_primary'])->withTimestamps();
+    }
+
+    public function primarySubject(): BelongsToMany
+    {
+        return $this->subjects()->wherePivot('is_primary', true);
+    }
+
+    public function contentItems(): BelongsToMany
+    {
+        return $this->belongsToMany(ContentItem::class, 'creator_video_content_item')->withPivot('is_primary')->withTimestamps();
+    }
+
+    public function primaryContentItem(): BelongsToMany
+    {
+        return $this->contentItems()->wherePivot('is_primary', true);
+    }
+
+    public function titleMetadata(): HasOne
+    {
+        return $this->hasOne(VideoTitleMetadata::class);
+    }
+
+    public function thumbnailMetadata(): HasOne
+    {
+        return $this->hasOne(VideoThumbnailMetadata::class);
+    }
+
+    public function editorialMetadata(): HasOne
+    {
+        return $this->hasOne(VideoEditorialMetadata::class);
     }
 }

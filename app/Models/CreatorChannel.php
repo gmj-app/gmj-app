@@ -36,6 +36,16 @@ class CreatorChannel extends Model
         return $this->hasMany(ImportBatch::class);
     }
 
+    public function subjects(): HasMany
+    {
+        return $this->hasMany(Subject::class);
+    }
+
+    public function contentItems(): HasMany
+    {
+        return $this->hasMany(ContentItem::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

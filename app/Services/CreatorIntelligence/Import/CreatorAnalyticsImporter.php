@@ -8,6 +8,7 @@ use App\Models\CreatorVideo;
 use App\Models\ImportBatch;
 use App\Models\ImportBatchRow;
 use App\Models\VideoPerformanceSnapshot;
+use App\Services\CreatorIntelligence\Metadata\MetadataReviewInvalidator;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -19,7 +20,7 @@ class CreatorAnalyticsImporter
 
     private const METRIC_FIELDS = ['views', 'impressions', 'impressions_ctr', 'watch_time_minutes', 'average_view_duration_seconds', 'average_percentage_viewed', 'likes', 'comments', 'shares', 'subscribers_gained', 'subscribers_lost', 'estimated_revenue', 'rpm', 'cpm', 'hype_points', 'views_first_24_hours', 'views_first_7_days', 'views_first_28_days'];
 
-    public function __construct(private readonly AnalyticsFileInspector $files, private readonly AnalyticsCsvReader $reader, private readonly CsvRowNormalizer $normalizer) {}
+    public function __construct(private readonly AnalyticsFileInspector $files, private readonly AnalyticsCsvReader $reader, private readonly CsvRowNormalizer $normalizer, private readonly MetadataReviewInvalidator $reviewInvalidator) {}
 
     public function import(ImportBatch $batch): void
     {
@@ -112,7 +113,10 @@ class CreatorAnalyticsImporter
         if (array_key_exists('duration', $data) && $data['duration'] !== null) {
             $video->duration_seconds = $data['duration'];
         }
+        $titleChanged = $video->isDirty('title');
+        $thumbnailChanged = $video->isDirty('thumbnail_url');
         $video->save();
+        $this->reviewInvalidator->apply($video, $titleChanged, $thumbnailChanged);
 
         return [$video, $created];
     }
