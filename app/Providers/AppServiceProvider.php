@@ -40,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('access-video-tools', fn (User $user): bool => (bool) $user->can_access_video_tools);
+        Gate::define('creator-intelligence.manage', fn (User $user): bool => $user->isSuperAdmin() || (bool) $user->can_manage_creator_intelligence);
         Event::listen(RequestCreated::class, NotifyCreatorOfNewRequest::class);
         Event::listen(RequestCreated::class, EvaluateGuideAccoladesAfterRequestCreated::class);
         Event::listen(RequestCreated::class, EvaluateCreatorReachAfterRequestCreated::class);

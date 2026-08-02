@@ -18,6 +18,10 @@ class DatabaseSeeder extends Seeder
         $this->call(GuideAccoladeSeeder::class);
         $this->call(CreatorSeeder::class);
 
+        if ($this->command?->getLaravel()->environment(['local', 'development', 'testing'])) {
+            $this->call(CreatorIntelligenceSeeder::class);
+        }
+
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',

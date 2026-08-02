@@ -25,6 +25,9 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SuperAdmin\AccoladeController as SuperAdminAccoladeController;
 use App\Http\Controllers\SuperAdmin\AnnouncementController;
 use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorController;
+use App\Http\Controllers\SuperAdmin\CreatorIntelligence\CreatorChannelController as CreatorIntelligenceChannelController;
+use App\Http\Controllers\SuperAdmin\CreatorIntelligence\CreatorProfileController as CreatorIntelligenceProfileController;
+use App\Http\Controllers\SuperAdmin\CreatorIntelligence\OverviewController as CreatorIntelligenceOverviewController;
 use App\Http\Controllers\SuperAdmin\CreatorRequestController as SuperAdminCreatorRequestController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\HomepageAdvertisementController;
@@ -207,6 +210,12 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verifie
     Route::post('/creators/{creator}/requests/{recommendation}/presentation/{revision}/revert', [SuperAdminCreatorRequestController::class, 'revertPresentation'])->whereNumber(['recommendation', 'revision'])->name('creators.requests.presentation.revert');
     Route::patch('/ads/{advertisement}/toggle', [HomepageAdvertisementController::class, 'toggle'])->name('ads.toggle');
     Route::resource('ads', HomepageAdvertisementController::class)->parameters(['ads' => 'advertisement'])->except('show');
+});
+
+Route::prefix('superadmin/creator-intelligence')->name('superadmin.creator-intelligence.')->middleware(['auth', 'can:creator-intelligence.manage'])->group(function () {
+    Route::get('/', CreatorIntelligenceOverviewController::class)->name('overview');
+    Route::resource('profiles', CreatorIntelligenceProfileController::class)->except(['show', 'destroy']);
+    Route::resource('channels', CreatorIntelligenceChannelController::class)->except(['show', 'destroy']);
 });
 
 Route::get('/@{handle}', PublicProfileController::class)

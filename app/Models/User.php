@@ -42,6 +42,7 @@ class User extends Authenticatable
         'membership_tier',
         'plan_slug',
         'can_access_video_tools',
+        'can_manage_creator_intelligence',
         'password',
     ];
 
@@ -69,6 +70,7 @@ class User extends Authenticatable
             'public_profile_enabled' => 'boolean',
             'display_name_prompt_dismissed_at' => 'datetime',
             'can_access_video_tools' => 'boolean',
+            'can_manage_creator_intelligence' => 'boolean',
             'password' => 'hashed',
         ];
     }

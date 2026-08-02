@@ -10,6 +10,7 @@
                 <a href="{{ route('super-admin.announcements.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.announcements.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Announcements</a>
                 <a href="{{ route('super-admin.accolades.index') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.accolades.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Accolades</a>
                 <a href="{{ route('super-admin.notifications.test') }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('super-admin.notifications.*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">Notifications</a>
+                @can('creator-intelligence.manage')<a href="{{ route('superadmin.creator-intelligence.overview') }}" class="rounded-xl px-4 py-2 bg-white dark:bg-slate-900">Creator Intelligence</a>@endcan
             </nav>
         </div>
         @if (session('success'))<div class="mb-6 rounded-xl bg-emerald-100 p-4 font-semibold text-emerald-800">{{ session('success') }}</div>@endif
