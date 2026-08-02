@@ -15,11 +15,16 @@ class YoutubeVideoIdentityService
         if ($value === '' || str_starts_with($value, 'fingerprint:')) {
             return null;
         }
-        if (! preg_match('/^[A-Za-z0-9_-]{6,32}$/', $value)) {
-            throw new InvalidArgumentException('The YouTube Video value is not a valid platform video ID.');
+        if (! preg_match('/^[A-Za-z0-9_-]{11}$/', $value)) {
+            throw new InvalidArgumentException('The YouTube Content or Video value must be an 11-character video ID.');
         }
 
         return $value;
+    }
+
+    public function platformIdFromImportData(array $raw, array $normalized = []): ?string
+    {
+        return $this->validPlatformId($normalized['platform_video_id'] ?? $raw['Content'] ?? $raw['Video'] ?? null);
     }
 
     public function findFingerprintMatch(int $channelId, string $title, CarbonImmutable $published): ?CreatorVideo

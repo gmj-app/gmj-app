@@ -48,7 +48,7 @@ class RepairYoutubeCreatorIntelligenceIdentities extends Command
                     $raw = $row->raw_data ?? [];
                     $normalized = $row->normalized_data ?? [];
                     try {
-                        $platformId = $identities->validPlatformId($normalized['platform_video_id'] ?? $raw['Video'] ?? null);
+                        $platformId = $identities->platformIdFromImportData($raw, $normalized);
                     } catch (InvalidArgumentException) {
                         $skipped++;
 

@@ -59,18 +59,18 @@ class CreatorIntelligenceImportTest extends TestCase
     public function test_valid_csv_upload_is_inspected_and_previewed_with_bom_mapping(): void
     {
         [$admin, $channel] = $this->context();
-        $csv = "\xEF\xBB\xBFVideo,Video title,Video publish time,Views,Hype points\nabc123,First video,2026-07-01 12:00:00,\"1,234\",50\n";
+        $csv = "\xEF\xBB\xBFContent,Video title,Video publish time,Views,Hype points\nNiDToOrsUeI,First video,2026-07-01 12:00:00,\"1,234\",50\n";
         $this->actingAs($admin)->post(route('superadmin.creator-intelligence.imports.store'), ['creator_channel_id' => $channel->id, 'source' => 'youtube_studio', 'snapshot_date' => '2026-08-01', 'file' => UploadedFile::fake()->createWithContent('analytics.csv', $csv)])->assertRedirect();
         $batch = ImportBatch::query()->sole();
         $this->assertSame(ImportBatchStatus::Completed, $batch->status);
         $this->assertSame('youtube_studio', $batch->source->value);
-        $this->assertSame(['Video', 'Video title', 'Video publish time', 'Views', 'Hype points'], $batch->detected_columns);
+        $this->assertSame(['Content', 'Video title', 'Video publish time', 'Views', 'Hype points'], $batch->detected_columns);
         $this->assertSame('title', $batch->column_mapping['Video title']);
-        $this->assertSame('platform_video_id', $batch->column_mapping['Video']);
+        $this->assertSame('platform_video_id', $batch->column_mapping['Content']);
         $this->assertCount(1, $batch->preview_rows);
         $video = CreatorVideo::query()->sole();
-        $this->assertSame('abc123', $video->platform_video_id);
-        $this->assertSame('https://i.ytimg.com/vi/abc123/hqdefault.jpg', $video->thumbnail_url);
+        $this->assertSame('NiDToOrsUeI', $video->platform_video_id);
+        $this->assertSame('https://i.ytimg.com/vi/NiDToOrsUeI/hqdefault.jpg', $video->thumbnail_url);
         $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.show', $batch))->assertOk()->assertSee('First video');
         Storage::disk('local')->assertExists($batch->storage_path);
     }
@@ -131,7 +131,7 @@ class CreatorIntelligenceImportTest extends TestCase
         $this->assertSame(50, $snapshot->hype_points);
         $this->assertNotNull($batch->rows()->whereNotNull('creator_video_id')->whereNotNull('video_performance_snapshot_id')->first());
 
-        $second = $this->readyBatch($channel, "Video,Video title,Video publish time,Views,Hype points,Watch time (hours)\nabc123,First video,2026-07-01 12:00:00,200,,2\n");
+        $second = $this->readyBatch($channel, "Video,Video title,Video publish time,Views,Hype points,Watch time (hours)\nNiDToOrsUeI,First video,2026-07-01 12:00:00,200,,2\n");
         ProcessCreatorAnalyticsImport::dispatchSync($second->id);
         $this->assertSame([], $second->rows()->where('status', 'failed')->pluck('message')->all());
         $this->assertDatabaseCount('creator_videos', 1);
@@ -156,8 +156,8 @@ class CreatorIntelligenceImportTest extends TestCase
 
         $this->assertDatabaseCount('creator_videos', 1);
         $video->refresh();
-        $this->assertSame('abc123', $video->platform_video_id);
-        $this->assertSame('https://i.ytimg.com/vi/abc123/hqdefault.jpg', $video->thumbnail_url);
+        $this->assertSame('NiDToOrsUeI', $video->platform_video_id);
+        $this->assertSame('https://i.ytimg.com/vi/NiDToOrsUeI/hqdefault.jpg', $video->thumbnail_url);
         $this->assertSame($video->id, $snapshot->fresh()->creator_video_id);
         $this->assertSame($video->id, $metadata->fresh()->creator_video_id);
         $this->assertTrue($video->subjects()->whereKey($subject->id)->exists());
@@ -173,10 +173,10 @@ class CreatorIntelligenceImportTest extends TestCase
         ProcessCreatorAnalyticsImport::dispatchSync($ambiguous->id);
         $this->assertSame(1, $ambiguous->fresh()->failed_rows);
         $this->assertStringContainsString('ambiguous', $ambiguous->rows()->first()->message);
-        $this->assertDatabaseMissing('creator_videos', ['platform_video_id' => 'abc123']);
+        $this->assertDatabaseMissing('creator_videos', ['platform_video_id' => 'NiDToOrsUeI']);
 
-        $custom = CreatorVideo::factory()->for($channel, 'channel')->create(['platform_video_id' => 'customID1', 'title' => 'Custom', 'published_at' => '2026-07-02', 'thumbnail_url' => 'https://example.com/custom.jpg']);
-        $batch = $this->readyBatch($channel, "Video,Video title,Video publish time,Views\ncustomID1,Custom,2026-07-02,20\n", ['Video' => 'platform_video_id', 'Video title' => 'title', 'Video publish time' => 'published_at', 'Views' => 'views']);
+        $custom = CreatorVideo::factory()->for($channel, 'channel')->create(['platform_video_id' => 'CuStomID123', 'title' => 'Custom', 'published_at' => '2026-07-02', 'thumbnail_url' => 'https://example.com/custom.jpg']);
+        $batch = $this->readyBatch($channel, "Video,Video title,Video publish time,Views\nCuStomID123,Custom,2026-07-02,20\n", ['Video' => 'platform_video_id', 'Video title' => 'title', 'Video publish time' => 'published_at', 'Views' => 'views']);
         ProcessCreatorAnalyticsImport::dispatchSync($batch->id);
         $this->assertSame('https://example.com/custom.jpg', $custom->fresh()->thumbnail_url);
     }
@@ -188,13 +188,16 @@ class CreatorIntelligenceImportTest extends TestCase
         $snapshot = VideoPerformanceSnapshot::factory()->for($video, 'video')->create();
         $metadata = VideoTitleMetadata::factory()->for($video, 'video')->create();
         $batch = ImportBatch::factory()->for($channel, 'channel')->create(['source' => 'youtube_studio']);
-        $batch->rows()->create(['row_number' => 2, 'raw_data' => ['Video' => 'repairID1', 'Video title' => 'Repair Me', 'Video publish time' => '2026-07-04'], 'normalized_data' => ['title' => 'Repair Me', 'published_at' => '2026-07-04T00:00:00-04:00'], 'status' => 'created', 'creator_video_id' => $video->id]);
+        $batch->rows()->create(['row_number' => 2, 'raw_data' => ['Content' => 'RepairID123', 'Video title' => 'Repair Me', 'Video publish time' => '2026-07-04'], 'normalized_data' => ['title' => 'Repair Me', 'published_at' => '2026-07-04T00:00:00-04:00'], 'status' => 'created', 'creator_video_id' => $video->id]);
+        $batch->rows()->create(['row_number' => 3, 'raw_data' => ['Video' => 'LegacyID123'], 'normalized_data' => [], 'status' => 'skipped']);
+
+        $this->artisan('creator-intelligence:diagnose-youtube-identities', ['--batch' => $batch->id])->assertSuccessful()->expectsOutput('Content: 1')->expectsOutput('Video: 1')->expectsOutput('Valid: 2');
 
         $this->artisan('creator-intelligence:repair-youtube-identities', ['--batch' => $batch->id, '--dry-run' => true])->assertSuccessful()->expectsOutputToContain('updated identities 1');
         $this->assertSame('fingerprint:repair', $video->fresh()->platform_video_id);
         $this->artisan('creator-intelligence:repair-youtube-identities', ['--batch' => $batch->id])->assertSuccessful()->expectsOutputToContain('updated identities 1');
-        $this->assertSame('repairID1', $video->fresh()->platform_video_id);
-        $this->assertSame('https://i.ytimg.com/vi/repairID1/hqdefault.jpg', $video->fresh()->thumbnail_url);
+        $this->assertSame('RepairID123', $video->fresh()->platform_video_id);
+        $this->assertSame('https://i.ytimg.com/vi/RepairID123/hqdefault.jpg', $video->fresh()->thumbnail_url);
         $this->assertSame($video->id, $snapshot->fresh()->creator_video_id);
         $this->assertSame($video->id, $metadata->fresh()->creator_video_id);
         $this->artisan('creator-intelligence:repair-youtube-identities', ['--batch' => $batch->id])->assertSuccessful()->expectsOutputToContain('updated identities 0');
@@ -261,6 +264,7 @@ class CreatorIntelligenceImportTest extends TestCase
         $queued->save();
         $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.show', $queued))->assertOk()->assertSee('Confirm that a queue worker is running');
         $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.show', $ready))->assertOk()->assertDontSee('Confirm that a queue worker is running');
+        $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.mapping', $mapping))->assertOk()->assertSee('YouTube Video ID (Content or Video)');
     }
 
     private function context(): array
@@ -270,7 +274,7 @@ class CreatorIntelligenceImportTest extends TestCase
 
     private function basicCsv(): string
     {
-        return "Video,Video title,Video publish time,Views,Hype points,Watch time (hours)\nabc123,First video,2026-07-01 12:00:00,100,50,1.5\n";
+        return "Video,Video title,Video publish time,Views,Hype points,Watch time (hours)\nNiDToOrsUeI,First video,2026-07-01 12:00:00,100,50,1.5\n";
     }
 
     private function readyBatch(CreatorChannel $channel, string $csv, ?array $mapping = null): ImportBatch

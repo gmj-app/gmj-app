@@ -41,6 +41,7 @@ class CreatorIntelligenceImportParsersTest extends TestCase
     {
         $mapping = (new CsvColumnMapper)->automatic(["\xEF\xBB\xBFVideo", 'Video title', 'Watch time (hours)', 'Subscribers', 'Hype points']);
         $this->assertSame('platform_video_id', $mapping["\xEF\xBB\xBFVideo"]);
+        $this->assertSame('platform_video_id', app(CsvColumnMapper::class)->automatic(['Content'])['Content']);
         $this->assertSame('title', $mapping['Video title']);
         $this->assertSame('watch_time_hours', $mapping['Watch time (hours)']);
         $this->assertArrayNotHasKey('Subscribers', $mapping);
