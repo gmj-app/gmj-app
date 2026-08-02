@@ -9,7 +9,7 @@ class AnalyticsCache
 {
     private const VERSION_KEY = 'creator-intelligence:analytics:version';
 
-    private const PAYLOAD_VERSION = 2;
+    private const PAYLOAD_VERSION = 3;
 
     public function remember(string $report, AnalyticsContext $context, Closure $callback): array
     {

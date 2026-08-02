@@ -43,7 +43,33 @@
     <section class="mt-6">
         <h2 class="text-xl font-extrabold">{{ $tabs[$report] }}</h2>
         @if($data['groups']->isEmpty())
-            <div class="mt-3 rounded-xl border border-dashed p-8 text-center"><p>No groups meet the current filters and minimum sample size.</p><p class="mt-2 text-sm">Show low-sample groups, lower the minimum sample, import performance data, classify metadata, or clear filters.</p></div>
+            <div class="mt-3 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+                @if($report === 'subjects' && $data['empty_state'] === 'no_relationships')
+                    <p class="font-bold">No subjects have been assigned to these videos yet.</p>
+                    <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Assign primary subjects in the Metadata Queue or use bulk actions from the Videos page. Subject analytics will appear once videos are classified.</p>
+                    <div class="mt-5 flex flex-wrap justify-center gap-3">
+                        <a href="{{ route('superadmin.creator-intelligence.metadata-queue.index', array_filter(['creator_channel_id'=>$context->channel?->id, 'missing_subject'=>1])) }}" class="rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">Open Metadata Queue</a>
+                        <a href="{{ route('superadmin.creator-intelligence.subjects.index', array_filter(['creator_channel_id'=>$context->channel?->id])) }}" class="rounded-xl border border-slate-300 px-4 py-2 font-bold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700">Manage Subjects</a>
+                        <a href="{{ route('superadmin.creator-intelligence.videos.index', array_filter(['creator_channel_id'=>$context->channel?->id])) }}" class="rounded-xl border border-slate-300 px-4 py-2 font-bold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700">Browse Videos</a>
+                    </div>
+                @elseif($report === 'subjects' && $data['empty_state'] === 'below_minimum')
+                    <p class="font-bold">No subjects meet the current minimum sample size of {{ $context->sampleMinimum() }} videos.</p>
+                    <div class="mt-5 flex flex-wrap justify-center gap-3">
+                        <a href="{{ route('superadmin.creator-intelligence.analytics.report', array_merge(['report'=>$report], request()->query(), ['show_low_sample'=>1])) }}" class="rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">Show Low-Sample Groups</a>
+                        <a href="{{ route('superadmin.creator-intelligence.analytics.report', array_merge(['report'=>$report], request()->query(), ['minimum_sample_size'=>1])) }}" class="rounded-xl border border-slate-300 px-4 py-2 font-bold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700">Lower Minimum Sample</a>
+                    </div>
+                @elseif($report === 'subjects' && $data['empty_state'] === 'no_videos')
+                    <p class="font-bold">No videos match the current analytics filters.</p>
+                    <div class="mt-5"><a href="{{ route('superadmin.creator-intelligence.analytics.report', $report) }}" class="inline-flex rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">Clear Filters</a></div>
+                @elseif($report === 'subjects' && $data['empty_state'] === 'no_primary_relationships')
+                    <p class="font-bold">No primary subjects are assigned in the current dataset.</p>
+                    <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Assign primary subjects or enable Include featured and secondary relationships.</p>
+                    <div class="mt-5"><a href="{{ route('superadmin.creator-intelligence.analytics.report', array_merge(['report'=>$report], request()->query(), ['include_secondary'=>1])) }}" class="inline-flex rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">Include Secondary Relationships</a></div>
+                @else
+                    <p class="font-bold">No groups meet the current filters and minimum sample size.</p>
+                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Show low-sample groups, lower the minimum sample, import performance data, classify metadata, or clear filters.</p>
+                @endif
+            </div>
         @else
             <div class="mt-3 max-w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" tabindex="0" aria-label="Scrollable channel performance table">
                 <table class="min-w-[1280px] border-separate border-spacing-0 text-sm">

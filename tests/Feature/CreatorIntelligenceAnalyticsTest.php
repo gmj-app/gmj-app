@@ -72,8 +72,78 @@ class CreatorIntelligenceAnalyticsTest extends TestCase
     {
         $admin = $this->admin();
         foreach (['channel', 'subjects', 'content-items', 'timing', 'titles', 'thumbnails', 'editorial', 'hype'] as $report) {
-            $this->actingAs($admin)->get(route('superadmin.creator-intelligence.analytics.report', $report))->assertOk()->assertSee('Data coverage')->assertSee('No groups meet');
+            $response = $this->actingAs($admin)->get(route('superadmin.creator-intelligence.analytics.report', $report))->assertOk()->assertSee('Data coverage');
+            $report === 'subjects'
+                ? $response->assertSee('No videos match the current analytics filters.')
+                : $response->assertSee('No groups meet');
         }
+    }
+
+    public function test_subject_report_explains_when_filtered_videos_have_no_subject_relationships(): void
+    {
+        $channel = CreatorChannel::factory()->create();
+        $video = CreatorVideo::factory()->for($channel, 'channel')->create();
+        VideoPerformanceSnapshot::factory()->for($video, 'video')->create();
+
+        $this->actingAs($this->admin())->get(route('superadmin.creator-intelligence.analytics.report', [
+            'report' => 'subjects', 'creator_channel_id' => $channel->id, 'minimum_sample_size' => 1,
+        ]))->assertOk()
+            ->assertSee('No subjects have been assigned to these videos yet.')
+            ->assertSee('Assign primary subjects in the Metadata Queue or use bulk actions from the Videos page. Subject analytics will appear once videos are classified.')
+            ->assertSee('Open Metadata Queue')
+            ->assertSee('Manage Subjects')
+            ->assertSee('Browse Videos')
+            ->assertDontSee('No groups meet the current filters');
+    }
+
+    public function test_subject_report_explains_when_all_subject_groups_are_below_minimum_sample(): void
+    {
+        $channel = CreatorChannel::factory()->create();
+        $subject = Subject::factory()->for($channel, 'creatorChannel')->create();
+        $video = CreatorVideo::factory()->for($channel, 'channel')->create();
+        $video->subjects()->attach($subject, ['relationship_type' => 'primary', 'is_primary' => true]);
+        VideoPerformanceSnapshot::factory()->for($video, 'video')->create();
+
+        $this->actingAs($this->admin())->get(route('superadmin.creator-intelligence.analytics.report', [
+            'report' => 'subjects', 'creator_channel_id' => $channel->id, 'minimum_sample_size' => 3,
+        ]))->assertOk()
+            ->assertSee('No subjects meet the current minimum sample size of 3 videos.')
+            ->assertSee('Show Low-Sample Groups')
+            ->assertSee('Lower Minimum Sample');
+    }
+
+    public function test_subject_report_explains_when_filters_exclude_all_videos(): void
+    {
+        $channel = CreatorChannel::factory()->create();
+        $video = CreatorVideo::factory()->for($channel, 'channel')->create(['published_at' => '2025-01-01 12:00:00']);
+        VideoPerformanceSnapshot::factory()->for($video, 'video')->create();
+
+        $this->actingAs($this->admin())->get(route('superadmin.creator-intelligence.analytics.report', [
+            'report' => 'subjects', 'creator_channel_id' => $channel->id, 'published_from' => '2026-01-01', 'minimum_sample_size' => 1,
+        ]))->assertOk()
+            ->assertSee('No videos match the current analytics filters.')
+            ->assertSee('Clear Filters');
+    }
+
+    public function test_subject_report_distinguishes_secondary_only_relationships_in_primary_mode(): void
+    {
+        $channel = CreatorChannel::factory()->create();
+        $subject = Subject::factory()->for($channel, 'creatorChannel')->create(['name' => 'Featured Subject']);
+        $video = CreatorVideo::factory()->for($channel, 'channel')->create();
+        $video->subjects()->attach($subject, ['relationship_type' => 'featured', 'is_primary' => false]);
+        VideoPerformanceSnapshot::factory()->for($video, 'video')->create();
+        $parameters = ['report' => 'subjects', 'creator_channel_id' => $channel->id, 'minimum_sample_size' => 1];
+
+        $this->actingAs($this->admin())->get(route('superadmin.creator-intelligence.analytics.report', $parameters))
+            ->assertOk()
+            ->assertSee('No primary subjects are assigned in the current dataset.')
+            ->assertSee('Assign primary subjects or enable Include featured and secondary relationships.')
+            ->assertSee('Include Secondary Relationships');
+
+        $this->actingAs($this->admin())->get(route('superadmin.creator-intelligence.analytics.report', $parameters + ['include_secondary' => 1]))
+            ->assertOk()
+            ->assertSee('Featured Subject')
+            ->assertDontSee('No primary subjects are assigned');
     }
 
     public function test_channel_filter_and_explicit_snapshot_source_are_isolated_and_deterministic(): void
@@ -101,7 +171,7 @@ class CreatorIntelligenceAnalyticsTest extends TestCase
         }
         $url = route('superadmin.creator-intelligence.analytics.report', ['report' => 'subjects', 'creator_channel_id' => $channel->id, 'minimum_sample_size' => 3]);
         $this->actingAs($this->admin())->get($url)->assertOk()->assertSee('Artist Performance')->assertSee('SB19')->assertSee('400')->assertSee('200')->assertSee('Outlier-sensitive');
-        $this->actingAs($this->admin())->get($url.'&minimum_sample_size=4')->assertOk()->assertSee('No groups meet');
+        $this->actingAs($this->admin())->get($url.'&minimum_sample_size=4')->assertOk()->assertSee('No subjects meet the current minimum sample size of 4 videos.');
     }
 
     public function test_channel_summary_uses_rate_watch_time_hype_and_metadata_semantics(): void

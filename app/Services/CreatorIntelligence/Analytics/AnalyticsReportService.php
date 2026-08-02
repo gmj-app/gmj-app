@@ -34,6 +34,7 @@ class AnalyticsReportService
             'summary' => $this->metrics($rows),
             'metadata_status_counts' => $this->metadataStatusCounts($rows),
             'groups' => $groups,
+            'empty_state' => $report === 'subjects' ? $this->subjectEmptyState($rows, $groups, $context) : null,
             'comparison' => $report === 'subjects' ? $this->subjectComparison($rows, $context) : null,
         ];
     }
@@ -116,6 +117,25 @@ class AnalyticsReportService
         }
 
         return $this->finishGroups($groups->groupBy('label')->map(fn ($items) => $items->pluck('video')), $context);
+    }
+
+    private function subjectEmptyState(Collection $rows, Collection $groups, AnalyticsContext $context): ?string
+    {
+        if ($rows->isEmpty()) {
+            return 'no_videos';
+        }
+
+        $relationships = DB::table('creator_video_subject')->whereIn('creator_video_id', $rows->pluck('id'))->get();
+        if ($relationships->isEmpty()) {
+            return 'no_relationships';
+        }
+
+        $primaryOnly = ($context->filters['primary_only'] ?? false) || ! ($context->filters['include_secondary'] ?? false);
+        if ($primaryOnly && $relationships->where('is_primary', true)->isEmpty()) {
+            return 'no_primary_relationships';
+        }
+
+        return $groups->isEmpty() ? 'below_minimum' : null;
     }
 
     private function periodGroups(Collection $rows, AnalyticsContext $context): Collection
