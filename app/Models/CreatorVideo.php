@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MetadataCompletionStatus;
 use App\Enums\VideoContentType;
 use App\Enums\VideoCopyrightStatus;
 use App\Enums\VideoFormat;
@@ -35,6 +36,7 @@ class CreatorVideo extends Model
             'is_interview' => 'boolean',
             'is_monetized' => 'boolean',
             'metadata_completion_percentage' => 'integer',
+            'metadata_completion_status' => MetadataCompletionStatus::class,
             'metadata_completion_calculated_at' => 'datetime',
         ];
     }

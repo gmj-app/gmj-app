@@ -25,6 +25,8 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SuperAdmin\AccoladeController as SuperAdminAccoladeController;
 use App\Http\Controllers\SuperAdmin\AnnouncementController;
 use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorController;
+use App\Http\Controllers\SuperAdmin\CreatorIntelligence\AnalyticsController as CreatorIntelligenceAnalyticsController;
+use App\Http\Controllers\SuperAdmin\CreatorIntelligence\AnalyticsExportController as CreatorIntelligenceAnalyticsExportController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\ContentItemController as CreatorIntelligenceContentItemController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\CreatorChannelController as CreatorIntelligenceChannelController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\CreatorProfileController as CreatorIntelligenceProfileController;
@@ -227,6 +229,9 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verifie
 });
 
 Route::prefix('superadmin/creator-intelligence')->name('superadmin.creator-intelligence.')->middleware(['auth', 'can:creator-intelligence.manage'])->group(function () {
+    Route::get('analytics', CreatorIntelligenceAnalyticsController::class)->name('analytics.index');
+    Route::get('analytics/{report}', CreatorIntelligenceAnalyticsController::class)->whereIn('report', CreatorIntelligenceAnalyticsController::REPORTS)->name('analytics.report');
+    Route::get('analytics/{report}/export/csv', CreatorIntelligenceAnalyticsExportController::class)->whereIn('report', CreatorIntelligenceAnalyticsController::REPORTS)->name('analytics.export');
     Route::get('/', CreatorIntelligenceOverviewController::class)->name('overview');
     Route::resource('profiles', CreatorIntelligenceProfileController::class)->except(['show', 'destroy']);
     Route::resource('channels', CreatorIntelligenceChannelController::class)->except(['show', 'destroy']);

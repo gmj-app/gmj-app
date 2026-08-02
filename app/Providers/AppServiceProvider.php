@@ -16,8 +16,16 @@ use App\Listeners\EvaluateGuideAccoladesAfterRequestCreated;
 use App\Listeners\NotifyCreatorOfNewRequest;
 use App\Listeners\NotifyRequestSubmitterOfPublication;
 use App\Listeners\NotifyRequestSupportersOfPublication;
+use App\Models\ContentItem;
 use App\Models\Creator;
+use App\Models\CreatorVideo;
+use App\Models\Subject;
 use App\Models\User;
+use App\Models\VideoEditorialMetadata;
+use App\Models\VideoPerformanceSnapshot;
+use App\Models\VideoThumbnailMetadata;
+use App\Models\VideoTitleMetadata;
+use App\Services\CreatorIntelligence\Analytics\AnalyticsCache;
 use App\Services\PlatformStatisticsService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -99,5 +107,11 @@ class AppServiceProvider extends ServiceProvider
         User::created($forgetPlatformStatistics);
         User::deleted($forgetPlatformStatistics);
         User::restored($forgetPlatformStatistics);
+
+        $invalidateAnalytics = fn (): mixed => app(AnalyticsCache::class)->invalidate();
+        foreach ([CreatorVideo::class, VideoPerformanceSnapshot::class, Subject::class, ContentItem::class, VideoTitleMetadata::class, VideoThumbnailMetadata::class, VideoEditorialMetadata::class] as $model) {
+            $model::saved($invalidateAnalytics);
+            $model::deleted($invalidateAnalytics);
+        }
     }
 }

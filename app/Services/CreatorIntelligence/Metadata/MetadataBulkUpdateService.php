@@ -4,13 +4,14 @@ namespace App\Services\CreatorIntelligence\Metadata;
 
 use App\Models\CreatorVideo;
 use App\Models\Subject;
+use App\Services\CreatorIntelligence\Analytics\AnalyticsCache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class MetadataBulkUpdateService
 {
-    public function __construct(private readonly MetadataCompletionService $completion) {}
+    public function __construct(private readonly MetadataCompletionService $completion, private readonly AnalyticsCache $analyticsCache) {}
 
     public function apply(array $ids, string $operation, mixed $value, string $mode, int $userId): void
     {
@@ -22,6 +23,7 @@ class MetadataBulkUpdateService
                 $this->applyOne($video, $operation, $value, $mode, $userId);
                 $this->completion->recalculate($video->fresh());
             }Log::info('Creator Intelligence bulk metadata update.', ['operation' => $operation, 'video_count' => $videos->count(), 'user_id' => $userId, 'fields' => [$operation]]);
+            $this->analyticsCache->invalidate();
         });
     }
 

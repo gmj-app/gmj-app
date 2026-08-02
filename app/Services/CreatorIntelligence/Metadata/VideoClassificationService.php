@@ -6,12 +6,13 @@ use App\Enums\SubjectRelationshipType;
 use App\Models\ContentItem;
 use App\Models\CreatorVideo;
 use App\Models\Subject;
+use App\Services\CreatorIntelligence\Analytics\AnalyticsCache;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class VideoClassificationService
 {
-    public function __construct(private readonly MetadataCompletionService $completion) {}
+    public function __construct(private readonly MetadataCompletionService $completion, private readonly AnalyticsCache $analyticsCache) {}
 
     public function subjects(CreatorVideo $video, array $rows): void
     {
@@ -33,6 +34,7 @@ class VideoClassificationService
                 throw new InvalidArgumentException('Only one primary subject is allowed.');
             }$video->subjects()->sync($sync);
             $this->completion->recalculate($video->fresh());
+            $this->analyticsCache->invalidate();
         });
     }
 
@@ -53,6 +55,7 @@ class VideoClassificationService
                 throw new InvalidArgumentException('Only one primary content item is allowed.');
             }$video->contentItems()->sync($sync);
             $this->completion->recalculate($video->fresh());
+            $this->analyticsCache->invalidate();
         });
     }
 }
