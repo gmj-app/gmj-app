@@ -3,14 +3,18 @@
 namespace Tests\Feature;
 
 use App\Enums\ImportBatchStatus;
+use App\Jobs\InspectCreatorAnalyticsImport;
 use App\Jobs\ProcessCreatorAnalyticsImport;
 use App\Models\CreatorChannel;
 use App\Models\CreatorVideo;
 use App\Models\ImportBatch;
 use App\Models\User;
 use App\Models\VideoPerformanceSnapshot;
+use App\Services\CreatorIntelligence\Import\AnalyticsFileInspector;
+use App\Services\CreatorIntelligence\Import\ImportProcessingDispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 use ZipArchive;
@@ -56,12 +60,25 @@ class CreatorIntelligenceImportTest extends TestCase
         $csv = "\xEF\xBB\xBFVideo,Video title,Video publish time,Views,Hype points\nabc123,First video,2026-07-01 12:00:00,\"1,234\",50\n";
         $this->actingAs($admin)->post(route('superadmin.creator-intelligence.imports.store'), ['creator_channel_id' => $channel->id, 'source' => 'youtube_studio', 'snapshot_date' => '2026-08-01', 'file' => UploadedFile::fake()->createWithContent('analytics.csv', $csv)])->assertRedirect();
         $batch = ImportBatch::query()->sole();
-        $this->assertSame(ImportBatchStatus::Ready, $batch->status);
+        $this->assertSame(ImportBatchStatus::Completed, $batch->status);
         $this->assertSame(['Video', 'Video title', 'Video publish time', 'Views', 'Hype points'], $batch->detected_columns);
         $this->assertSame('title', $batch->column_mapping['Video title']);
         $this->assertCount(1, $batch->preview_rows);
         $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.show', $batch))->assertOk()->assertSee('First video');
         Storage::disk('local')->assertExists($batch->storage_path);
+    }
+
+    public function test_confident_inspection_atomically_queues_processing_job(): void
+    {
+        [, $channel] = $this->context();
+        $batch = ImportBatch::factory()->for($channel, 'channel')->create(['status' => 'uploaded']);
+        Storage::disk('local')->put($batch->storage_path, $this->basicCsv());
+        Queue::fake([ProcessCreatorAnalyticsImport::class]);
+
+        (new InspectCreatorAnalyticsImport($batch->id))->handle(app(AnalyticsFileInspector::class), app(ImportProcessingDispatcher::class));
+
+        $this->assertSame(ImportBatchStatus::Queued, $batch->fresh()->status);
+        Queue::assertPushed(ProcessCreatorAnalyticsImport::class, fn ($job) => $job->batchId === $batch->id);
     }
 
     public function test_zip_prefers_table_data_and_rejects_unsafe_archive(): void
@@ -82,8 +99,10 @@ class CreatorIntelligenceImportTest extends TestCase
         $batch = ImportBatch::factory()->create(['status' => 'awaiting_mapping', 'detected_columns' => ['Video', 'Name'], 'preview_rows' => [['Video' => 'x', 'Name' => 'Title']]]);
         $this->actingAs($admin)->put(route('superadmin.creator-intelligence.imports.mapping.update', $batch), ['mapping' => ['Video' => 'platform_video_id', 'Name' => null]])->assertSessionHasErrors('mapping');
         $this->actingAs($admin)->put(route('superadmin.creator-intelligence.imports.mapping.update', $batch), ['mapping' => ['Video' => 'title', 'Name' => 'title']])->assertSessionHasErrors('mapping.Name');
+        Queue::fake([ProcessCreatorAnalyticsImport::class]);
         $this->actingAs($admin)->put(route('superadmin.creator-intelligence.imports.mapping.update', $batch), ['mapping' => ['Video' => 'platform_video_id', 'Name' => 'title']])->assertRedirect();
-        $this->assertSame(ImportBatchStatus::Ready, $batch->fresh()->status);
+        $this->assertSame(ImportBatchStatus::Queued, $batch->fresh()->status);
+        Queue::assertPushed(ProcessCreatorAnalyticsImport::class, 1);
         $batch->update(['status' => 'processing']);
         $this->actingAs($admin)->put(route('superadmin.creator-intelligence.imports.mapping.update', $batch), ['mapping' => ['Name' => 'title']])->assertSessionHasErrors('mapping');
     }
@@ -141,6 +160,41 @@ class CreatorIntelligenceImportTest extends TestCase
         Storage::disk('local')->assertMissing($path);
         $this->assertDatabaseHas('creator_videos', ['id' => $video->id]);
         $this->assertDatabaseHas('video_performance_snapshots', ['id' => $snapshot->id]);
+    }
+
+    public function test_ready_recovery_is_atomic_available_to_admin_and_command_safe(): void
+    {
+        [$admin, $channel] = $this->context();
+        $first = ImportBatch::factory()->for($channel, 'channel')->create(['status' => 'ready']);
+        $second = ImportBatch::factory()->for($channel, 'channel')->create(['status' => 'ready']);
+        Queue::fake([ProcessCreatorAnalyticsImport::class]);
+
+        $this->actingAs(User::factory()->create())->post(route('superadmin.creator-intelligence.imports.process', $first))->assertForbidden();
+        $this->actingAs($admin)->post(route('superadmin.creator-intelligence.imports.process', $first))->assertRedirect();
+        $this->actingAs($admin)->post(route('superadmin.creator-intelligence.imports.process', $first))->assertSessionHasErrors('process');
+        $this->assertSame(ImportBatchStatus::Queued, $first->fresh()->status);
+        Queue::assertPushed(ProcessCreatorAnalyticsImport::class, 1);
+
+        $this->artisan('creator-intelligence:process-ready-imports', ['--batch' => $second->id])->assertSuccessful()->expectsOutput("Dispatched import batch #{$second->id}.")->expectsOutput('Dispatched 1 ready import batch(es).');
+        $this->artisan('creator-intelligence:process-ready-imports', ['--batch' => $second->id])->assertSuccessful()->expectsOutput('Dispatched 0 ready import batch(es).');
+        Queue::assertPushed(ProcessCreatorAnalyticsImport::class, 2);
+    }
+
+    public function test_import_index_exposes_status_specific_actions_and_stale_queue_warning(): void
+    {
+        [$admin] = $this->context();
+        $mapping = ImportBatch::factory()->create(['status' => 'awaiting_mapping', 'original_filename' => 'mapping.csv']);
+        $ready = ImportBatch::factory()->create(['status' => 'ready', 'original_filename' => 'ready.csv']);
+        $failed = ImportBatch::factory()->create(['status' => 'failed', 'original_filename' => 'failed.csv']);
+        $response = $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.index'));
+        $response->assertOk()->assertSee('View Import')->assertSee('Review Mapping')->assertSee('Start Processing')->assertSee('View Errors')->assertSee(route('superadmin.creator-intelligence.imports.show', $mapping));
+
+        $queued = ImportBatch::factory()->create(['status' => 'queued']);
+        $queued->timestamps = false;
+        $queued->updated_at = now()->subMinutes(10);
+        $queued->save();
+        $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.show', $queued))->assertOk()->assertSee('Confirm that a queue worker is running');
+        $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.show', $ready))->assertOk()->assertDontSee('Confirm that a queue worker is running');
     }
 
     private function context(): array

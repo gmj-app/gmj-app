@@ -8,10 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatorIntelligence\StoreImportBatchRequest;
 use App\Http\Requests\CreatorIntelligence\UpdateImportMappingRequest;
 use App\Jobs\InspectCreatorAnalyticsImport;
-use App\Jobs\ProcessCreatorAnalyticsImport;
 use App\Models\CreatorChannel;
 use App\Models\ImportBatch;
 use App\Services\CreatorIntelligence\Import\CsvColumnMapper;
+use App\Services\CreatorIntelligence\Import\ImportProcessingDispatcher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -84,20 +84,23 @@ class ImportBatchController extends Controller
         return view('super-admin.creator-intelligence.imports.mapping', ['batch' => $importBatch, 'fields' => CsvColumnMapper::CANONICAL_FIELDS]);
     }
 
-    public function updateMapping(UpdateImportMappingRequest $request, ImportBatch $importBatch): RedirectResponse
+    public function updateMapping(UpdateImportMappingRequest $request, ImportBatch $importBatch, ImportProcessingDispatcher $dispatcher): RedirectResponse
     {
         $importBatch->update(['column_mapping' => $request->validatedMapping(), 'status' => ImportBatchStatus::Ready, 'error_summary' => null]);
+        $queued = $dispatcher->dispatch($importBatch);
 
-        return redirect()->route('superadmin.creator-intelligence.imports.show', $importBatch)->with('success', 'Column mapping saved.');
+        $redirect = redirect()->route('superadmin.creator-intelligence.imports.show', $importBatch);
+
+        return $queued
+            ? $redirect->with('success', 'Column mapping saved and import queued for processing.')
+            : $redirect->withErrors(['process' => 'Column mapping was saved, but processing could not be queued. Use Start Processing after checking the queue connection.']);
     }
 
-    public function process(ImportBatch $importBatch): RedirectResponse
+    public function process(ImportBatch $importBatch, ImportProcessingDispatcher $dispatcher): RedirectResponse
     {
-        $claimed = ImportBatch::whereKey($importBatch->id)->where('status', ImportBatchStatus::Ready->value)->update(['status' => ImportBatchStatus::Queued->value]);
-        if (! $claimed) {
+        if (! $dispatcher->dispatch($importBatch)) {
             return back()->withErrors(['process' => 'This import is not ready or is already being processed.']);
         }
-        ProcessCreatorAnalyticsImport::dispatch($importBatch->id);
 
         return back()->with('success', 'Import queued for processing.');
     }
