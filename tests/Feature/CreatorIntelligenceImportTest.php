@@ -8,8 +8,10 @@ use App\Jobs\ProcessCreatorAnalyticsImport;
 use App\Models\CreatorChannel;
 use App\Models\CreatorVideo;
 use App\Models\ImportBatch;
+use App\Models\Subject;
 use App\Models\User;
 use App\Models\VideoPerformanceSnapshot;
+use App\Models\VideoTitleMetadata;
 use App\Services\CreatorIntelligence\Import\AnalyticsFileInspector;
 use App\Services\CreatorIntelligence\Import\ImportProcessingDispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -61,9 +63,14 @@ class CreatorIntelligenceImportTest extends TestCase
         $this->actingAs($admin)->post(route('superadmin.creator-intelligence.imports.store'), ['creator_channel_id' => $channel->id, 'source' => 'youtube_studio', 'snapshot_date' => '2026-08-01', 'file' => UploadedFile::fake()->createWithContent('analytics.csv', $csv)])->assertRedirect();
         $batch = ImportBatch::query()->sole();
         $this->assertSame(ImportBatchStatus::Completed, $batch->status);
+        $this->assertSame('youtube_studio', $batch->source->value);
         $this->assertSame(['Video', 'Video title', 'Video publish time', 'Views', 'Hype points'], $batch->detected_columns);
         $this->assertSame('title', $batch->column_mapping['Video title']);
+        $this->assertSame('platform_video_id', $batch->column_mapping['Video']);
         $this->assertCount(1, $batch->preview_rows);
+        $video = CreatorVideo::query()->sole();
+        $this->assertSame('abc123', $video->platform_video_id);
+        $this->assertSame('https://i.ytimg.com/vi/abc123/hqdefault.jpg', $video->thumbnail_url);
         $this->actingAs($admin)->get(route('superadmin.creator-intelligence.imports.show', $batch))->assertOk()->assertSee('First video');
         Storage::disk('local')->assertExists($batch->storage_path);
     }
@@ -133,6 +140,65 @@ class CreatorIntelligenceImportTest extends TestCase
         $this->assertSame(50, $snapshot->fresh()->hype_points);
         $this->assertSame('120.0000', $snapshot->fresh()->watch_time_minutes);
         $this->assertSame(1, $second->fresh()->updated_rows);
+    }
+
+    public function test_real_youtube_identity_upgrades_one_fingerprint_and_preserves_linked_data(): void
+    {
+        [, $channel] = $this->context();
+        $video = CreatorVideo::factory()->for($channel, 'channel')->create(['platform_video_id' => 'fingerprint:legacy', 'title' => 'First Video', 'published_at' => '2026-07-01 12:00:00', 'thumbnail_url' => null]);
+        $snapshot = VideoPerformanceSnapshot::factory()->for($video, 'video')->create(['source' => 'manual', 'snapshot_date' => '2026-07-31']);
+        $metadata = VideoTitleMetadata::factory()->for($video, 'video')->create();
+        $subject = Subject::factory()->for($channel, 'creatorChannel')->create();
+        $video->subjects()->attach($subject, ['relationship_type' => 'primary', 'is_primary' => true]);
+
+        $batch = $this->readyBatch($channel, $this->basicCsv());
+        ProcessCreatorAnalyticsImport::dispatchSync($batch->id);
+
+        $this->assertDatabaseCount('creator_videos', 1);
+        $video->refresh();
+        $this->assertSame('abc123', $video->platform_video_id);
+        $this->assertSame('https://i.ytimg.com/vi/abc123/hqdefault.jpg', $video->thumbnail_url);
+        $this->assertSame($video->id, $snapshot->fresh()->creator_video_id);
+        $this->assertSame($video->id, $metadata->fresh()->creator_video_id);
+        $this->assertTrue($video->subjects()->whereKey($subject->id)->exists());
+        $this->assertSame($video->id, $batch->rows()->first()->creator_video_id);
+    }
+
+    public function test_ambiguous_fingerprint_upgrade_fails_without_guessing_and_custom_thumbnail_is_preserved(): void
+    {
+        [, $channel] = $this->context();
+        CreatorVideo::factory()->for($channel, 'channel')->create(['platform_video_id' => 'fingerprint:one', 'title' => 'First Video', 'published_at' => '2026-07-01 10:00:00']);
+        CreatorVideo::factory()->for($channel, 'channel')->create(['platform_video_id' => 'fingerprint:two', 'title' => ' First   Video ', 'published_at' => '2026-07-01 18:00:00']);
+        $ambiguous = $this->readyBatch($channel, $this->basicCsv());
+        ProcessCreatorAnalyticsImport::dispatchSync($ambiguous->id);
+        $this->assertSame(1, $ambiguous->fresh()->failed_rows);
+        $this->assertStringContainsString('ambiguous', $ambiguous->rows()->first()->message);
+        $this->assertDatabaseMissing('creator_videos', ['platform_video_id' => 'abc123']);
+
+        $custom = CreatorVideo::factory()->for($channel, 'channel')->create(['platform_video_id' => 'customID1', 'title' => 'Custom', 'published_at' => '2026-07-02', 'thumbnail_url' => 'https://example.com/custom.jpg']);
+        $batch = $this->readyBatch($channel, "Video,Video title,Video publish time,Views\ncustomID1,Custom,2026-07-02,20\n", ['Video' => 'platform_video_id', 'Video title' => 'title', 'Video publish time' => 'published_at', 'Views' => 'views']);
+        ProcessCreatorAnalyticsImport::dispatchSync($batch->id);
+        $this->assertSame('https://example.com/custom.jpg', $custom->fresh()->thumbnail_url);
+    }
+
+    public function test_repair_command_is_scoped_dry_run_safe_and_idempotent(): void
+    {
+        [, $channel] = $this->context();
+        $video = CreatorVideo::factory()->for($channel, 'channel')->create(['platform_video_id' => 'fingerprint:repair', 'title' => 'Repair Me', 'published_at' => '2026-07-04', 'thumbnail_url' => null]);
+        $snapshot = VideoPerformanceSnapshot::factory()->for($video, 'video')->create();
+        $metadata = VideoTitleMetadata::factory()->for($video, 'video')->create();
+        $batch = ImportBatch::factory()->for($channel, 'channel')->create(['source' => 'youtube_studio']);
+        $batch->rows()->create(['row_number' => 2, 'raw_data' => ['Video' => 'repairID1', 'Video title' => 'Repair Me', 'Video publish time' => '2026-07-04'], 'normalized_data' => ['title' => 'Repair Me', 'published_at' => '2026-07-04T00:00:00-04:00'], 'status' => 'created', 'creator_video_id' => $video->id]);
+
+        $this->artisan('creator-intelligence:repair-youtube-identities', ['--batch' => $batch->id, '--dry-run' => true])->assertSuccessful()->expectsOutputToContain('updated identities 1');
+        $this->assertSame('fingerprint:repair', $video->fresh()->platform_video_id);
+        $this->artisan('creator-intelligence:repair-youtube-identities', ['--batch' => $batch->id])->assertSuccessful()->expectsOutputToContain('updated identities 1');
+        $this->assertSame('repairID1', $video->fresh()->platform_video_id);
+        $this->assertSame('https://i.ytimg.com/vi/repairID1/hqdefault.jpg', $video->fresh()->thumbnail_url);
+        $this->assertSame($video->id, $snapshot->fresh()->creator_video_id);
+        $this->assertSame($video->id, $metadata->fresh()->creator_video_id);
+        $this->artisan('creator-intelligence:repair-youtube-identities', ['--batch' => $batch->id])->assertSuccessful()->expectsOutputToContain('updated identities 0');
+        $this->assertDatabaseCount('creator_videos', 1);
     }
 
     public function test_fallback_matching_ambiguity_fatal_file_error_concurrency_and_cleanup_are_safe(): void

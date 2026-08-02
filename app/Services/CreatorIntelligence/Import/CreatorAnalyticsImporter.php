@@ -20,7 +20,7 @@ class CreatorAnalyticsImporter
 
     private const METRIC_FIELDS = ['views', 'impressions', 'impressions_ctr', 'watch_time_minutes', 'average_view_duration_seconds', 'average_percentage_viewed', 'likes', 'comments', 'shares', 'subscribers_gained', 'subscribers_lost', 'estimated_revenue', 'rpm', 'cpm', 'hype_points', 'views_first_24_hours', 'views_first_7_days', 'views_first_28_days'];
 
-    public function __construct(private readonly AnalyticsFileInspector $files, private readonly AnalyticsCsvReader $reader, private readonly CsvRowNormalizer $normalizer, private readonly MetadataReviewInvalidator $reviewInvalidator) {}
+    public function __construct(private readonly AnalyticsFileInspector $files, private readonly AnalyticsCsvReader $reader, private readonly CsvRowNormalizer $normalizer, private readonly MetadataReviewInvalidator $reviewInvalidator, private readonly YoutubeVideoIdentityService $identities) {}
 
     public function import(ImportBatch $batch): void
     {
@@ -87,16 +87,22 @@ class CreatorAnalyticsImporter
 
     private function upsertVideo(ImportBatch $batch, array $data): array
     {
-        $platformId = $data['platform_video_id'] ?? null;
+        $platformId = $this->identities->validPlatformId($data['platform_video_id'] ?? null);
         $published = isset($data['published_at']) ? CarbonImmutable::parse($data['published_at']) : null;
         if ($platformId) {
             $video = CreatorVideo::where('creator_channel_id', $batch->creator_channel_id)->where('platform_video_id', $platformId)->first();
+            if (! $video && $published) {
+                $video = $this->identities->findFingerprintMatch($batch->creator_channel_id, $data['title'], $published);
+                if ($video) {
+                    $video->platform_video_id = $platformId;
+                }
+            }
         } else {
             if (! $published) {
                 throw new InvalidArgumentException('A platform video ID or published date is required for safe duplicate matching.');
             }
-            $normalizedTitle = $this->normalizedTitle($data['title']);
-            $matches = CreatorVideo::where('creator_channel_id', $batch->creator_channel_id)->whereDate('published_at', $published->toDateString())->get()->filter(fn ($candidate) => $this->normalizedTitle($candidate->title) === $normalizedTitle);
+            $normalizedTitle = $this->identities->normalizedTitle($data['title']);
+            $matches = CreatorVideo::where('creator_channel_id', $batch->creator_channel_id)->whereDate('published_at', $published->toDateString())->get()->filter(fn ($candidate) => $this->identities->normalizedTitle($candidate->title) === $normalizedTitle);
             if ($matches->count() > 1) {
                 throw new InvalidArgumentException('Multiple videos match the title and published date; the row is ambiguous.');
             }
@@ -112,6 +118,9 @@ class CreatorAnalyticsImporter
         }
         if (array_key_exists('duration', $data) && $data['duration'] !== null) {
             $video->duration_seconds = $data['duration'];
+        }
+        if ($platformId && blank($video->thumbnail_url)) {
+            $video->thumbnail_url = $this->identities->thumbnailUrl($platformId);
         }
         $titleChanged = $video->isDirty('title');
         $thumbnailChanged = $video->isDirty('thumbnail_url');
@@ -133,11 +142,6 @@ class CreatorAnalyticsImporter
         $updated = (int) ($counts[ImportRowStatus::Updated->value] ?? 0);
         $failed = (int) ($counts[ImportRowStatus::Failed->value] ?? 0);
         $batch->update(['total_rows' => (int) $counts->sum(), 'successful_rows' => $created + $updated, 'created_rows' => $created, 'updated_rows' => $updated, 'skipped_rows' => (int) ($counts[ImportRowStatus::Skipped->value] ?? 0), 'failed_rows' => $failed, 'status' => $failed ? ImportBatchStatus::CompletedWithErrors : ImportBatchStatus::Completed, 'completed_at' => now()]);
-    }
-
-    private function normalizedTitle(string $title): string
-    {
-        return Str::lower(trim(preg_replace('/\s+/u', ' ', $title) ?? $title));
     }
 
     private function empty(array $row): bool
