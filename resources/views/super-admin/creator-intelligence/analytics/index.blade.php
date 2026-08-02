@@ -11,9 +11,9 @@
             'hype'=>['videos'=>'Videos','subjects'=>($context->channel?->subject_label ?? 'Subject').'s'],
         ];
     @endphp
-    <nav aria-label="Analytics reports" class="mb-6 flex flex-wrap gap-2">@foreach($tabs as $key=>$label)<a class="rounded-xl px-3 py-2 text-sm font-bold {{ $report===$key?'bg-indigo-600 text-white':'border bg-white dark:bg-slate-900' }}" href="{{ route('superadmin.creator-intelligence.analytics.report', ['report'=>$key] + request()->except('dimension')) }}">{{ $label }}</a>@endforeach</nav>
+    <nav aria-label="Analytics reports" class="ci-tabs mb-6">@foreach($tabs as $key=>$label)<a class="rounded-xl px-3 py-2 text-sm font-bold {{ $report===$key?'bg-indigo-600 text-white':'border border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100' }}" href="{{ route('superadmin.creator-intelligence.analytics.report', ['report'=>$key] + request()->except('dimension')) }}">{{ $label }}</a>@endforeach</nav>
 
-    <form method="GET" class="rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <form method="GET" class="ci-filter-panel">
         <div class="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
             <label class="text-sm font-bold">Creator Profile<select name="creator_profile_id" class="mt-1 block w-full rounded-xl"><option value="">All profiles</option>@foreach($profiles as $profile)<option value="{{ $profile->id }}" @selected(request('creator_profile_id')==$profile->id)>{{ $profile->display_name }}</option>@endforeach</select></label>
             <label class="text-sm font-bold">Creator Channel<select name="creator_channel_id" class="mt-1 block w-full rounded-xl"><option value="">First active channel</option>@foreach($channels as $channel)<option value="{{ $channel->id }}" @selected($context->channel?->id==$channel->id)>{{ $channel->channel_name }}</option>@endforeach</select></label>
@@ -43,7 +43,7 @@
     <section class="mt-6">
         <h2 class="text-xl font-extrabold">{{ $tabs[$report] }}</h2>
         @if($data['groups']->isEmpty())
-            <div class="mt-3 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+            <div class="ci-empty-state mt-3">
                 @if($report === 'subjects' && $data['empty_state'] === 'no_relationships')
                     <p class="font-bold">No subjects have been assigned to these videos yet.</p>
                     <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Assign primary subjects in the Metadata Queue or use bulk actions from the Videos page. Subject analytics will appear once videos are classified.</p>
@@ -71,7 +71,7 @@
                 @endif
             </div>
         @else
-            <div class="mt-3 max-w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" tabindex="0" aria-label="Scrollable channel performance table">
+            <div class="ci-table-container mt-3 overflow-x-auto" tabindex="0" aria-label="Scrollable channel performance table">
                 <table class="min-w-[1280px] border-separate border-spacing-0 text-sm">
                     <thead class="sticky top-0 z-20 bg-slate-100 text-slate-700 dark:bg-slate-950 dark:text-slate-200">
                         <tr>

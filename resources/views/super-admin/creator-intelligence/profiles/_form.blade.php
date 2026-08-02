@@ -1,10 +1,8 @@
 @csrf
 @if(isset($profile)) @method('PUT') @endif
 <div class="grid gap-5 sm:grid-cols-2">
-    <label class="font-bold">Display name<input name="display_name" value="{{ old('display_name', $profile->display_name ?? '') }}" required class="mt-2 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-950"></label>
-    <label class="font-bold">Slug<input name="slug" value="{{ old('slug', $profile->slug ?? '') }}" required class="mt-2 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-950"></label>
-    <label class="font-bold">Timezone<input name="timezone" value="{{ old('timezone', $profile->timezone ?? 'America/New_York') }}" required class="mt-2 w-full rounded-xl border-slate-300 dark:border-slate-700 dark:bg-slate-950"></label>
-    <label class="font-bold">Currency<input name="default_currency" maxlength="3" value="{{ old('default_currency', $profile->default_currency ?? 'USD') }}" required class="mt-2 w-full rounded-xl border-slate-300 uppercase dark:border-slate-700 dark:bg-slate-950"></label>
+    @foreach(['display_name'=>'Display Name','slug'=>'Slug','timezone'=>'Timezone','default_currency'=>'Currency'] as $field=>$label)
+        <div><label for="profile-{{ $field }}" class="ci-label">{{ $label }}</label><input id="profile-{{ $field }}" name="{{ $field }}" @if($field==='default_currency') maxlength="3" @endif value="{{ old($field, $profile->{$field} ?? ($field==='timezone'?'America/New_York':($field==='default_currency'?'USD':''))) }}" required aria-describedby="@error($field) profile-{{ $field }}-error @enderror" @error($field) aria-invalid="true" @enderror class="ci-control mt-1 w-full @if($field==='default_currency') uppercase @endif @error($field) !border-rose-500 @enderror">@error($field)<p id="profile-{{ $field }}-error" class="ci-error">{{ $message }}</p>@enderror</div>
+    @endforeach
 </div>
-@if($errors->any())<div class="mt-5 rounded-xl bg-rose-100 p-4 text-rose-800"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-<button class="mt-6 rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white">Save profile</button>
+<button class="ci-button-primary mt-6">Save Profile</button>

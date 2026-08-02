@@ -3,6 +3,131 @@
 @tailwind utilities;
 
 @layer components {
+    .ci-page {
+        @apply min-w-0 text-slate-900 dark:text-slate-100;
+        color-scheme: light;
+    }
+
+    .dark .ci-page {
+        color-scheme: dark;
+    }
+
+    .ci-card,
+    .ci-form-card,
+    .ci-filter-panel,
+    .ci-table-container,
+    .ci-empty-state {
+        @apply rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100;
+    }
+
+    .ci-card,
+    .ci-form-card,
+    .ci-filter-panel {
+        @apply p-5 sm:p-6;
+    }
+
+    .ci-table-container {
+        @apply max-w-full overflow-x-auto;
+    }
+
+    .ci-empty-state {
+        @apply border-dashed p-8 text-center text-slate-700 dark:text-slate-200;
+    }
+
+    .ci-label {
+        @apply block font-bold text-slate-800 dark:text-slate-100;
+    }
+
+    .ci-control,
+    .ci-page :where(input:not([type='hidden'], [type='checkbox'], [type='radio']), select, textarea) {
+        @apply min-h-11 rounded-xl border-slate-300 bg-white text-slate-950 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-600 read-only:bg-slate-100 read-only:text-slate-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-400 dark:read-only:bg-slate-800 dark:read-only:text-slate-200;
+    }
+
+    .ci-page :where(input[type='checkbox'], input[type='radio']) {
+        @apply border-slate-400 bg-white text-indigo-600 focus:ring-2 focus:ring-indigo-500 dark:border-slate-500 dark:bg-slate-950;
+    }
+
+    .ci-help,
+    .ci-muted {
+        @apply text-sm text-slate-600 dark:text-slate-300;
+    }
+
+    .ci-error {
+        @apply mt-1 text-sm font-semibold text-rose-700 dark:text-rose-300;
+    }
+
+    .ci-button {
+        @apply inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950;
+    }
+
+    .ci-button-primary {
+        @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none transition hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950;
+    }
+
+    .ci-button-secondary {
+        @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 font-bold text-slate-900 outline-none transition hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-950;
+    }
+
+    .ci-badge {
+        @apply inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-bold;
+    }
+
+    .ci-badge-success {
+        @apply inline-flex items-center whitespace-nowrap rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-100;
+    }
+
+    .ci-badge-warning {
+        @apply inline-flex items-center whitespace-nowrap rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-950 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100;
+    }
+
+    .ci-badge-danger {
+        @apply inline-flex items-center whitespace-nowrap rounded-full border border-rose-300 bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-900 dark:border-rose-700 dark:bg-rose-950 dark:text-rose-100;
+    }
+
+    .ci-badge-info {
+        @apply inline-flex items-center whitespace-nowrap rounded-full border border-sky-300 bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-900 dark:border-sky-700 dark:bg-sky-950 dark:text-sky-100;
+    }
+
+    .ci-alert {
+        @apply rounded-xl border p-4 font-semibold;
+    }
+
+    .ci-alert-success {
+        @apply rounded-xl border border-emerald-300 bg-emerald-100 p-4 font-semibold text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-100;
+    }
+
+    .ci-alert-danger {
+        @apply rounded-xl border border-rose-300 bg-rose-100 p-4 font-semibold text-rose-900 dark:border-rose-700 dark:bg-rose-950 dark:text-rose-100;
+    }
+
+    .ci-alert-warning {
+        @apply rounded-xl border border-amber-300 bg-amber-100 p-4 font-semibold text-amber-950 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100;
+    }
+
+    .ci-tabs {
+        @apply flex max-w-full flex-wrap gap-2 overflow-x-auto;
+    }
+
+    .ci-page table {
+        @apply text-slate-800 dark:text-slate-100;
+    }
+
+    .ci-page table thead {
+        @apply bg-slate-100 text-slate-700 dark:bg-slate-950 dark:text-slate-200;
+    }
+
+    .ci-page table th {
+        @apply font-bold;
+    }
+
+    .ci-page table tbody tr {
+        @apply border-slate-200 transition hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800/80;
+    }
+
+    .ci-page :where(a, button, summary):focus-visible {
+        @apply rounded outline-none ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-950;
+    }
+
     .guide-avatar[class*="accolade-"] .guide-avatar__image {
         @apply ring-[3px];
     }
