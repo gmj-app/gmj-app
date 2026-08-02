@@ -6,7 +6,7 @@ class MetricFormatter
 {
     public function count(mixed $value): string
     {
-        return $value === null ? '—' : number_format((int) $value);
+        return $value === null ? '—' : number_format((float) $value, 0);
     }
 
     public function percentage(mixed $value): string
@@ -21,7 +21,22 @@ class MetricFormatter
 
     public function currency(mixed $value, string $currency): string
     {
-        return $value === null ? '—' : $currency.' '.number_format((float) $value, 2);
+        if ($value === null) {
+            return '—';
+        }
+
+        $currency = strtoupper($currency);
+        $prefix = match ($currency) {
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'JPY', 'CNY' => '¥',
+            'CAD' => 'CA$',
+            'AUD' => 'A$',
+            default => $currency.' ',
+        };
+
+        return $prefix.number_format((float) $value, 2);
     }
 
     public function duration(mixed $seconds): string

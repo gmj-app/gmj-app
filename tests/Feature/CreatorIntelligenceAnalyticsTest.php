@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CreatorChannel;
+use App\Models\CreatorProfile;
 use App\Models\CreatorVideo;
 use App\Models\Subject;
 use App\Models\User;
@@ -57,6 +58,14 @@ class CreatorIntelligenceAnalyticsTest extends TestCase
         $this->assertNotContains('Total CTR', $ctrLabels);
         $this->assertSame(['Average CTR', 'Median CTR', 'Eligible videos', 'Missing CTR'], $ctrLabels->all());
         $this->assertSame('Total Views', $registry->summaryRows('views', $statistics)[0]['label']);
+        $this->assertSame('Average Percentage Viewed', $registry->summaryRows('average_percentage_viewed', $statistics)[0]['label']);
+        $this->assertSame('Median Percentage Viewed', $registry->summaryRows('average_percentage_viewed', $statistics)[1]['label']);
+        $this->assertSame('Average Completion', $registry->summaryRows('metadata_completion_percentage', $statistics)[0]['label']);
+        $this->assertSame('Median Completion', $registry->summaryRows('metadata_completion_percentage', $statistics)[1]['label']);
+        $this->assertSame('7,211', $registry->formatValue('views', 7210.5, 'mean'));
+        $this->assertSame('29', $registry->formatValue('subscribers_gained', 29, 'total'));
+        $this->assertSame('2,198.58', $registry->formatValue('hype_points', 2198.58, 'mean'));
+        $this->assertSame('$16.61', $registry->formatValue('estimated_revenue', 16.61, 'mean', 'USD'));
     }
 
     public function test_every_report_renders_an_accessible_empty_state(): void
@@ -155,7 +164,59 @@ class CreatorIntelligenceAnalyticsTest extends TestCase
             ->assertSee('Complete videos')
             ->assertSee('In-progress videos')
             ->assertSee('Not-started videos')
-            ->assertSeeInOrder(['Group', 'Videos', 'Average Views', 'Median Views', 'Average CTR', 'Subscribers', 'Revenue', 'Average Hype', 'Consistency', 'Top Video', 'Sample Strength']);
+            ->assertSee('Average Percentage Viewed')
+            ->assertDontSee('Average Average Percentage Viewed')
+            ->assertSeeInOrder(['Group', 'Videos', 'Average Views', 'Median Views', 'Average CTR', 'Subscribers', 'Revenue', 'Average Hype', 'Consistency', 'Top Video', 'Sample Strength'])
+            ->assertSee('overflow-x-auto')
+            ->assertSee('Optional metrics')
+            ->assertSee('dark:open:bg-slate-800')
+            ->assertSee('focus-visible:ring-2');
+        $this->assertSame(11, substr_count($response->getContent(), 'scope="col"'));
+        $this->assertStringContainsString('scope="row"', $response->getContent());
+    }
+
+    public function test_channel_summary_uses_profile_currency_without_formatting_raw_exports(): void
+    {
+        $profile = CreatorProfile::factory()->create(['display_name' => 'JFragment', 'default_currency' => 'USD']);
+        $channel = CreatorChannel::factory()->for($profile, 'profile')->create();
+        $video = CreatorVideo::factory()->for($channel, 'channel')->create(['published_at' => '2026-07-01 12:00:00']);
+        VideoPerformanceSnapshot::factory()->for($video, 'video')->create(['estimated_revenue' => 2259.45]);
+        $parameters = ['report' => 'channel', 'creator_channel_id' => $channel->id, 'minimum_sample_size' => 1];
+
+        $this->actingAs($this->admin())
+            ->get(route('superadmin.creator-intelligence.analytics.report', $parameters))
+            ->assertOk()
+            ->assertSee('$2,259.45');
+
+        $csv = $this->actingAs($this->admin())
+            ->get(route('superadmin.creator-intelligence.analytics.export', $parameters))
+            ->streamedContent();
+        $this->assertStringContainsString('2259.45', $csv);
+        $this->assertStringNotContainsString('$2,259.45', $csv);
+    }
+
+    public function test_zero_hype_median_note_only_appears_when_most_eligible_videos_have_zero(): void
+    {
+        $mostlyZeroChannel = CreatorChannel::factory()->create();
+        foreach ([0, 0, 5] as $hype) {
+            $video = CreatorVideo::factory()->for($mostlyZeroChannel, 'channel')->create(['published_at' => '2026-07-01 12:00:00']);
+            VideoPerformanceSnapshot::factory()->for($video, 'video')->create(['hype_points' => $hype]);
+        }
+
+        $note = 'More than half of eligible videos had zero reported Hype Points.';
+        $this->actingAs($this->admin())->get(route('superadmin.creator-intelligence.analytics.report', [
+            'report' => 'channel', 'creator_channel_id' => $mostlyZeroChannel->id, 'minimum_sample_size' => 1,
+        ]))->assertOk()->assertSee($note);
+
+        $mostlyPositiveChannel = CreatorChannel::factory()->create();
+        foreach ([0, 5, 10] as $hype) {
+            $video = CreatorVideo::factory()->for($mostlyPositiveChannel, 'channel')->create(['published_at' => '2026-07-01 12:00:00']);
+            VideoPerformanceSnapshot::factory()->for($video, 'video')->create(['hype_points' => $hype]);
+        }
+
+        $this->actingAs($this->admin())->get(route('superadmin.creator-intelligence.analytics.report', [
+            'report' => 'channel', 'creator_channel_id' => $mostlyPositiveChannel->id, 'minimum_sample_size' => 1,
+        ]))->assertOk()->assertDontSee($note);
     }
 
     public function test_analytics_export_uses_filters_includes_counts_and_escapes_formulas(): void

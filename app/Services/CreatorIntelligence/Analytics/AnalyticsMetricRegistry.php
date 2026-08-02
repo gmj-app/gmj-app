@@ -2,6 +2,8 @@
 
 namespace App\Services\CreatorIntelligence\Analytics;
 
+use App\Services\CreatorIntelligence\Videos\MetricFormatter;
+
 class AnalyticsMetricRegistry
 {
     public const DEFINITIONS = [
@@ -17,10 +19,12 @@ class AnalyticsMetricRegistry
         'estimated_revenue' => ['label' => 'Revenue', 'summable' => true, 'format' => 'currency'],
         'rpm' => ['label' => 'RPM', 'summable' => false, 'format' => 'currency'],
         'cpm' => ['label' => 'CPM', 'summable' => false, 'format' => 'currency'],
-        'hype_points' => ['label' => 'Hype Points', 'summable' => true, 'format' => 'number'],
+        'hype_points' => ['label' => 'Hype Points', 'summable' => true, 'format' => 'number', 'average_precision' => 2],
         'metadata_completion_percentage' => ['label' => 'Metadata Completion', 'summable' => false, 'format' => 'percentage'],
         'consistency_score' => ['label' => 'Consistency Score', 'summable' => false, 'format' => 'percentage'],
     ];
+
+    public function __construct(private readonly MetricFormatter $formatter) {}
 
     public function label(string $metric): string
     {
@@ -47,12 +51,12 @@ class AnalyticsMetricRegistry
      * @param  array<string, int>  $metadataStatuses
      * @return array<int, array{label: string, value: string, title: ?string}>
      */
-    public function summaryRows(string $metric, array $statistics, array $metadataStatuses = []): array
+    public function summaryRows(string $metric, array $statistics, array $metadataStatuses = [], string $currency = 'USD'): array
     {
         if ($metric === 'metadata_completion_percentage') {
             return [
-                $this->row('Average completion percentage', $metric, $statistics['mean'] ?? null),
-                $this->row('Median completion percentage', $metric, $statistics['median'] ?? null),
+                $this->row('Average Completion', $metric, $statistics['mean'] ?? null, 'mean', $currency),
+                $this->row('Median Completion', $metric, $statistics['median'] ?? null, 'median', $currency),
                 $this->countRow('Complete videos', $metadataStatuses['complete'] ?? 0),
                 $this->countRow('In-progress videos', $metadataStatuses['in_progress'] ?? 0),
                 $this->countRow('Not-started videos', $metadataStatuses['not_started'] ?? 0),
@@ -61,11 +65,11 @@ class AnalyticsMetricRegistry
 
         $rows = [];
         if ($this->summable($metric)) {
-            $rows[] = $this->row($this->aggregateLabel($metric, 'Total'), $metric, $statistics['sum'] ?? null);
+            $rows[] = $this->row($this->aggregateLabel($metric, 'Total'), $metric, $statistics['sum'] ?? null, 'total', $currency);
         }
 
-        $rows[] = $this->row($this->aggregateLabel($metric, 'Average'), $metric, $statistics['mean'] ?? null);
-        $rows[] = $this->row($this->aggregateLabel($metric, 'Median'), $metric, $statistics['median'] ?? null);
+        $rows[] = $this->row($this->aggregateLabel($metric, 'Average'), $metric, $statistics['mean'] ?? null, 'mean', $currency);
+        $rows[] = $this->row($this->aggregateLabel($metric, 'Median'), $metric, $statistics['median'] ?? null, 'median', $currency);
         $rows[] = $this->countRow('Eligible videos', (int) ($statistics['eligible_video_count'] ?? 0));
         $rows[] = $this->countRow(self::DEFINITIONS[$metric]['missing_label'] ?? 'Missing values', (int) ($statistics['missing_value_count'] ?? 0));
 
@@ -78,22 +82,55 @@ class AnalyticsMetricRegistry
             return $aggregate === 'Total' ? 'Total watch time in hours' : $aggregate.' watch time per video in hours';
         }
 
+        if ($metric === 'average_percentage_viewed') {
+            return $aggregate.' Percentage Viewed';
+        }
+
         return $aggregate.' '.$this->label($metric);
     }
 
     /** @return array{label: string, value: string, title: ?string} */
-    private function row(string $label, string $metric, float|int|null $value): array
+    private function row(string $label, string $metric, float|int|null $value, string $aggregate, string $currency): array
     {
         $format = self::DEFINITIONS[$metric]['format'] ?? 'number';
-        $displayValue = $format === 'hours' && $value !== null ? $value / 60 : $value;
-        $decimals = in_array($format, ['percentage', 'currency', 'hours', 'seconds'], true) ? 2 : ($displayValue !== null && floor((float) $displayValue) !== (float) $displayValue ? 2 : 0);
-        $suffix = $format === 'percentage' && $displayValue !== null ? '%' : '';
 
         return [
             'label' => $label,
-            'value' => $displayValue === null ? 'No data' : number_format((float) $displayValue, $decimals).$suffix,
+            'value' => $value === null ? 'No data' : $this->formatValue($metric, $value, $aggregate, $currency),
             'title' => $format === 'hours' && $value !== null ? number_format((float) $value, 2).' raw minutes' : null,
         ];
+    }
+
+    public function formatValue(string $metric, float|int|null $value, string $aggregate = 'value', string $currency = 'USD'): string
+    {
+        if ($value === null) {
+            return 'No data';
+        }
+
+        return match (self::DEFINITIONS[$metric]['format'] ?? 'number') {
+            'percentage' => $this->formatter->percentage($value),
+            'currency' => $this->formatter->currency($value, $currency),
+            'hours' => $this->formatter->decimal((float) $value / 60, 2),
+            'seconds' => $this->formatter->decimal($value, 2).' seconds',
+            default => $aggregate === 'mean' && isset(self::DEFINITIONS[$metric]['average_precision'])
+                ? $this->formatter->decimal($value, self::DEFINITIONS[$metric]['average_precision'])
+                : $this->formatter->count($value),
+        };
+    }
+
+    /** @param array<string, float|int|null> $coverage */
+    public function summaryNote(string $metric, array $statistics, array $coverage): ?string
+    {
+        if ($metric !== 'hype_points' || (float) ($statistics['median'] ?? -1) !== 0.0) {
+            return null;
+        }
+
+        $reported = (int) ($coverage['hype_reported'] ?? 0);
+        $positive = (int) ($coverage['hype_positive'] ?? 0);
+
+        return $reported > 0 && ($positive / $reported) < 0.5
+            ? 'More than half of eligible videos had zero reported Hype Points.'
+            : null;
     }
 
     /** @return array{label: string, value: string, title: null} */
