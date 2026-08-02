@@ -281,7 +281,7 @@
                                     </span>
                                 @else
                                     <a
-                                        href="{{ route('creator.queue', ['creator' => $creator, 'status' => 'recorded']) }}"
+                                        href="{{ route('creator.queue', ['creator' => $creator, 'status' => 'recorded', 'per_page' => $perPage]) }}"
                                         class="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:bg-amber-500 dark:text-slate-950 dark:hover:bg-amber-400 dark:focus-visible:ring-offset-slate-900"
                                     >
                                         See recorded requests
@@ -355,6 +355,7 @@
                             class="border-t border-slate-200 px-4 pb-5 pt-4 dark:border-slate-800 sm:px-5"
                         >
                             <form method="GET" action="{{ route('creator.queue', $creator) }}" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[repeat(14,minmax(0,1fr))] xl:items-end">
+                                <input type="hidden" name="per_page" value="{{ $perPage }}">
                             <div class="md:col-span-2 xl:col-span-4">
                                 <label for="queue-search" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Search requests</label>
                                 <input
@@ -417,7 +418,7 @@
                                 </button>
 
                                 @if ($filters['q'] !== '' || $filters['status'] !== '' || $filters['category'] !== '' || $filters['tag'] !== '' || $filters['sort'] !== 'votes')
-                                    <a href="{{ route('creator.queue', $creator) }}" class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300">
+                                    <a href="{{ route('creator.queue', ['creator' => $creator, 'per_page' => $perPage]) }}" class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300">
                                         Clear
                                     </a>
                                 @endif
@@ -593,7 +594,7 @@
                                 @endif
                             @else
                                 <h2 class="text-lg font-semibold text-slate-950 dark:text-white">No requests found.</h2>
-                                <a href="{{ route('creator.queue', $creator) }}" class="mt-4 inline-flex text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                                <a href="{{ route('creator.queue', ['creator' => $creator, 'per_page' => $perPage]) }}" class="mt-4 inline-flex text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                                     Clear filters
                                 </a>
                             @endif
@@ -601,11 +602,46 @@
                     @endforelse
                     </div>
 
-                    @if ($recommendations->hasPages())
-                        <div class="pt-2">
-                            {{ $recommendations->links() }}
-                        </div>
-                    @endif
+                    <div data-request-pagination-controls class="flex min-w-0 flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                        <p class="text-sm text-slate-600 dark:text-slate-300" aria-live="polite">
+                            @if ($recommendations->total() > 0)
+                                Showing <span class="font-medium">{{ $recommendations->firstItem() }}</span> to <span class="font-medium">{{ $recommendations->lastItem() }}</span> of <span class="font-medium">{{ $recommendations->total() }}</span> results
+                            @else
+                                Showing 0 results
+                            @endif
+                        </p>
+
+                        <form method="GET" action="{{ route('creator.queue', $creator) }}" class="flex min-w-0 items-center gap-2" data-request-per-page-form>
+                            @foreach (['q', 'status', 'category', 'tag', 'sort'] as $parameter)
+                                @if ($filters[$parameter] !== '' && ! ($parameter === 'sort' && $filters[$parameter] === 'votes'))
+                                    <input type="hidden" name="{{ $parameter }}" value="{{ $filters[$parameter] }}">
+                                @endif
+                            @endforeach
+
+                            <label for="requests-per-page" class="shrink-0 text-sm font-medium text-slate-700 dark:text-slate-200">Show</label>
+                            <select
+                                id="requests-per-page"
+                                name="per_page"
+                                aria-label="Requests per page"
+                                class="min-h-11 rounded-xl border-slate-300 bg-white py-2 pl-3 pr-8 text-base text-slate-950 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white sm:text-sm"
+                                onchange="this.form.requestSubmit()"
+                            >
+                                @foreach ($perPageOptions as $option)
+                                    <option value="{{ $option }}" @selected($perPage === $option)>{{ $option }}</option>
+                                @endforeach
+                            </select>
+                            <span class="shrink-0 text-sm text-slate-600 dark:text-slate-300">per page</span>
+                            <noscript>
+                                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Apply</button>
+                            </noscript>
+                        </form>
+
+                        @if ($recommendations->hasPages())
+                            <div class="min-w-0 sm:ml-auto [&>nav>div:last-child>div:first-child]:hidden [&>nav>div:last-child]:justify-end">
+                                {{ $recommendations->links() }}
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

@@ -10,6 +10,7 @@ use App\Models\Recommendation;
 use App\Models\User;
 use App\Services\Accolades\AccoladeShowcaseService;
 use App\Services\CreatorParticipationService;
+use App\Services\CreatorRequestPerPageResolver;
 use App\Services\RequestCacheInvalidator;
 use App\Services\RequestSupportService;
 use App\Services\UnfavoriteCreatorAction;
@@ -30,6 +31,7 @@ class RecommendationController extends Controller
 {
     public function __construct(
         private readonly CreatorParticipationService $participation,
+        private readonly CreatorRequestPerPageResolver $creatorRequestPerPage,
         private readonly UnfavoriteCreatorAction $unfavoriteCreator,
         private readonly YouTubeUrlService $youtubeUrls,
         private readonly YouTubePlaylistMetadataService $playlistMetadata,
@@ -42,6 +44,9 @@ class RecommendationController extends Controller
     public function showCreatorQueue(Request $request, Creator $creator): View
     {
         abort_if($creator->status !== 'active' && ! $request->user()?->isSuperAdmin(), 404);
+
+        $perPage = $this->creatorRequestPerPage->resolve($request);
+        $request->query->set('per_page', $perPage);
 
         $filters = [
             'q' => trim((string) $request->query('q', '')),
@@ -127,7 +132,7 @@ class RecommendationController extends Controller
         };
 
         $recommendations = $recommendationsQuery
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
         $initialExpandedRequestId = $recommendations->first()?->id;
 
@@ -154,6 +159,7 @@ class RecommendationController extends Controller
         $usage = $header['guide_activity'];
         $isFavorited = $header['actions']['favorite_state'];
         $creatorAccolades = $header['accolade_showcase'];
+        $perPageOptions = $this->creatorRequestPerPage->options();
 
         return view('recommendations.creator-queue', compact(
             'categoryOptions',
@@ -164,6 +170,8 @@ class RecommendationController extends Controller
             'initialExpandedRequestId',
             'isFavorited',
             'ownsCreator',
+            'perPage',
+            'perPageOptions',
             'publicRecommendationsCount',
             'recordedRecommendationsCount',
             'recentPublishedRecommendations',
