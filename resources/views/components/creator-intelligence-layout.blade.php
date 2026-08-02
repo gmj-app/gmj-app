@@ -9,12 +9,14 @@
                     'overview' => ['Overview', route('superadmin.creator-intelligence.overview')],
                     'profiles' => ['Creator Profiles', route('superadmin.creator-intelligence.profiles.index')],
                     'channels' => ['Creator Channels', route('superadmin.creator-intelligence.channels.index')],
+                    'imports' => ['Imports', route('superadmin.creator-intelligence.imports.index')],
                 ] as $key => [$label, $url])
                     <a href="{{ $url }}" class="rounded-xl px-4 py-2 {{ request()->routeIs('superadmin.creator-intelligence.'.$key.'*') ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900' }}">{{ $label }}</a>
                 @endforeach
             </nav>
         </div>
         @if (session('success'))<div class="mb-6 rounded-xl bg-emerald-100 p-4 font-semibold text-emerald-800">{{ session('success') }}</div>@endif
+        @if ($errors->any())<div class="mb-6 rounded-xl bg-rose-100 p-4 font-semibold text-rose-800"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
         {{ $slot }}
     </div>
 </x-public-layout>

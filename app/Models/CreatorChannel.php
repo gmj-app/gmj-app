@@ -31,6 +31,11 @@ class CreatorChannel extends Model
         return $this->hasMany(CreatorVideo::class);
     }
 
+    public function importBatches(): HasMany
+    {
+        return $this->hasMany(ImportBatch::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

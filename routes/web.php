@@ -27,6 +27,7 @@ use App\Http\Controllers\SuperAdmin\AnnouncementController;
 use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\CreatorChannelController as CreatorIntelligenceChannelController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\CreatorProfileController as CreatorIntelligenceProfileController;
+use App\Http\Controllers\SuperAdmin\CreatorIntelligence\ImportBatchController as CreatorIntelligenceImportBatchController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\OverviewController as CreatorIntelligenceOverviewController;
 use App\Http\Controllers\SuperAdmin\CreatorRequestController as SuperAdminCreatorRequestController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
@@ -216,6 +217,12 @@ Route::prefix('superadmin/creator-intelligence')->name('superadmin.creator-intel
     Route::get('/', CreatorIntelligenceOverviewController::class)->name('overview');
     Route::resource('profiles', CreatorIntelligenceProfileController::class)->except(['show', 'destroy']);
     Route::resource('channels', CreatorIntelligenceChannelController::class)->except(['show', 'destroy']);
+    Route::get('imports/{importBatch}/mapping', [CreatorIntelligenceImportBatchController::class, 'mapping'])->name('imports.mapping');
+    Route::put('imports/{importBatch}/mapping', [CreatorIntelligenceImportBatchController::class, 'updateMapping'])->name('imports.mapping.update');
+    Route::post('imports/{importBatch}/process', [CreatorIntelligenceImportBatchController::class, 'process'])->name('imports.process');
+    Route::get('imports/{importBatch}/errors', [CreatorIntelligenceImportBatchController::class, 'errors'])->name('imports.errors');
+    Route::get('imports/{importBatch}/failed-rows.csv', [CreatorIntelligenceImportBatchController::class, 'failedRows'])->name('imports.failed-rows');
+    Route::resource('imports', CreatorIntelligenceImportBatchController::class)->parameters(['imports' => 'importBatch'])->only(['index', 'create', 'store', 'show']);
 });
 
 Route::get('/@{handle}', PublicProfileController::class)

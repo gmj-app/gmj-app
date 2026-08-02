@@ -7,6 +7,7 @@ use Database\Factories\VideoPerformanceSnapshotFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VideoPerformanceSnapshot extends Model
 {
@@ -32,5 +33,10 @@ class VideoPerformanceSnapshot extends Model
     public function video(): BelongsTo
     {
         return $this->belongsTo(CreatorVideo::class, 'creator_video_id');
+    }
+
+    public function importRows(): HasMany
+    {
+        return $this->hasMany(ImportBatchRow::class);
     }
 }

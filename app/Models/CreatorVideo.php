@@ -44,4 +44,9 @@ class CreatorVideo extends Model
     {
         return $this->hasMany(VideoPerformanceSnapshot::class);
     }
+
+    public function importRows(): HasMany
+    {
+        return $this->hasMany(ImportBatchRow::class);
+    }
 }
