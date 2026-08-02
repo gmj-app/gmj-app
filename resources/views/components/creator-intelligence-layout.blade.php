@@ -8,8 +8,7 @@
         $configuredChannel = request()->filled('creator_channel_id')
             ? \App\Models\CreatorChannel::find(request()->integer('creator_channel_id'))
             : ($routeSubject?->creatorChannel ?? $routeContentItem?->creatorChannel ?? $routeVideo?->channel ?? $routeBatch?->channel);
-        $navigationSubjectLabel = $configuredChannel?->subject_label ?? 'Subject';
-        $navigationContentItemLabel = $configuredChannel?->content_item_label ?? 'Content Item';
+        $navigationLabels = \App\Support\CreatorIntelligenceLabels::for($configuredChannel);
     @endphp
     <div data-creator-intelligence class="ci-page mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div class="mb-8 border-b border-slate-200 pb-6 dark:border-slate-800">
@@ -21,8 +20,8 @@
                     'analytics' => ['Analytics', route('superadmin.creator-intelligence.analytics.index')],
                     'videos' => ['Videos', route('superadmin.creator-intelligence.videos.index')],
                     'metadata-queue' => ['Metadata Queue', route('superadmin.creator-intelligence.metadata-queue.index')],
-                    'subjects' => [str($navigationSubjectLabel)->plural()->toString(), route('superadmin.creator-intelligence.subjects.index', array_filter(['creator_channel_id'=>$configuredChannel?->id]))],
-                    'content-items' => [str($navigationContentItemLabel)->plural()->toString(), route('superadmin.creator-intelligence.content-items.index', array_filter(['creator_channel_id'=>$configuredChannel?->id]))],
+                    'subjects' => [$navigationLabels->subjectPlural(), route('superadmin.creator-intelligence.subjects.index', array_filter(['creator_channel_id'=>$configuredChannel?->id]))],
+                    'content-items' => [$navigationLabels->contentItemPlural(), route('superadmin.creator-intelligence.content-items.index', array_filter(['creator_channel_id'=>$configuredChannel?->id]))],
                     'profiles' => ['Creator Profiles', route('superadmin.creator-intelligence.profiles.index')],
                     'channels' => ['Creator Channels', route('superadmin.creator-intelligence.channels.index')],
                     'imports' => ['Imports', route('superadmin.creator-intelligence.imports.index')],

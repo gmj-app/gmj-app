@@ -1,6 +1,7 @@
 <x-creator-intelligence-layout :title="str($report)->headline().' Analytics'">
     @php
-        $tabs = ['channel'=>'Channel Performance','subjects'=>($context->channel?->subject_label ?? 'Subject').' Performance','content-items'=>($context->channel?->content_item_label ?? 'Content Item').' Performance','timing'=>'Upload Timing','titles'=>'Titles','thumbnails'=>'Thumbnails','editorial'=>'Editorial','hype'=>'Hype'];
+        $labels = \App\Support\CreatorIntelligenceLabels::for($context->channel);
+        $tabs = ['channel'=>'Channel Performance','subjects'=>$labels->subject.' Performance','content-items'=>$labels->contentItem.' Performance','timing'=>'Upload Timing','titles'=>'Titles','thumbnails'=>'Thumbnails','editorial'=>'Editorial','hype'=>'Hype'];
         $fmt = fn($value, $decimals = 0) => $value === null ? 'No data' : number_format((float) $value, $decimals);
         $currency = $context->channel?->profile?->default_currency ?? 'USD';
         $dimensions = [
@@ -8,7 +9,7 @@
             'titles'=>['title_contains_question'=>'Contains Question','title_contains_exclamation'=>'Contains Exclamation','title_contains_pipe'=>'Contains Pipe','title_contains_parentheses'=>'Contains Parentheses','title_contains_all_caps'=>'Contains All Caps','subject_name_present'=>'Subject Name Present','content_item_name_present'=>'Content Item Name Present','negative_hook'=>'Negative Hook','curiosity_hook'=>'Curiosity Hook','emotional_hook'=>'Emotional Hook','controversy_hook'=>'Controversy Hook','technical_hook'=>'Technical Hook','discovery_hook'=>'Discovery Hook','title_template'=>'Title Template','title_character_count'=>'Character Count Bucket','title_word_count'=>'Word Count Bucket'],
             'thumbnails'=>['creator_expression'=>'Creator Expression','background_style'=>'Background Style','dominant_color_label'=>'Dominant Color','layout_style'=>'Layout Style','text_position'=>'Text Position','thumbnail_text_word_count'=>'Text Word Count Bucket','face_count'=>'Face Count Bucket','creator_face_visible'=>'Creator Face Visible','subject_face_visible'=>'Subject Face Visible','thumbnail_contains_question'=>'Contains Question','contains_arrow'=>'Contains Arrow','contains_circle'=>'Contains Circle','contains_flag'=>'Contains Flag','contains_logo'=>'Contains Logo'],
             'editorial'=>['creator_sentiment'=>'Creator Sentiment','reaction_style'=>'Reaction Style','energy_level'=>'Energy Level','technical_depth'=>'Technical Depth','humor_level'=>'Humor Level','cultural_context_level'=>'Cultural Context'],
-            'hype'=>['videos'=>'Videos','subjects'=>($context->channel?->subject_label ?? 'Subject').'s'],
+            'hype'=>['videos'=>'Videos','subjects'=>$labels->subjectPlural()],
         ];
     @endphp
     <nav aria-label="Analytics reports" class="ci-tabs mb-6">@foreach($tabs as $key=>$label)<a class="rounded-xl px-3 py-2 text-sm font-bold {{ $report===$key?'bg-indigo-600 text-white':'border border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100' }}" href="{{ route('superadmin.creator-intelligence.analytics.report', ['report'=>$key] + request()->except('dimension')) }}">{{ $label }}</a>@endforeach</nav>
@@ -45,15 +46,15 @@
         @if($data['groups']->isEmpty())
             <div class="ci-empty-state mt-3">
                 @if($report === 'subjects' && $data['empty_state'] === 'no_relationships')
-                    <p class="font-bold">No subjects have been assigned to these videos yet.</p>
-                    <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Assign primary subjects in the Metadata Queue or use bulk actions from the Videos page. Subject analytics will appear once videos are classified.</p>
+                    <p class="font-bold">No {{ $labels->lowerSubjects() }} have been assigned to these videos yet.</p>
+                    <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Assign primary {{ $labels->lowerSubjects() }} in the Metadata Queue or use bulk actions from the Videos page. {{ $labels->subject }} analytics will appear once videos are classified.</p>
                     <div class="mt-5 flex flex-wrap justify-center gap-3">
                         <a href="{{ route('superadmin.creator-intelligence.metadata-queue.index', array_filter(['creator_channel_id'=>$context->channel?->id, 'missing_subject'=>1])) }}" class="rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">Open Metadata Queue</a>
-                        <a href="{{ route('superadmin.creator-intelligence.subjects.index', array_filter(['creator_channel_id'=>$context->channel?->id])) }}" class="rounded-xl border border-slate-300 px-4 py-2 font-bold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700">Manage Subjects</a>
+                        <a href="{{ route('superadmin.creator-intelligence.subjects.index', array_filter(['creator_channel_id'=>$context->channel?->id])) }}" class="rounded-xl border border-slate-300 px-4 py-2 font-bold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700">Manage {{ $labels->subjectPlural() }}</a>
                         <a href="{{ route('superadmin.creator-intelligence.videos.index', array_filter(['creator_channel_id'=>$context->channel?->id])) }}" class="rounded-xl border border-slate-300 px-4 py-2 font-bold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700">Browse Videos</a>
                     </div>
                 @elseif($report === 'subjects' && $data['empty_state'] === 'below_minimum')
-                    <p class="font-bold">No subjects meet the current minimum sample size of {{ $context->sampleMinimum() }} videos.</p>
+                    <p class="font-bold">No {{ $labels->lowerSubjects() }} meet the current minimum sample size of {{ $context->sampleMinimum() }} videos.</p>
                     <div class="mt-5 flex flex-wrap justify-center gap-3">
                         <a href="{{ route('superadmin.creator-intelligence.analytics.report', array_merge(['report'=>$report], request()->query(), ['show_low_sample'=>1])) }}" class="rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">Show Low-Sample Groups</a>
                         <a href="{{ route('superadmin.creator-intelligence.analytics.report', array_merge(['report'=>$report], request()->query(), ['minimum_sample_size'=>1])) }}" class="rounded-xl border border-slate-300 px-4 py-2 font-bold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700">Lower Minimum Sample</a>
@@ -62,8 +63,8 @@
                     <p class="font-bold">No videos match the current analytics filters.</p>
                     <div class="mt-5"><a href="{{ route('superadmin.creator-intelligence.analytics.report', $report) }}" class="inline-flex rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">Clear Filters</a></div>
                 @elseif($report === 'subjects' && $data['empty_state'] === 'no_primary_relationships')
-                    <p class="font-bold">No primary subjects are assigned in the current dataset.</p>
-                    <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Assign primary subjects or enable Include featured and secondary relationships.</p>
+                    <p class="font-bold">No primary {{ $labels->lowerSubjects() }} are assigned in the current dataset.</p>
+                    <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Assign primary {{ $labels->lowerSubjects() }} or enable Include featured and secondary relationships.</p>
                     <div class="mt-5"><a href="{{ route('superadmin.creator-intelligence.analytics.report', array_merge(['report'=>$report], request()->query(), ['include_secondary'=>1])) }}" class="inline-flex rounded-xl bg-indigo-600 px-4 py-2 font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">Include Secondary Relationships</a></div>
                 @else
                     <p class="font-bold">No groups meet the current filters and minimum sample size.</p>

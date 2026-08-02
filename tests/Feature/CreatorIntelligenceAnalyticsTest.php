@@ -171,7 +171,7 @@ class CreatorIntelligenceAnalyticsTest extends TestCase
         }
         $url = route('superadmin.creator-intelligence.analytics.report', ['report' => 'subjects', 'creator_channel_id' => $channel->id, 'minimum_sample_size' => 3]);
         $this->actingAs($this->admin())->get($url)->assertOk()->assertSee('Artist Performance')->assertSee('SB19')->assertSee('400')->assertSee('200')->assertSee('Outlier-sensitive');
-        $this->actingAs($this->admin())->get($url.'&minimum_sample_size=4')->assertOk()->assertSee('No subjects meet the current minimum sample size of 4 videos.');
+        $this->actingAs($this->admin())->get($url.'&minimum_sample_size=4')->assertOk()->assertSee('No artists meet the current minimum sample size of 4 videos.');
     }
 
     public function test_channel_summary_uses_rate_watch_time_hype_and_metadata_semantics(): void

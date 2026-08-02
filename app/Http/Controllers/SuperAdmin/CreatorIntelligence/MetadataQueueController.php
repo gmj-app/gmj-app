@@ -13,6 +13,7 @@ use App\Models\CreatorChannel;
 use App\Models\CreatorProfile;
 use App\Models\CreatorVideo;
 use App\Models\Subject;
+use App\Support\CreatorIntelligenceLabels;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -77,6 +78,7 @@ class MetadataQueueController extends Controller
             $videos->isEmpty() => 'no_results',
             default => null,
         };
+        $labels = CreatorIntelligenceLabels::for($selectedChannel);
 
         return view('super-admin.creator-intelligence.metadata-queue.index', [
             'videos' => $videos,
@@ -86,8 +88,9 @@ class MetadataQueueController extends Controller
             'subjectsExist' => $subjects->isNotEmpty(),
             'contentItemsExist' => $contentItemsExist,
             'selectedChannel' => $selectedChannel,
-            'subjectLabel' => $selectedChannel?->subject_label ?? 'Subject',
-            'contentItemLabel' => $selectedChannel?->content_item_label ?? 'Content Item',
+            'labels' => $labels,
+            'subjectLabel' => $labels->subject,
+            'contentItemLabel' => $labels->contentItem,
             'relationshipTypes' => SubjectRelationshipType::cases(),
             'contentTypes' => VideoContentType::cases(),
             'sentiments' => CreatorSentiment::cases(),
