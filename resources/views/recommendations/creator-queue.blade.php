@@ -182,70 +182,29 @@
             @enderror
 
             <div class="flex min-w-0 flex-col gap-6">
-                <aside class="order-2 min-w-0">
-                    <div class="space-y-5">
-                        <section class="w-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="recently-published-title">
+                @if ($recentPublishedRecommendations->isNotEmpty())
+                    <section class="order-2 min-w-0 pt-2" aria-labelledby="recently-published-title" data-published-preview>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
                             <x-subsection-label as="h2" id="recently-published-title">Recently Published</x-subsection-label>
-
-                            @if ($recentPublishedRecommendations->isEmpty())
-                                <p class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">No published requests yet.</p>
-                            @else
-                                <div class="mt-3 divide-y divide-slate-200/80 dark:divide-slate-700/50">
-                                    @foreach ($recentPublishedRecommendations as $publishedRecommendation)
-                                        @php
-                                            $publishedDisplay = $publishedRecommendation->publishedDisplayData();
-                                            $publishedDate = $publishedDisplay['date'];
-                                            $publishedVotes = $publishedRecommendation->totalVotes();
-                                        @endphp
-                                        <a
-                                            href="{{ route('creators.published', $creator) }}#recommendation-{{ $publishedRecommendation->id }}"
-                                            aria-label="View published request: {{ $publishedDisplay['title'] }}"
-                                            class="group flex min-w-0 items-start gap-3 rounded-xl px-1 py-4 transition hover:bg-emerald-50/70 focus:outline-none focus-visible:bg-emerald-50/70 focus-visible:ring-2 focus-visible:ring-emerald-500 dark:hover:bg-emerald-950/20 dark:focus-visible:bg-emerald-950/20"
-                                        >
-                                            <span class="relative flex aspect-video w-[84px] shrink-0 overflow-hidden rounded-lg bg-slate-950 ring-1 ring-slate-200 dark:ring-slate-800">
-                                                @if ($publishedDisplay['thumbnail_url'])
-                                                    <img
-                                                        src="{{ $publishedDisplay['thumbnail_url'] }}"
-                                                        alt=""
-                                                        loading="lazy"
-                                                        onerror="this.hidden = true"
-                                                        class="h-full w-full object-cover transition duration-200 group-hover:scale-105 group-hover:opacity-90"
-                                                    >
-                                                @else
-                                                    <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-slate-400">
-                                                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V6.75A2.75 2.75 0 0 1 6.75 4h10.5A2.75 2.75 0 0 1 20 6.75V19.5l-4.5-2.25L12 19.5l-3.5-2.25L4 19.5Z" />
-                                                        </svg>
-                                                    </span>
-                                                @endif
-                                            </span>
-                                            <span class="min-w-0 flex-1">
-                                                <span class="line-clamp-2 break-words text-sm font-semibold leading-5 text-slate-800 transition group-hover:text-emerald-700 group-focus-visible:text-emerald-700 dark:text-slate-100 dark:group-hover:text-emerald-300 dark:group-focus-visible:text-emerald-300">{{ $publishedDisplay['title'] }}</span>
-                                                <span class="mt-1 block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                                                    {{ $publishedDate?->format('M j, Y') ?? 'Recently' }} &middot; {{ $publishedVotes }} {{ Str::plural('vote', $publishedVotes) }}
-                                                </span>
-                                            </span>
-                                        </a>
-                                    @endforeach
-                                </div>
-
-                                <div class="mt-4 flex justify-end">
-                                    <div class="flex flex-wrap items-center gap-4">
-                                    <a href="{{ route('creators.published', $creator) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 transition hover:text-emerald-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-300 dark:hover:text-emerald-200">
-                                        View all published
-                                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
-                                        </svg>
-                                    </a>
-                                    <a href="{{ route('creators.closed', $creator) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 transition hover:text-indigo-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:text-indigo-300">
-                                        Closed Requests
-                                    </a>
-                                    </div>
-                                </div>
+                            @if ($hasMorePublishedRecommendations)
+                                <a href="{{ route('creators.published', $creator) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 transition hover:text-emerald-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-300 dark:hover:text-emerald-200">
+                                    View all published
+                                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" /></svg>
+                                </a>
                             @endif
-                        </section>
-                    </div>
-                </aside>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
+                            @foreach ($recentPublishedRecommendations as $publishedRecommendation)
+                                <x-published-recommendation-preview-tile :recommendation="$publishedRecommendation" :creator="$creator" />
+                            @endforeach
+                        </div>
+
+                        <div class="mt-4 flex justify-end">
+                            <a href="{{ route('creators.closed', $creator) }}" class="text-sm font-semibold text-slate-600 transition hover:text-indigo-600 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:text-indigo-300">Closed Requests</a>
+                        </div>
+                    </section>
+                @endif
 
                 <div class="order-1 min-w-0 space-y-5">
                     @if ($recordedRecommendationsCount > 0)

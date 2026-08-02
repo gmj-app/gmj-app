@@ -193,7 +193,8 @@ class CreatorRequestPaginationTest extends TestCase
         $this->get(route('creator.queue', ['creator' => $creator, 'per_page' => 100]))
             ->assertOk()
             ->assertViewHas('recommendations', fn (LengthAwarePaginator $requests) => $requests->count() === 12)
-            ->assertViewHas('recentPublishedRecommendations', fn ($requests) => $requests->count() === 4);
+            ->assertViewHas('recentPublishedRecommendations', fn ($requests) => $requests->count() === 6)
+            ->assertViewHas('hasMorePublishedRecommendations', false);
 
         $this->get(route('creator.queue', ['creator' => $creator, 'q' => 'no-match', 'per_page' => 100]))
             ->assertOk()

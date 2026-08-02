@@ -149,12 +149,16 @@ class RecommendationController extends Controller
                 ->activePubliclyVisible())
             ->get();
         $recentPublishedRecommendations = $creator->recommendations()
-            ->where('status', 'published')
+            ->publicPublished()
             ->withEffectiveVoteTotal()
-            ->orderByRaw('COALESCE(published_at, updated_at, created_at) DESC')
-            ->latest()
-            ->limit(4)
+            ->orderByRaw('published_at IS NULL')
+            ->orderByDesc('published_at')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->limit(7)
             ->get();
+        $hasMorePublishedRecommendations = $recentPublishedRecommendations->count() > 6;
+        $recentPublishedRecommendations = $recentPublishedRecommendations->take(6);
 
         $usage = $header['guide_activity'];
         $isFavorited = $header['actions']['favorite_state'];
@@ -167,6 +171,7 @@ class RecommendationController extends Controller
             'creatorAccolades',
             'filters',
             'header',
+            'hasMorePublishedRecommendations',
             'initialExpandedRequestId',
             'isFavorited',
             'ownsCreator',

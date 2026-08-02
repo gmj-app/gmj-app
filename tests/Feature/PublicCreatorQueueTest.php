@@ -997,7 +997,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Scheduled for Jul 4, 2026 at 7:30 PM');
     }
 
-    public function test_creator_page_shows_recently_published_sidebar_and_excludes_published_from_active_queue(): void
+    public function test_creator_page_shows_six_recent_published_tiles_and_excludes_them_from_active_queue(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
         $active = Recommendation::factory()->create([
@@ -1015,6 +1015,7 @@ class PublicCreatorQueueTest extends TestCase
             'published_title' => 'Creator finished video',
             'published_channel' => 'Creator Finished Channel',
             'published_thumbnail_url' => 'https://img.youtube.com/vi/PUBLISHED01/hqdefault.jpg',
+            'vote_total_at_close' => 43,
         ]);
         $fallback = Recommendation::factory()->create([
             'creator_id' => $creator->id,
@@ -1038,9 +1039,21 @@ class PublicCreatorQueueTest extends TestCase
         ]);
         $fifth = Recommendation::factory()->create([
             'creator_id' => $creator->id,
-            'title' => 'Old published sidebar item',
+            'title' => 'Fifth published tile',
             'status' => 'published',
             'published_at' => '2026-07-02 12:00:00',
+        ]);
+        $sixth = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Sixth published tile',
+            'status' => 'published',
+            'published_at' => '2026-07-01 12:00:00',
+        ]);
+        $seventh = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Seventh published item',
+            'status' => 'published',
+            'published_at' => '2026-06-30 12:00:00',
         ]);
 
         $this->addPicks($creator, $newest, 2);
@@ -1052,31 +1065,32 @@ class PublicCreatorQueueTest extends TestCase
             ->assertOk()
             ->assertSee('Recently Published')
             ->assertSee('View all published')
-            ->assertSee('divide-y divide-slate-200/80 dark:divide-slate-700/50', false)
-            ->assertSee('w-[84px]', false)
-            ->assertSee('hover:bg-emerald-50/70', false)
+            ->assertSee('data-published-preview', false)
+            ->assertSee('grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3', false)
+            ->assertSee('aspect-video', false)
+            ->assertSee('line-clamp-2 min-h-10', false)
             ->assertSee('focus-visible:ring-emerald-500', false)
-            ->assertSee('mt-4 flex justify-end', false)
-            ->assertDontSee('bg-emerald-100 px-2.5 py-1 text-[11px]', false)
-            ->assertDontSee('bg-red-600/95 text-white shadow-md', false)
             ->assertSeeInOrder([
                 'Creator finished video',
                 'Fallback original published title',
                 'Third published sidebar item',
                 'Fourth published sidebar item',
+                'Fifth published tile',
+                'Sixth published tile',
             ])
-            ->assertSee('Jul 6, 2026 &middot; 2 votes', false)
+            ->assertSee('Published <time datetime="2026-07-06">Jul 6, 2026</time>', false)
             ->assertSee('Creator finished video')
             ->assertSee('https://img.youtube.com/vi/PUBLISHED01/hqdefault.jpg', false)
             ->assertSee('Fallback original published title')
             ->assertSee('https://img.youtube.com/vi/FALLBACK001/hqdefault.jpg', false)
             ->assertSee(route('creators.published', $creator).'#recommendation-'.$newest->id, false)
             ->assertSee(route('creators.published', $creator).'#recommendation-'.$fallback->id, false)
-            ->assertSee('2 votes')
+            ->assertSee('43 votes')
             ->assertSee('5 votes')
             ->assertDontSee('Creator Finished Channel')
-            ->assertDontSee('Old published sidebar item')
-            ->assertDontSee(route('creators.published', $creator).'#recommendation-'.$fifth->id, false);
+            ->assertDontSee('Seventh published item')
+            ->assertDontSee(route('creators.published', $creator).'#recommendation-'.$seventh->id, false)
+            ->assertDontSee('<iframe', false);
 
         $this->assertStringContainsString('Active community request', $response->getContent());
         $this->assertStringNotContainsString('Original newest request title', $response->getContent());
@@ -1084,17 +1098,61 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringNotContainsString('id="recommendation-'.$third->id.'"', $response->getContent());
         $this->assertStringNotContainsString('id="recommendation-'.$fourth->id.'"', $response->getContent());
         $this->assertStringContainsString('id="recommendation-'.$active->id.'"', $response->getContent());
+        $this->assertSame(6, substr_count($response->getContent(), 'aria-label="View published request:'));
     }
 
-    public function test_creator_page_shows_recently_published_empty_state(): void
+    public function test_creator_page_hides_empty_recently_published_section(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Recently Published')
-            ->assertSee('No published requests yet.')
+            ->assertDontSee('Recently Published')
+            ->assertDontSee('data-published-preview', false)
             ->assertDontSee('data-recorded-progress', false);
+    }
+
+    public function test_published_preview_uses_stable_publication_order_and_conditional_catalog_link(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'published-order']);
+
+        $olderId = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Same date older id',
+            'status' => 'published',
+            'published_at' => '2026-07-10 12:00:00',
+        ]);
+        $newerId = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Same date newer id',
+            'status' => 'published',
+            'published_at' => '2026-07-10 12:00:00',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Legacy null publication date',
+            'status' => 'published',
+            'published_at' => null,
+            'updated_at' => '2026-07-20 12:00:00',
+        ]);
+        Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Active item must stay outside preview',
+            'status' => 'approved',
+        ]);
+        $deleted = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Deleted published item',
+            'status' => 'published',
+            'published_at' => '2026-07-30 12:00:00',
+        ]);
+        $deleted->delete();
+
+        $this->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertSeeInOrder([$newerId->title, $olderId->title, 'Legacy null publication date'])
+            ->assertDontSee('View all published')
+            ->assertDontSee('Deleted published item');
     }
 
     public function test_creator_page_surfaces_recorded_requests_as_visible_journey_progress(): void
