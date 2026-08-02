@@ -7,6 +7,7 @@
             <nav aria-label="Creator Intelligence" class="mt-5 flex flex-wrap gap-2 text-sm font-bold">
                 @foreach ([
                     'overview' => ['Overview', route('superadmin.creator-intelligence.overview')],
+                    'videos' => ['Videos', route('superadmin.creator-intelligence.videos.index')],
                     'profiles' => ['Creator Profiles', route('superadmin.creator-intelligence.profiles.index')],
                     'channels' => ['Creator Channels', route('superadmin.creator-intelligence.channels.index')],
                     'imports' => ['Imports', route('superadmin.creator-intelligence.imports.index')],
