@@ -3,6 +3,7 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import { creatorRequestAccordion } from './creator-request-accordion.js';
 import { creatorPublicationStatusForm } from './creator-publication-status-form.js';
+import { enhanceCreatorYoutubeThumbnails } from './creator-youtube-thumbnail.js';
 
 window.Alpine = Alpine;
 
@@ -92,6 +93,7 @@ const resetModalState = () => {
 window.resetModalState = resetModalState;
 
 Alpine.start();
+enhanceCreatorYoutubeThumbnails();
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', resetModalState, { once: true });
