@@ -1,5 +1,6 @@
 @props([
     'recommendation',
+    'showVoteIndicator' => true,
 ])
 
 @php
@@ -8,9 +9,9 @@
     $requestedByCurrentUser = $recommendation->requestedByCurrentUser($currentUser);
 @endphp
 
-@if ($currentUser && ($votedByCurrentUser || $requestedByCurrentUser))
+@if ($currentUser && (($showVoteIndicator && $votedByCurrentUser) || $requestedByCurrentUser))
     <span {{ $attributes->class('flex flex-wrap items-center gap-1.5') }}>
-        @if ($votedByCurrentUser)
+        @if ($showVoteIndicator && $votedByCurrentUser)
             <x-requests.active-vote-badge :recommendation="$recommendation" />
         @endif
 

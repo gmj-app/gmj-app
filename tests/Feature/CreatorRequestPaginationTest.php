@@ -38,7 +38,7 @@ class CreatorRequestPaginationTest extends TestCase
                 && $requests->count() === $perPage
                 && $requests->lastPage() === (int) ceil(120 / $perPage));
 
-        $this->assertSame(1, substr_count($response->getContent(), 'aria-expanded="true"'));
+        $this->assertSame(2, substr_count($response->getContent(), 'aria-expanded="true"'));
     }
 
     /** @return array<string, array{int}> */
@@ -220,6 +220,35 @@ class CreatorRequestPaginationTest extends TestCase
 
         $this->assertLessThanOrEqual(2, max($counts) - min($counts), json_encode($counts, JSON_THROW_ON_ERROR));
         $this->assertLessThan(30, max($counts), json_encode($counts, JSON_THROW_ON_ERROR));
+    }
+
+    public function test_authenticated_vote_state_query_count_is_bounded_at_ten_and_one_hundred_rows(): void
+    {
+        $creator = $this->creatorWithActiveRequests(120);
+        $guide = User::factory()->create();
+        $counts = [];
+
+        foreach ([10, 100] as $perPage) {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+
+            $response = $this->actingAs($guide)
+                ->get(route('creator.queue', ['creator' => $creator, 'per_page' => $perPage]))
+                ->assertOk();
+            $counts[$perPage] = count(DB::getQueryLog());
+            DB::disableQueryLog();
+
+            $this->assertSame($perPage, substr_count($response->getContent(), 'data-collapsed-vote-button'));
+        }
+
+        fwrite(STDERR, sprintf(
+            "\nauthenticated-vote-state queries_10=%d queries_100=%d\n",
+            $counts[10],
+            $counts[100],
+        ));
+
+        $this->assertLessThanOrEqual(2, $counts[100] - $counts[10], json_encode($counts, JSON_THROW_ON_ERROR));
+        $this->assertLessThan(32, max($counts), json_encode($counts, JSON_THROW_ON_ERROR));
     }
 
     private function creatorWithActiveRequests(int $count): Creator

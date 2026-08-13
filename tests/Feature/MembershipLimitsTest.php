@@ -78,6 +78,49 @@ class MembershipLimitsTest extends TestCase
         $this->assertDatabaseCount('user_picks', 1);
     }
 
+    public function test_json_vote_contract_returns_canonical_binary_state_and_total(): void
+    {
+        $creator = Creator::factory()->create();
+        $request = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson(route('recommendations.vote', [$creator, $request]))
+            ->assertOk()
+            ->assertExactJson([
+                'has_voted' => true,
+                'votes' => 1,
+                'message' => 'Your vote was added.',
+            ]);
+
+        $this->postJson(route('recommendations.vote', [$creator, $request]))
+            ->assertOk()
+            ->assertJsonPath('has_voted', true)
+            ->assertJsonPath('votes', 1);
+        $this->assertDatabaseCount('user_picks', 1);
+
+        $this->deleteJson(route('recommendations.vote.destroy', [$creator, $request]))
+            ->assertOk()
+            ->assertJsonPath('has_voted', false)
+            ->assertJsonPath('votes', 0);
+
+        $this->deleteJson(route('recommendations.vote.destroy', [$creator, $request]))
+            ->assertOk()
+            ->assertJsonPath('has_voted', false)
+            ->assertJsonPath('votes', 0);
+    }
+
+    public function test_guest_json_vote_mutation_requires_authentication(): void
+    {
+        $creator = Creator::factory()->create();
+        $request = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
+
+        $this->postJson(route('recommendations.vote', [$creator, $request]))
+            ->assertUnauthorized();
+
+        $this->assertDatabaseCount('user_picks', 0);
+    }
+
     public function test_vote_payload_rejects_quantity_and_closed_requests(): void
     {
         $creator = Creator::factory()->create();

@@ -2,6 +2,7 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import { creatorRequestAccordion } from './creator-request-accordion.js';
+import { creatorRequestVote } from './creator-request-vote.js';
 import { creatorPublicationStatusForm } from './creator-publication-status-form.js';
 import { enhanceCreatorYoutubeThumbnails } from './creator-youtube-thumbnail.js';
 import { metadataQueue } from './metadata-queue.js';
@@ -63,6 +64,7 @@ Alpine.data('siteNavigation', () => ({
 }));
 
 Alpine.data('creatorRequestAccordion', creatorRequestAccordion);
+Alpine.data('creatorRequestVote', creatorRequestVote);
 Alpine.data('creatorPublicationStatusForm', creatorPublicationStatusForm);
 Alpine.data('metadataQueue', metadataQueue);
 

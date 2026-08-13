@@ -577,7 +577,7 @@ class RecommendationController extends Controller
         Request $request,
         Creator $creator,
         Recommendation $recommendation,
-    ): RedirectResponse {
+    ): RedirectResponse|JsonResponse {
         $request->validate([
             'quantity' => ['prohibited'],
             'amount' => ['prohibited'],
@@ -605,10 +605,17 @@ class RecommendationController extends Controller
         $this->requestCache->forget($recommendation);
         $this->requestCache->forgetGuide($request->user()->id);
 
-        return $this->voteRedirect($creator, $recommendation, $created ? 'Your vote was added.' : 'You already voted.', 'added');
+        return $this->voteResponse(
+            $request,
+            $creator,
+            $recommendation,
+            true,
+            $created ? 'Your vote was added.' : 'You already voted.',
+            'added',
+        );
     }
 
-    public function destroyVote(Request $request, Creator $creator, Recommendation $recommendation): RedirectResponse
+    public function destroyVote(Request $request, Creator $creator, Recommendation $recommendation): RedirectResponse|JsonResponse
     {
         $this->ensureVoteable($recommendation);
 
@@ -620,7 +627,14 @@ class RecommendationController extends Controller
         $this->requestCache->forget($recommendation);
         $this->requestCache->forgetGuide($request->user()->id);
 
-        return $this->voteRedirect($creator, $recommendation, $removed ? 'Your vote was removed.' : 'Your vote was already removed.', 'removed');
+        return $this->voteResponse(
+            $request,
+            $creator,
+            $recommendation,
+            false,
+            $removed ? 'Your vote was removed.' : 'Your vote was already removed.',
+            'removed',
+        );
     }
 
     private function ensureVoteable(Recommendation $recommendation): void
@@ -636,6 +650,25 @@ class RecommendationController extends Controller
     {
         return redirect()->to(route('creator.queue', $creator)."#recommendation-{$recommendation->id}")
             ->with('recommendation_action', compact('message', 'type') + ['recommendation_id' => $recommendation->id]);
+    }
+
+    private function voteResponse(
+        Request $request,
+        Creator $creator,
+        Recommendation $recommendation,
+        bool $hasVoted,
+        string $message,
+        string $type,
+    ): RedirectResponse|JsonResponse {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'has_voted' => $hasVoted,
+                'votes' => $recommendation->userPicks()->count(),
+                'message' => $message,
+            ]);
+        }
+
+        return $this->voteRedirect($creator, $recommendation, $message, $type);
     }
 
     public function toggleFavorite(Request $request, Creator $creator): RedirectResponse

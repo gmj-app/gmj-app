@@ -24,7 +24,7 @@
 <article
     data-recommendation-expanded-card
     @if ($anchor) id="recommendation-{{ $recommendation->id }}" @endif
-    x-data="{ alternativeOpen: @js($alternativeErrorsOpen), withdrawOpen: false }"
+    @if ($alternativeErrorsOpen) x-init="alternativeOpen = true" @endif
     class="group min-w-0 scroll-mt-24 overflow-hidden rounded-3xl border bg-white shadow-sm transition duration-200 dark:bg-slate-900 md:hover:-translate-y-0.5 md:hover:shadow-xl {{ $hasRecommendationAction ? 'border-indigo-300 ring-1 ring-indigo-400/40 dark:border-indigo-700 dark:ring-indigo-500/40' : 'border-slate-200 dark:border-slate-800 md:hover:border-indigo-200 dark:md:hover:border-indigo-800' }}"
 >
     @if ($recommendation->hasMediaPreview())
@@ -309,45 +309,32 @@
             @if ($showVotingControls && $recommendation->isVotable())
                 <div class="inline-flex w-full items-center justify-end sm:w-auto">
                     @auth
-                        @if ($hasVoted)
-                            <form
-                                method="POST"
-                                action="{{ route('recommendations.vote.destroy', [$creator, $recommendation]) }}"
+                        <form
+                            id="recommendation-vote-{{ $recommendation->id }}"
+                            method="POST"
+                            action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
+                            x-on:submit.prevent.stop="toggleVote($event, 'expanded_card')"
+                        >
+                            @csrf
+                            <input type="hidden" name="_method" value="DELETE" @disabled(! $hasVoted) x-bind:disabled="! hasVoted">
+                            <button
+                                type="submit"
+                                data-expanded-vote-button
+                                aria-label="{{ $hasVoted ? 'Remove vote from this request' : 'Add vote to this request' }}"
+                                x-bind:aria-label="voteLabel"
+                                aria-pressed="{{ $hasVoted ? 'true' : 'false' }}"
+                                x-bind:aria-pressed="hasVoted.toString()"
+                                x-bind:disabled="votePending"
+                                class="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70"
+                                x-bind:class="hasVoted
+                                    ? 'border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 dark:border-indigo-400 dark:bg-indigo-500 dark:focus-visible:ring-offset-slate-950'
+                                    : 'border-slate-300 bg-white text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300'"
                             >
-                                @csrf
-                                @method('DELETE')
-                                <button
-                                    type="submit"
-                                    aria-label="Remove vote from this request"
-                                    aria-pressed="true"
-                                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-500 bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-indigo-400 dark:bg-indigo-500 dark:focus-visible:ring-offset-slate-950"
-                                >
-                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
-                                    <span>You voted</span>
-                                    <span aria-hidden="true">&middot;</span>
-                                    <span>{{ $totalVotes }}</span>
-                                </button>
-                            </form>
-                        @else
-                            <form
-                                id="recommendation-vote-{{ $recommendation->id }}"
-                                method="POST"
-                                action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
-                            >
-                                @csrf
-                                <button
-                                    type="submit"
-                                    aria-label="Add vote to this request"
-                                    aria-pressed="false"
-                                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300"
-                                >
-                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 10v10H4V10h3Zm0 10h10.2a2 2 0 0 0 1.94-1.52l1.5-6A2 2 0 0 0 18.7 10H14l.7-3.5A2.08 2.08 0 0 0 12.66 4L7 10Z" /></svg>
-                                    <span>Vote</span>
-                                    <span aria-hidden="true">&middot;</span>
-                                    <span>{{ $totalVotes }}</span>
-                                </button>
-                            </form>
-                        @endif
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 10v10H4V10h3Zm0 10h10.2a2 2 0 0 0 1.94-1.52l1.5-6A2 2 0 0 0 18.7 10H14l.7-3.5A2.08 2.08 0 0 0 12.66 4L7 10Z" /></svg>
+                                <span x-text="hasVoted ? 'You voted' : 'Vote'">{{ $hasVoted ? 'You voted' : 'Vote' }}</span>
+                                <span class="border-l border-current/30 pl-2 tabular-nums" x-text="votes" x-bind:aria-label="`${votes} total ${votes === 1 ? 'vote' : 'votes'}`">{{ $totalVotes }}</span>
+                            </button>
+                        </form>
                     @else
                         <a
                             href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id]) }}"

@@ -383,6 +383,70 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
     }
 
+    public function test_collapsed_vote_controls_are_independent_accessible_and_status_aware(): void
+    {
+        $creator = Creator::factory()->create(['slug' => 'collapsed-voting']);
+        $guide = User::factory()->create();
+        $unselected = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'submitted_by' => $guide->id,
+            'title' => 'Vote from the blade',
+            'status' => 'approved',
+        ]);
+        $selected = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Already supported blade',
+            'status' => 'approved',
+        ]);
+        $recorded = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'title' => 'Recorded read only blade',
+            'status' => 'recorded',
+        ]);
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $selected->id,
+            'user_id' => $guide->id,
+        ]);
+
+        $response = $this->actingAs($guide)->get(route('creator.queue', $creator))->assertOk();
+        $html = $response->getContent();
+
+        $response
+            ->assertSee('data-collapsed-vote-button', false)
+            ->assertSee('aria-label="Vote for “Vote from the blade”"', false)
+            ->assertSee('aria-label="Remove vote from “Already supported blade”"', false)
+            ->assertSee('aria-pressed="false"', false)
+            ->assertSee('aria-pressed="true"', false)
+            ->assertSee('x-on:submit.prevent.stop="toggleVote($event, \'collapsed_blade\')"', false)
+            ->assertSee('data-request-disclosure-body', false)
+            ->assertSee('data-request-disclosure-chevron', false)
+            ->assertSee('size-11 shrink-0', false)
+            ->assertSee('<span>You requested</span>', false)
+            ->assertDontSee('You voted <span aria-hidden="true">&middot;</span> 1', false);
+
+        $this->assertSame(2, substr_count($html, 'data-collapsed-vote-button'));
+        $recordedRow = Str::of($html)
+            ->after('id="recommendation-'.$recorded->id.'"')
+            ->before('id="recommendation-details-'.$recorded->id.'"');
+        $this->assertStringContainsString('data-collapsed-vote-count', (string) $recordedRow);
+        $this->assertStringNotContainsString('data-collapsed-vote-button', (string) $recordedRow);
+        $this->assertStringContainsString('creatorRequestVote({', $html);
+        $this->assertStringContainsString('x-bind:aria-expanded="open.toString()"', $html);
+        $this->assertSame($selected->id, $response->viewData('initialExpandedRequestId'));
+
+        $this->actingAs($guide)
+            ->get(route('requests.card-details', $selected), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()
+            ->assertSee('data-expanded-vote-button', false)
+            ->assertDontSee('x-data="creatorRequestVote(', false);
+
+        $this->actingAs($guide)
+            ->get(route('requests.card-details', $selected))
+            ->assertOk()
+            ->assertSee('x-data="creatorRequestVote(', false);
+    }
+
     public function test_first_visible_request_is_server_rendered_expanded_and_all_others_are_collapsed(): void
     {
         $creator = Creator::factory()->create(['slug' => 'initial-expanded']);
@@ -403,7 +467,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringNotContainsString('x-cloak style="display: none;"', $firstRow);
         $this->assertStringContainsString('aria-expanded="false"', $secondRow);
         $this->assertStringContainsString('x-cloak style="display: none;"', $secondRow);
-        $this->assertSame(1, substr_count($html, 'aria-expanded="true"'));
+        $this->assertSame(2, substr_count($html, 'aria-expanded="true"'));
         $this->assertStringNotContainsString('<iframe', $html);
         $this->assertStringNotContainsString('autoplay', $html);
     }
@@ -496,7 +560,7 @@ class PublicCreatorQueueTest extends TestCase
         $response->assertDontSee('Private pending request')
             ->assertDontSee('Private hidden request')
             ->assertDontSee('Private withdrawn request')
-            ->assertSee('flex min-w-0 flex-col items-start gap-1 sm:flex-row', false)
+            ->assertSee('flex min-w-0 flex-col items-start gap-1 lg:flex-row', false)
             ->assertSee('Ordinary active request with a deliberately long title')
             ->assertSee('vote');
     }
@@ -558,13 +622,11 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Suggested by current guide')
             ->assertSee('Voted by current guide')
             ->assertSee('Submitted and voted by current guide')
-            ->assertSee('title="You have 1 active vote here"', false)
+            ->assertSee('aria-label="Remove vote from “Voted by current guide”"', false)
             ->assertSee('title="You requested"', false)
-            ->assertSee('text-emerald-700', false)
             ->assertSee('text-amber-700', false);
 
-        $this->assertSame(2, substr_count($response->getContent(), 'data-active-vote-badge'));
-        $this->assertSame(2, substr_count($response->getContent(), 'data-active-vote-quantity="1"'));
+        $this->assertSame(2, substr_count($response->getContent(), 'aria-pressed="true"'));
         $this->assertSame(2, substr_count($response->getContent(), '<span>You requested</span>'));
 
         $this->actingAs(User::factory()->create())
@@ -621,9 +683,8 @@ class PublicCreatorQueueTest extends TestCase
         $response = $this->actingAs($guide)->get(route('creator.queue', $creator))->assertOk();
         $html = $response->getContent();
 
-        $this->assertSame(2, substr_count($html, 'data-active-vote-quantity="1"'));
-        $this->assertSame(0, substr_count($html, 'data-active-vote-quantity="2"'));
-        $response->assertSee('data-active-vote-quantity="1"', false);
+        $this->assertSame(2, substr_count($html, 'aria-pressed="true"'));
+        $this->assertSame(0, substr_count($html, 'data-active-vote-quantity'));
 
         $this->assertSame(0, $zero->activeVoteQuantityFor($guide));
         $this->assertSame(0, $otherVotes->activeVoteQuantityFor($guide));
@@ -701,7 +762,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringNotContainsString('Supported by Voter', (string) $collapsedHeader);
         $this->assertStringNotContainsString('more supporters', (string) $collapsedHeader);
         $this->assertStringContainsString('items-center', (string) $collapsedHeader);
-        $this->assertStringContainsString('sm:min-h-[66px]', (string) $collapsedHeader);
+        $this->assertStringContainsString('focus-visible:ring-emerald-500', (string) $collapsedHeader);
     }
 
     public function test_full_community_support_separates_up_to_twenty_larger_avatars(): void
@@ -1466,8 +1527,9 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('aria-label="Add vote to this request"', false)
             ->assertSee('mt-5 flex items-center justify-end', false)
             ->assertDontSee('votes total')
-            ->assertSee('<span>Vote</span>', false)
-            ->assertSee('<span>0</span>', false)
+            ->assertSee("x-text=\"hasVoted ? 'You voted' : 'Vote'\"", false)
+            ->assertSee('x-text="votes"', false)
+            ->assertSee('>0</span>', false)
             ->assertSee('Why this was suggested')
             ->assertSee(Str::limit($reason, 250))
             ->assertSee('Read more')

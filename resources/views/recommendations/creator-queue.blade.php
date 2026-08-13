@@ -433,90 +433,140 @@
                             };
                             $isActionTarget = $actionRecommendationId === $recommendation->id;
                             $isInitiallyExpanded = $initialExpandedRequestId === $recommendation->id;
+                            $requestTitle = $recommendation->displayTitle();
+                            $hasVoted = $recommendation->votedBy(auth()->user());
+                            $totalVotes = $recommendation->totalVotes();
+                            $isVotable = $recommendation->isVotable();
+                            $loginReturnUrl = route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id;
                         @endphp
 
                         <div
                             data-creator-request-row
                             id="recommendation-{{ $recommendation->id }}"
-                            x-data="{
+                            x-data="creatorRequestVote({
                                 requestId: @js($recommendation->id),
-                                loaded: false,
-                                loading: false,
-                                error: false,
-                                detailsHtml: '',
-                                get open() {
-                                    return this.expandedRequestId === this.requestId;
-                                },
-                                async loadDetails() {
-                                    if (this.loaded || this.loading) return;
-                                    this.loading = true;
-                                    this.error = false;
-                                    try {
-                                        const response = await fetch(@js(route('requests.card-details', ['recommendation' => $recommendation, 'top' => $recommendation->id === $topRequestedId ? 1 : null])), {
-                                            headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
-                                            credentials: 'same-origin',
-                                        });
-                                        if (! response.ok) throw new Error(`Request failed: ${response.status}`);
-                                        this.detailsHtml = await response.text();
-                                        this.loaded = true;
-                                    } catch (error) {
-                                        this.error = true;
-                                    } finally {
-                                        this.loading = false;
-                                    }
-                                },
-                                toggleDetails() {
-                                    this.toggleRequest(this.requestId);
-                                },
-                            }"
+                                requestTitle: @js($requestTitle),
+                                detailsUrl: @js(route('requests.card-details', ['recommendation' => $recommendation, 'top' => $recommendation->id === $topRequestedId ? 1 : null])),
+                                voteUrl: @js(route('recommendations.vote', [$creator, $recommendation])),
+                                loginUrl: @js(route('login.required', ['return' => $loginReturnUrl])),
+                                authenticated: @js(auth()->check()),
+                                votable: @js($isVotable),
+                                hasVoted: @js($hasVoted),
+                                votes: @js($totalVotes),
+                                csrfToken: @js(csrf_token()),
+                            })"
                             x-effect="if (open) loadDetails()"
                             class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 motion-reduce:transition-none hover:border-emerald-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700"
                             x-bind:class="open ? 'border-emerald-400 ring-2 ring-emerald-300/70 dark:border-emerald-500 dark:ring-emerald-500/40' : ''"
                         >
-                            <button
-                                type="button"
-                                x-on:click="toggleDetails()"
-                                aria-expanded="{{ $isInitiallyExpanded ? 'true' : 'false' }}"
-                                x-bind:aria-expanded="open.toString()"
-                                aria-controls="recommendation-details-{{ $recommendation->id }}"
-                                class="group flex min-h-14 w-full min-w-0 cursor-pointer items-center gap-2.5 px-3 py-2 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:hover:bg-emerald-950/20 sm:min-h-[66px] sm:gap-4 sm:px-5"
-                            >
-                                <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
-                                    {{ $rankLabel }}
-                                </span>
-
-                                <x-recommendation-compact-media :recommendation="$recommendation" />
-
-                                <span class="min-w-0 flex-1">
-                                    <span class="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
-                                        <span class="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
-                                            {{ $recommendation->displayTitle() }}
-                                        </span>
-                                        <x-requests.status-badge :request="$recommendation" variant="compact" />
-                                    </span>
-                                    <x-recommendation-user-indicators
-                                        :recommendation="$recommendation"
-                                        class="mt-1"
-                                    />
-                                </span>
-
-                                <span class="shrink-0 text-right">
-                                    <span class="block text-base font-semibold leading-none text-slate-950 dark:text-white sm:text-lg">{{ $recommendation->totalVotes() }}</span>
-                                    <span class="mt-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $recommendation->totalVotes()) }}</span>
-                                </span>
-
-                                <svg
-                                    class="size-5 shrink-0 text-slate-400 transition-transform duration-200 motion-reduce:transition-none"
-                                    x-bind:class="{ 'rotate-180 text-emerald-600 dark:text-emerald-300': open }"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    aria-hidden="true"
+                            <div class="group flex min-h-14 w-full min-w-0 items-center gap-1.5 px-2 py-2 transition hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 sm:min-h-[66px] sm:gap-2 sm:px-3">
+                                <button
+                                    type="button"
+                                    data-request-disclosure-body
+                                    x-on:click="toggleDetails()"
+                                    aria-expanded="{{ $isInitiallyExpanded ? 'true' : 'false' }}"
+                                    x-bind:aria-expanded="open.toString()"
+                                    aria-controls="recommendation-details-{{ $recommendation->id }}"
+                                    class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl px-1 py-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:gap-4 sm:px-2"
                                 >
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
-                                </svg>
-                            </button>
+                                    <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
+                                        {{ $rankLabel }}
+                                    </span>
+
+                                    <x-recommendation-compact-media :recommendation="$recommendation" />
+
+                                    <span class="min-w-0 flex-1">
+                                        <span class="flex min-w-0 flex-col items-start gap-1 lg:flex-row lg:items-center lg:gap-2">
+                                            <span class="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
+                                                {{ $requestTitle }}
+                                            </span>
+                                            <x-requests.status-badge :request="$recommendation" variant="compact" />
+                                        </span>
+                                        <x-recommendation-user-indicators
+                                            :recommendation="$recommendation"
+                                            :show-vote-indicator="false"
+                                            class="mt-1"
+                                        />
+                                    </span>
+                                </button>
+
+                                @if ($isVotable)
+                                    @auth
+                                        <form
+                                            method="POST"
+                                            action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
+                                            x-on:click.stop
+                                            x-on:submit.prevent.stop="toggleVote($event, 'collapsed_blade')"
+                                            class="shrink-0"
+                                        >
+                                            @csrf
+                                            <input type="hidden" name="_method" value="DELETE" @disabled(! $hasVoted) x-bind:disabled="! hasVoted">
+                                            <button
+                                                type="submit"
+                                                data-collapsed-vote-button
+                                                aria-label="{{ $hasVoted ? "Remove vote from “{$requestTitle}”" : "Vote for “{$requestTitle}”" }}"
+                                                x-bind:aria-label="voteLabel"
+                                                aria-pressed="{{ $hasVoted ? 'true' : 'false' }}"
+                                                x-bind:aria-pressed="hasVoted.toString()"
+                                                x-bind:disabled="votePending"
+                                                class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70 sm:min-w-[4.5rem] sm:px-3"
+                                                x-bind:class="hasVoted
+                                                    ? 'border-indigo-500 bg-indigo-600 text-white shadow-sm dark:border-indigo-400 dark:bg-indigo-500'
+                                                    : 'border-slate-300 bg-white text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-950/40'"
+                                            >
+                                                <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 10v10H4V10h3Zm0 10h10.2a2 2 0 0 0 1.94-1.52l1.5-6A2 2 0 0 0 18.7 10H14l.7-3.5A2.08 2.08 0 0 0 12.66 4L7 10Z" /></svg>
+                                                <span class="tabular-nums" x-text="votes">{{ $totalVotes }}</span>
+                                                <svg x-show="hasVoted" class="hidden size-3.5 shrink-0 sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <a
+                                            href="{{ route('login.required', ['return' => $loginReturnUrl]) }}"
+                                            data-collapsed-vote-button
+                                            aria-label="Vote for “{{ $requestTitle }}”"
+                                            x-on:click.stop
+                                            class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-2.5 text-sm font-bold text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:min-w-[4.5rem] sm:px-3"
+                                        >
+                                            <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 10v10H4V10h3Zm0 10h10.2a2 2 0 0 0 1.94-1.52l1.5-6A2 2 0 0 0 12.66 4L7 10Z" /></svg>
+                                            <span class="tabular-nums">{{ $totalVotes }}</span>
+                                        </a>
+                                    @endauth
+                                @else
+                                    <span data-collapsed-vote-count class="min-w-11 shrink-0 text-center">
+                                        <span class="block text-base font-semibold leading-none text-slate-950 dark:text-white" x-text="votes">{{ $totalVotes }}</span>
+                                        <span class="mt-1 block text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $totalVotes) }}</span>
+                                    </span>
+                                @endif
+
+                                <button
+                                    type="button"
+                                    data-request-disclosure-chevron
+                                    x-on:click="toggleDetails()"
+                                    aria-label="{{ $isInitiallyExpanded ? 'Collapse' : 'Expand' }} “{{ $requestTitle }}”"
+                                    x-bind:aria-label="`${open ? 'Collapse' : 'Expand'} “${requestTitle}”`"
+                                    aria-expanded="{{ $isInitiallyExpanded ? 'true' : 'false' }}"
+                                    x-bind:aria-expanded="open.toString()"
+                                    aria-controls="recommendation-details-{{ $recommendation->id }}"
+                                    class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                                >
+                                    <svg
+                                        class="size-5 transition-transform duration-200 motion-reduce:transition-none"
+                                        x-bind:class="{ 'rotate-180 text-emerald-600 dark:text-emerald-300': open }"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        aria-hidden="true"
+                                    >
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <p x-show="voteError" x-cloak class="border-t border-red-100 px-4 py-2 text-xs font-semibold text-red-700 dark:border-red-950 dark:text-red-300">
+                                We couldn’t update your vote. Try again.
+                            </p>
+                            <span class="sr-only" aria-live="polite" aria-atomic="true" x-text="voteAnnouncement"></span>
 
                             <div
                                 id="recommendation-details-{{ $recommendation->id }}"
