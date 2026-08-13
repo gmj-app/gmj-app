@@ -522,17 +522,17 @@ class SeedDemoData extends Command
             ->orWhereIn('user_id', User::query()->whereIn('email', $this->demoUserEmails())->select('id'))
             ->delete();
 
-        Recommendation::query()
+        Recommendation::withTrashed()
             ->whereIn('id', $demoRecommendationIds)
-            ->delete();
+            ->forceDelete();
 
-        Creator::query()
+        Creator::withTrashed()
             ->whereIn('slug', $this->demoCreatorSlugs())
-            ->delete();
+            ->forceDelete();
 
-        User::query()
+        User::withTrashed()
             ->whereIn('email', $this->demoUserEmails())
-            ->delete();
+            ->forceDelete();
     }
 
     /**

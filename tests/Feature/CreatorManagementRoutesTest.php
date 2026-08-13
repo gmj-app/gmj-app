@@ -485,7 +485,7 @@ class CreatorManagementRoutesTest extends TestCase
                 ->assertRedirect()
                 ->assertSessionHas(
                     'success',
-                    'Status updated. 2 votes are no longer active and returned to Guides.',
+                    'Status updated. Supporter history was preserved.',
                 );
 
             $this->assertDatabaseHas('user_picks', [
@@ -539,13 +539,13 @@ class CreatorManagementRoutesTest extends TestCase
             ])
             ->assertSessionHas(
                 'success',
-                'Request updated. 1 vote is no longer active and returned to Guides.',
+                'Request updated. Supporter history was preserved.',
             );
 
         $this->patch(route('creators.recommendations.hide', [$creator, $hiddenRecommendation]))
             ->assertSessionHas(
                 'success',
-                'Request hidden. 1 vote is no longer active and returned to Guides.',
+                'Request hidden. Supporter history was preserved.',
             );
 
         $this->assertDatabaseHas('user_picks', [

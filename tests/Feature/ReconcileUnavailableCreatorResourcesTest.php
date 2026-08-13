@@ -24,7 +24,7 @@ class ReconcileUnavailableCreatorResourcesTest extends TestCase
         $recommendation = Recommendation::factory()->create(['creator_id' => $removed->id, 'submitted_by' => $guide->id,
             'submission_source' => Recommendation::SUBMISSION_SOURCE_FAN, 'status' => 'approved']);
         $pick = UserPick::factory()->create(['creator_id' => $removed->id, 'recommendation_id' => $recommendation->id,
-            'user_id' => $guide->id, 'vote_count' => 3]);
+            'user_id' => $guide->id, 'vote_count' => 1]);
         Creator::withoutEvents(fn () => $removed->delete());
 
         $this->artisan("guides:reconcile-unavailable-creator-resources --user={$guide->id} --dry-run")

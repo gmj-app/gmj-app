@@ -56,17 +56,17 @@ class PublicClosedRequestsTest extends TestCase
         $creator = Creator::factory()->create(['status' => 'active']);
         $actor = User::factory()->create();
         $request = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
-        $pick = UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'vote_count' => 3]);
+        $pick = UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'vote_count' => 1]);
 
         $service = app(RecommendationStatusTransitionService::class);
         $first = $service->transition($request, 'passed', $actor, ['public_resolution_note' => 'Not planned.']);
         $resolvedAt = $request->fresh()->resolved_at;
         $second = $service->transition($request->fresh(), 'passed', $actor);
 
-        $this->assertSame(3, $first['released_votes']);
-        $this->assertSame(0, $second['released_votes']);
+        $this->assertSame(1, $first['closed_supports']);
+        $this->assertSame(0, $second['closed_supports']);
         $this->assertNotNull($pick->fresh()->released_at);
-        $this->assertSame('request_closed', $pick->fresh()->release_reason);
+        $this->assertSame('request_passed', $pick->fresh()->release_reason);
         $this->assertTrue($resolvedAt->equalTo($request->fresh()->resolved_at));
     }
 }

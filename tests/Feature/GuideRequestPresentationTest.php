@@ -99,7 +99,6 @@ class GuideRequestPresentationTest extends TestCase
         $other = User::factory()->create();
 
         foreach ([
-            route('creator.queue', $request->creator),
             route('activity.index'),
             route('guides.show', ['handle' => $guide->public_handle]),
         ] as $url) {
@@ -109,7 +108,12 @@ class GuideRequestPresentationTest extends TestCase
                 ->assertSee(route('requests.presentation.edit', $request), escape: false);
         }
 
-        $this->actingAs($other)->get(route('creator.queue', $request->creator))
+        $this->actingAs($guide)->get(route('requests.card-details', $request))
+            ->assertOk()
+            ->assertSee('You requested', escape: false)
+            ->assertSee(route('requests.presentation.edit', $request), escape: false);
+
+        $this->actingAs($other)->get(route('requests.card-details', $request))
             ->assertOk()
             ->assertDontSee('You requested')
             ->assertDontSee(route('requests.presentation.edit', $request), escape: false);

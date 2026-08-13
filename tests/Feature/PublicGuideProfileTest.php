@@ -113,7 +113,7 @@ class PublicGuideProfileTest extends TestCase
             'title' => 'Public active suggestion',
             'status' => 'approved',
         ]);
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'submitted_by' => $guide->id,
             'title' => 'Hidden moderation item',
@@ -261,14 +261,14 @@ class PublicGuideProfileTest extends TestCase
             'public_profile_enabled' => false,
         ]);
         $creator = Creator::factory()->create(['slug' => 'disabled-profile-link']);
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'submitted_by' => $guide->id,
             'title' => 'Attributed recommendation',
             'status' => 'approved',
         ]);
 
-        $this->get(route('creator.queue', $creator))
+        $this->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('Visible Attribution')
             ->assertDontSee(route('guides.show', ['handle' => $guide->public_handle]), false);

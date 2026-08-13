@@ -53,7 +53,7 @@ class SuperAdminCreatorRequestManagementTest extends TestCase
     {
         [$creator, $item, $submitter] = $this->creatorRequest(['status' => 'approved']);
         $admin = $this->admin();
-        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $item->id, 'user_id' => $submitter->id, 'vote_count' => 2]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $item->id, 'user_id' => $submitter->id, 'vote_count' => 1]);
         $this->actingAs($admin)->post(route('super-admin.creators.requests.status', [$creator, $item]), ['status' => 'published'])->assertSessionHasErrors(['published_reaction_url', 'published_at']);
         $this->post(route('super-admin.creators.requests.status', [$creator, $item]), ['status' => 'published', 'published_reaction_url' => 'javascript:alert(1)', 'published_at' => now()])->assertSessionHasErrors('published_reaction_url');
         Http::fake(['*youtube.com/oembed*' => Http::response(['title' => 'Published Work', 'author_name' => 'Creator Channel'])]);
@@ -64,14 +64,14 @@ class SuperAdminCreatorRequestManagementTest extends TestCase
         $this->assertSame(0, $submitter->fresh()->votesUsedFor($creator));
         $this->assertSame(0, $submitter->fresh()->suggestionsUsedFor($creator));
         $this->assertSame('request.published', SuperAdminAuditLog::query()->sole()->action);
-        $this->assertSame(2, data_get(SuperAdminAuditLog::query()->sole()->metadata, 'released_votes'));
+        $this->assertSame(1, data_get(SuperAdminAuditLog::query()->sole()->metadata, 'closed_supports'));
     }
 
     public function test_spam_removal_soft_deletes_releases_resources_and_restore_stays_released(): void
     {
         [$creator, $item, $submitter] = $this->creatorRequest(['status' => 'approved']);
         $admin = $this->admin();
-        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $item->id, 'user_id' => $submitter->id, 'vote_count' => 2]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $item->id, 'user_id' => $submitter->id, 'vote_count' => 1]);
         $this->actingAs($admin)->delete(route('super-admin.creators.requests.destroy', [$creator, $item]), ['moderation_reason' => 'spam'])->assertRedirect();
         $this->assertSoftDeleted($item);
         $this->assertSame(0, $submitter->fresh()->votesUsedFor($creator));

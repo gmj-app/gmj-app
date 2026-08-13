@@ -28,7 +28,7 @@ class HistoricalSupportStatusMatrixTest extends TestCase
             'submitted_by' => $actor->id,
         ]);
 
-        foreach ([2, 2, 2, 1, 1] as $index => $quantity) {
+        foreach ([1, 1, 1, 1, 1] as $index => $quantity) {
             UserPick::factory()->create([
                 'creator_id' => $creator->id,
                 'recommendation_id' => $request->id,
@@ -42,9 +42,9 @@ class HistoricalSupportStatusMatrixTest extends TestCase
         $support = app(RequestSupportService::class);
 
         $this->assertSame(0, $support->activeVoteQuantity($request));
-        $this->assertSame(8, $support->historicalVoteQuantity($request));
+        $this->assertSame(5, $support->historicalVoteQuantity($request));
         $this->assertSame(5, $support->historicalSupporterCount($request));
-        $this->assertSame(8, $support->displayVoteQuantity($request));
+        $this->assertSame(5, $support->displayVoteQuantity($request));
         $this->assertSame(5, $support->displaySupporterCount($request));
         $this->assertEqualsCanonicalizing($guides->pluck('id')->all(), $support->displaySupport($request)->pluck('user_id')->all());
     }
@@ -79,13 +79,13 @@ class HistoricalSupportStatusMatrixTest extends TestCase
             'creator_id' => $request->creator_id,
             'recommendation_id' => $request->id,
             'user_id' => User::factory(),
-            'vote_count' => 8,
+            'vote_count' => 1,
         ]);
         $transitions = app(RecommendationStatusTransitionService::class);
 
         foreach (['scheduled', 'scheduled', 'recorded', 'published'] as $status) {
             $request = $transitions->transition($request, $status, $actor)['recommendation'];
-            $this->assertSame(8, app(RequestSupportService::class)->historicalVoteQuantity($request));
+            $this->assertSame(1, app(RequestSupportService::class)->historicalVoteQuantity($request));
             $this->assertSame(1, app(RequestSupportService::class)->historicalSupporterCount($request));
         }
     }
@@ -121,7 +121,7 @@ class HistoricalSupportStatusMatrixTest extends TestCase
     {
         $request = Recommendation::factory()->create(['status' => 'approved']);
         $guides = User::factory()->count(8)->create();
-        foreach ([2, 2, 2, 2, 2, 2, 1, 1] as $index => $quantity) {
+        foreach ([1, 1, 1, 1, 1, 1, 1, 1] as $index => $quantity) {
             UserPick::factory()->create([
                 'creator_id' => $request->creator_id,
                 'recommendation_id' => $request->id,
@@ -132,7 +132,7 @@ class HistoricalSupportStatusMatrixTest extends TestCase
 
         $support = app(RequestSupportService::class);
         $this->assertSame('active', $support->displaySupportScope($request));
-        $this->assertSame(14, $support->displayVoteQuantity($request));
+        $this->assertSame(8, $support->displayVoteQuantity($request));
         $this->assertSame(8, $support->displaySupporterCount($request, $request->submitted_by));
         $this->assertCount(6, $support->displaySupporterPreview($request, 6, $request->submitted_by));
 
@@ -147,7 +147,7 @@ class HistoricalSupportStatusMatrixTest extends TestCase
             ->assertJsonPath('total', 8);
 
         $request->userPicks()->where('user_id', $guides->last()->id)->delete();
-        $this->assertSame(13, $support->displayVoteQuantity($request));
+        $this->assertSame(7, $support->displayVoteQuantity($request));
         $this->assertSame(7, $support->displaySupporterCount($request, $request->submitted_by));
     }
 
@@ -159,7 +159,7 @@ class HistoricalSupportStatusMatrixTest extends TestCase
             'creator_id' => $request->creator_id,
             'recommendation_id' => $request->id,
             'user_id' => $requester->id,
-            'vote_count' => 3,
+            'vote_count' => 1,
         ]);
 
         $this->artisan("requests:audit-support-display --request={$request->id} --dry-run")

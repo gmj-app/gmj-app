@@ -21,23 +21,23 @@ class RecordedVoteHistoryRegressionTest extends TestCase
         $supporters = User::factory()->count(3)->create();
         $request = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
         $lower = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
-        foreach ([5, 4, 5] as $index => $quantity) {
+        foreach ([1, 1, 1] as $index => $quantity) {
             UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'user_id' => $supporters[$index]->id, 'vote_count' => $quantity]);
         }
-        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $lower->id, 'user_id' => $actor->id, 'vote_count' => 10]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $lower->id, 'user_id' => $actor->id, 'vote_count' => 1]);
 
         $service = app(RecommendationStatusTransitionService::class);
         $first = $service->transition($request, 'recorded', $actor);
         $service->transition($first['recommendation'], 'recorded', $actor);
 
         $request->refresh();
-        $this->assertSame(14, $request->vote_total_at_close);
+        $this->assertSame(3, $request->vote_total_at_close);
         $this->assertSame(3, $request->supporter_count_at_close);
         $this->assertNotNull($request->voting_closed_at);
-        $this->assertSame(14, $request->totalVotes());
+        $this->assertSame(3, $request->totalVotes());
         $this->assertSame(0, $request->userPicks()->count());
         $this->assertSame(3, $request->allUserPicks()->count());
-        $this->assertSame(14, (int) $request->allUserPicks()->sum('vote_count'));
+        $this->assertSame(3, (int) $request->allUserPicks()->sum('vote_count'));
         $this->assertSame(['request_recorded'], $request->allUserPicks()->pluck('release_reason')->unique()->all());
 
         $ranked = $creator->recommendations()->activePubliclyVisible()->withEffectiveVoteTotal()

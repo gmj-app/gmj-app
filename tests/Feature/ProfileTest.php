@@ -258,7 +258,7 @@ class ProfileTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->actingAs($user)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', Recommendation::query()->where('creator_id', $creator->id)->sole()))
             ->assertOk()
             ->assertSee('Suggested by Cher Ree')
             ->assertDontSee('Suggested by Guide');
@@ -372,7 +372,7 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertSoftDeleted($user);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

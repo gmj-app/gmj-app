@@ -141,14 +141,7 @@ class SeedDemoDataCommandTest extends TestCase
 
         $this->assertGreaterThan(5, $topRecommendationVotes);
 
-        User::query()
-            ->whereIn('email', $this->demoEmails())
-            ->each(function (User $user): void {
-                $this->assertLessThanOrEqual(
-                    $user->membershipLimits()['votes_per_reactor'],
-                    $user->userPicks()->count(),
-                );
-            });
+        $this->assertSame(0, UserPick::query()->where('vote_count', '!=', 1)->whereNull('released_at')->count());
 
         $voteCount = UserPick::query()->count();
         $this->artisan('gmj:seed-demo')->assertSuccessful();

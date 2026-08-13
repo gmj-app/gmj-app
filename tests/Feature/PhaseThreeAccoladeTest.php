@@ -41,7 +41,7 @@ class PhaseThreeAccoladeTest extends TestCase
         $own = $this->publishedCommunityRequest($creator, $submitter);
         $supported = $this->publishedCommunityRequest($creator, User::factory()->create());
         UserPick::factory()->create(['user_id' => $supporter->id, 'creator_id' => $creator->id, 'recommendation_id' => $supported->id, 'vote_count' => 7, 'released_at' => now(), 'release_reason' => 'request_published']);
-        UserPick::factory()->create(['user_id' => $submitter->id, 'creator_id' => $creator->id, 'recommendation_id' => $own->id, 'vote_count' => 2]);
+        UserPick::factory()->create(['user_id' => $submitter->id, 'creator_id' => $creator->id, 'recommendation_id' => $own->id, 'vote_count' => 1]);
 
         $service = app(AccoladeEvaluationService::class);
         $service->evaluateGuide($submitter);

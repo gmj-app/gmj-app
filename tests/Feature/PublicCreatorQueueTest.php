@@ -154,19 +154,25 @@ class PublicCreatorQueueTest extends TestCase
             ]);
         }
 
-        $response = $this->get('/jfragment');
+        $response = $this->get('/@jfragment');
 
         $response->assertOk()
             ->assertSee('JFragment')
+            ->assertDontSee('Watch original');
+
+        $approved = Recommendation::query()->where('creator_id', $creator->id)->where('status', 'approved')->sole();
+        $this->get(route('requests.card-details', $approved))
+            ->assertOk()
             ->assertSee('Example Artist')
             ->assertSee('Music')
-            ->assertDontSee('Watch original')
             ->assertSee('rel="noopener noreferrer nofollow ugc"', false)
             ->assertSee('Submitted');
 
-        foreach (['approved', 'coming_soon', 'scheduled', 'recorded', 'passed'] as $status) {
+        foreach (['approved', 'coming_soon', 'scheduled', 'recorded'] as $status) {
             $response->assertSee(ucfirst($status).' recommendation');
         }
+
+        $response->assertDontSee('Passed recommendation');
 
         $response
             ->assertSee('Recently Published')
@@ -204,7 +210,7 @@ class PublicCreatorQueueTest extends TestCase
         $oldest = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Oldest recommendation',
-            'status' => 'passed',
+            'status' => 'approved',
             'created_at' => now()->subDay(),
         ]);
 
@@ -213,7 +219,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->addPicks($creator, $newest, 3);
         $this->addPicks($creator, $oldest, 3);
 
-        $this->get('/jfragment')
+        $this->get('/@jfragment')
             ->assertOk()
             ->assertSeeInOrder([
                 'Most voted recommendation',
@@ -460,18 +466,16 @@ class PublicCreatorQueueTest extends TestCase
         $response = $this->get(route('creator.queue', $creator))->assertOk();
         $html = $response->getContent();
 
-        $this->assertSame(5, substr_count($html, 'data-status-variant="compact"'));
+        $this->assertSame(3, substr_count($html, 'data-status-variant="compact"'));
         foreach ([
             'coming_soon' => ['Coming Soon', 'violet'],
             'scheduled' => ['Scheduled', 'blue'],
             'recorded' => ['Recorded', 'amber'],
-            'already_seen' => ['Already Seen', 'slate'],
-            'passed' => ['Passed', 'rose'],
         ] as $status => [$label, $style]) {
             $response->assertSee('data-request-status="'.$status.'"', false)
                 ->assertSee('data-status-style="'.$style.'"', false)
                 ->assertSee('aria-label="Request status: '.$label.'. Voting is closed."', false);
-            $this->assertSame(3, substr_count($html, 'data-request-status="'.$status.'"')); // folded plus two expanded contexts
+            $this->assertSame(1, substr_count($html, 'data-request-status="'.$status.'"'));
         }
 
         $approved = Recommendation::query()->where('creator_id', $creator->id)->where('status', 'approved')->firstOrFail();
@@ -503,7 +507,7 @@ class PublicCreatorQueueTest extends TestCase
         $guide = User::factory()->create();
         $otherGuide = User::factory()->create();
 
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'submitted_by' => $otherGuide->id,
             'title' => 'Unmarked request',
@@ -532,7 +536,7 @@ class PublicCreatorQueueTest extends TestCase
             'creator_id' => $creator->id,
             'recommendation_id' => $voted->id,
             'user_id' => $guide->id,
-            'vote_count' => 2,
+            'vote_count' => 1,
         ]);
         UserPick::factory()->create([
             'creator_id' => $creator->id,
@@ -544,7 +548,7 @@ class PublicCreatorQueueTest extends TestCase
             'creator_id' => $creator->id,
             'recommendation_id' => $submitted->id,
             'user_id' => $otherGuide->id,
-            'vote_count' => 3,
+            'vote_count' => 1,
         ]);
 
         $response = $this->actingAs($guide)
@@ -554,17 +558,14 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Suggested by current guide')
             ->assertSee('Voted by current guide')
             ->assertSee('Submitted and voted by current guide')
-            ->assertSee('title="You have 2 active votes here"', false)
             ->assertSee('title="You have 1 active vote here"', false)
             ->assertSee('title="You requested"', false)
             ->assertSee('text-emerald-700', false)
             ->assertSee('text-amber-700', false);
 
-        $this->assertSame(4, substr_count($response->getContent(), 'data-active-vote-badge'));
+        $this->assertSame(2, substr_count($response->getContent(), 'data-active-vote-badge'));
         $this->assertSame(2, substr_count($response->getContent(), 'data-active-vote-quantity="1"'));
-        $this->assertSame(2, substr_count($response->getContent(), 'data-active-vote-quantity="2"'));
-        $this->assertSame(4, substr_count($response->getContent(), '<span>You requested</span>'));
-        $this->assertSame(2, substr_count($response->getContent(), 'Edit request details'));
+        $this->assertSame(2, substr_count($response->getContent(), '<span>You requested</span>'));
 
         $this->actingAs(User::factory()->create())
             ->get(route('creator.queue', $creator))
@@ -584,7 +585,7 @@ class PublicCreatorQueueTest extends TestCase
     {
         $creator = Creator::factory()->create();
         $guide = User::factory()->create();
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'submitted_by' => $guide->id,
             'submission_source' => Recommendation::SUBMISSION_SOURCE_CREATOR,
@@ -594,8 +595,11 @@ class PublicCreatorQueueTest extends TestCase
 
         $response = $this->actingAs($guide)->get(route('creator.queue', $creator))->assertOk();
 
-        $this->assertSame(2, substr_count($response->getContent(), '<span>You requested</span>'));
-        $response->assertSee('Suggested by')->assertSee($guide->publicName());
+        $this->assertSame(1, substr_count($response->getContent(), '<span>You requested</span>'));
+        $this->actingAs($guide)->get(route('requests.card-details', $recommendation))
+            ->assertOk()
+            ->assertSee('Suggested by')
+            ->assertSee($guide->publicName());
     }
 
     public function test_active_vote_badge_quantity_matches_yours_control_and_ignores_other_or_released_votes(): void
@@ -610,21 +614,16 @@ class PublicCreatorQueueTest extends TestCase
         $released = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'passed', 'title' => 'Released historical votes']);
 
         UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $one->id, 'user_id' => $guide->id, 'vote_count' => 1]);
-        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $multiple->id, 'user_id' => $guide->id, 'vote_count' => 3]);
-        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $otherVotes->id, 'user_id' => $other->id, 'vote_count' => 2]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $multiple->id, 'user_id' => $guide->id, 'vote_count' => 1]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $otherVotes->id, 'user_id' => $other->id, 'vote_count' => 1]);
         UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $released->id, 'user_id' => $guide->id, 'vote_count' => 2, 'released_at' => now(), 'release_reason' => 'request_closed']);
 
         $response = $this->actingAs($guide)->get(route('creator.queue', $creator))->assertOk();
         $html = $response->getContent();
 
         $this->assertSame(2, substr_count($html, 'data-active-vote-quantity="1"'));
-        $this->assertSame(2, substr_count($html, 'data-active-vote-quantity="3"'));
         $this->assertSame(0, substr_count($html, 'data-active-vote-quantity="2"'));
-        $this->assertSame(1, substr_count($html, 'data-current-user-votes="1"'));
-        $this->assertSame(1, substr_count($html, 'data-current-user-votes="3"'));
-        $response
-            ->assertSee('You voted <span aria-hidden="true">&middot;</span> 1', false)
-            ->assertSee('You voted <span aria-hidden="true">&middot;</span> 3', false);
+        $response->assertSee('data-active-vote-quantity="1"', false);
 
         $this->assertSame(0, $zero->activeVoteQuantityFor($guide));
         $this->assertSame(0, $otherVotes->activeVoteQuantityFor($guide));
@@ -670,29 +669,25 @@ class PublicCreatorQueueTest extends TestCase
             ]));
 
         $response = $this->get(route('creator.queue', $creator));
+        $details = $this->get(route('requests.card-details', $recommendation));
 
         $response
             ->assertOk()
-            ->assertSee('Avatar-backed request')
-            ->assertSee('title="Suggested by Original Fan&#10;Founding Guide (#1)"', false)
-            ->assertSee('aria-label="View Original Fan&#039;s Guide profile"', false)
+            ->assertSee('Avatar-backed request');
+        $details
+            ->assertOk()
             ->assertSee('href="'.route('guides.show', ['handle' => 'originalfan']).'"', false)
             ->assertSee('accolade-founding', false)
             ->assertSee('guide-accolade__number', false)
             ->assertSee('#1')
             ->assertDontSee('bg-amber-400 text-amber-950 ring-1 ring-white', false)
             ->assertSee('src="https://example.test/avatar-0.jpg"', false)
-            ->assertSee('title="Supported by Voter 01&#10;Founding Guide (#2)"', false)
-            ->assertSee('aria-label="View Voter 01&#039;s Guide profile"', false)
             ->assertSee('href="'.route('guides.show', ['handle' => 'voter01']).'"', false)
             ->assertSee('accolade-founding', false)
             ->assertSee('Community support')
-            ->assertDontSee('title="54 more supporters"', false)
-            ->assertDontSee('title="59 more supporters"', false)
-            ->assertSee('title="13 additional supporters"', false)
-            ->assertSee('aria-label="13 additional supporters"', false)
-            ->assertSee('src="https://example.test/avatar-49.jpg"', false)
-            ->assertDontSee('src="https://example.test/avatar-50.jpg"', false)
+            ->assertSee('aria-label="View 57 more supporters"', false)
+            ->assertSee('src="https://example.test/avatar-5.jpg"', false)
+            ->assertDontSee('src="https://example.test/avatar-6.jpg"', false)
             ->assertDontSee('data-supporter-name', false)
             ->assertDontSee('this.nextElementSibling.hidden', false)
             ->assertDontSee('original@example.test');
@@ -725,19 +720,21 @@ class PublicCreatorQueueTest extends TestCase
             'email' => 'private-google@example.test',
         ]);
 
-        User::factory()->count(9)->create()->push($longNameSupporter)->each(fn (User $user) => UserPick::factory()->create([
+        collect([$longNameSupporter])->concat(User::factory()->count(9)->create())->each(fn (User $user) => UserPick::factory()->create([
             'creator_id' => $creator->id,
             'recommendation_id' => $recommendation->id,
             'user_id' => $user->id,
         ]));
 
-        $this->get(route('creator.queue', $creator))
+        $this->get(route('requests.card-details', $recommendation))
             ->assertOk()
-            ->assertSee('size-9 text-sm sm:size-10', false)
-            ->assertSee('grid w-full grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))] items-start gap-x-3 gap-y-4 px-1', false)
-            ->assertSee('data-supporter-name', false)
+            ->assertSee('data-supporter-preview-count="6"', false)
+            ->assertSee('data-supporter-total="10"', false)
+            ->assertSee('grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 lg:grid-cols-7', false)
+            ->assertSee('aria-label="View 4 more supporters"', false)
             ->assertSee('Samantha with a very long public name ðŸŒŸ')
-            ->assertSee('max-w-[88px] truncate', false)
+            ->assertSee('Community Support')
+            ->assertSee('10 Guides supported this request.')
             ->assertDontSee('Private Google Profile Name')
             ->assertDontSee('private-google@example.test')
             ->assertDontSee('additional supporters');
@@ -802,7 +799,7 @@ class PublicCreatorQueueTest extends TestCase
             'scheduled_for' => now()->addWeek(),
             'created_at' => now(),
         ]);
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Hidden Retro Archive request',
             'category' => 'documentary',
@@ -885,7 +882,7 @@ class PublicCreatorQueueTest extends TestCase
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
 
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'recommendation_type' => 'topic',
             'youtube_url' => null,
@@ -897,7 +894,7 @@ class PublicCreatorQueueTest extends TestCase
             'status' => 'approved',
         ]);
 
-        $response = $this->get('/jfragment');
+        $response = $this->get(route('requests.card-details', $recommendation));
 
         $response
             ->assertOk()
@@ -953,46 +950,47 @@ class PublicCreatorQueueTest extends TestCase
             'title' => 'New status recommendation',
             'status' => 'coming_soon',
         ]);
-        Recommendation::factory()->create([
+        $passed = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Passed status recommendation',
             'status' => 'passed',
         ]);
-        Recommendation::factory()->create([
+        $alreadySeen = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Already seen recommendation',
             'status' => 'already_seen',
         ]);
 
-        $this->get('/jfragment')
+        $response = $this->get('/@jfragment')
             ->assertOk()
             ->assertSee('New status recommendation')
-            ->assertSee('Passed status recommendation')
-            ->assertSee('Already seen recommendation')
             ->assertSee('Coming Soon', false)
-            ->assertSee('Already Seen', false)
-            ->assertSee('The creator has already seen this.')
+            ->assertDontSee('Passed status recommendation')
+            ->assertDontSee('Already seen recommendation');
+
+        $this->get(route('requests.card-details', $passed))
+            ->assertOk()
             ->assertSee('Passed', false);
 
-        $this->get('/jfragment?status=already_seen')
+        $this->get(route('requests.card-details', $alreadySeen))
             ->assertOk()
             ->assertSee('Already seen recommendation')
-            ->assertDontSee('New status recommendation')
-            ->assertDontSee('Passed status recommendation');
+            ->assertSee('Already Seen', false)
+            ->assertSee('The creator has already seen this.');
     }
 
     public function test_scheduled_recommendations_show_public_timing(): void
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
 
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Scheduled recommendation',
             'status' => 'scheduled',
             'scheduled_for' => '2026-07-04 19:30:00',
         ]);
 
-        $this->get('/jfragment')
+        $this->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('Scheduled for Jul 4, 2026 at 7:30 PM');
     }
@@ -1267,12 +1265,16 @@ class PublicCreatorQueueTest extends TestCase
             'recommendation_id' => $newer->id,
             'user_id' => $supporter->id,
             'vote_count' => 3,
+            'released_at' => now(),
+            'release_reason' => 'request_published',
         ]);
         UserPick::factory()->create([
             'creator_id' => $creator->id,
             'recommendation_id' => $newer->id,
             'user_id' => $secondSupporter->id,
             'vote_count' => 1,
+            'released_at' => now(),
+            'release_reason' => 'request_published',
         ]);
 
         $response = $this->get(route('creators.published', $creator));
@@ -1301,9 +1303,9 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Suggested by')
             ->assertSee('Community support')
             ->assertSee('Public Requester')
-            ->assertSee('title="Suggested by Public Requester', false)
-            ->assertSee('title="Supported by Public Supporter', false)
-            ->assertSee('title="Supported by Second Supporter', false)
+            ->assertSee('aria-label="View Public Requester\'s Guide profile"', false)
+            ->assertSee('aria-label="View Public Supporter\'s Guide profile"', false)
+            ->assertSee('aria-label="View Second Supporter\'s Guide profile"', false)
             ->assertSee('src="https://example.test/supporter.jpg"', false)
             ->assertSee('4 votes when published')
             ->assertSee('No votes yet.')
@@ -1357,13 +1359,16 @@ class PublicCreatorQueueTest extends TestCase
             'status' => 'approved',
         ]);
 
-        $response = $this->get('/jfragment')
+        $response = $this->get('/@jfragment')
+            ->assertOk()
+            ->assertDontSee('border-cyan-500/60', false)
+            ->assertDontSee('text-cyan-800 dark:text-cyan-200', false);
+
+        $this->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', false)
             ->assertSee('onerror="this.hidden = true"', false)
-            ->assertSee('Thumbnail for Never Gonna Give You Up')
-            ->assertDontSee('border-cyan-500/60', false)
-            ->assertDontSee('text-cyan-800 dark:text-cyan-200', false);
+            ->assertSee('Thumbnail for Never Gonna Give You Up');
 
         $collapsedHeader = Str::of($response->getContent())
             ->after('aria-controls="recommendation-details-'.$recommendation->id.'"')
@@ -1409,23 +1414,26 @@ class PublicCreatorQueueTest extends TestCase
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
 
+        $recommendations = collect();
         foreach ([
             ['title' => 'Missing ID', 'youtube_video_id' => null],
             ['title' => 'Malformed ID', 'youtube_video_id' => 'not-a-video-id'],
         ] as $recommendation) {
-            Recommendation::factory()->create([
+            $recommendations->push(Recommendation::factory()->create([
                 'creator_id' => $creator->id,
                 'youtube_url' => null,
                 'status' => 'approved',
                 ...$recommendation,
-            ]);
+            ]));
         }
 
-        $this->get(route('creator.queue', $creator))
-            ->assertOk()
-            ->assertSee('Video preview unavailable')
-            ->assertDontSee('/vi//hqdefault.jpg', false)
-            ->assertDontSee('/vi/not-a-video-id/hqdefault.jpg', false);
+        foreach ($recommendations as $recommendation) {
+            $this->get(route('requests.card-details', $recommendation))
+                ->assertOk()
+                ->assertSee('Video preview unavailable')
+                ->assertDontSee('/vi//hqdefault.jpg', false)
+                ->assertDontSee('/vi/not-a-video-id/hqdefault.jpg', false);
+        }
     }
 
     public function test_cards_show_placeholder_reason_submitter_and_pick_copy(): void
@@ -1450,39 +1458,35 @@ class PublicCreatorQueueTest extends TestCase
         $viewer = User::factory()->create();
 
         $this->actingAs($viewer)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('Topic')
             ->assertDontSee('Community topic')
             ->assertSee('Suggested by Example Fan')
             ->assertSee('aria-label="Add vote to this request"', false)
             ->assertSee('mt-5 flex items-center justify-end', false)
-            ->assertSee('inline-flex w-full flex-col gap-3 rounded-2xl', false)
             ->assertDontSee('votes total')
-            ->assertSeeInOrder([
-                'aria-hidden="true" class="text-3xl font-extrabold',
-                '>0 total votes</span>',
-                '>0/3</p>',
-                'aria-label="Add vote to this request"',
-            ], false)
-            ->assertSee('Top requested')
+            ->assertSee('<span>Vote</span>', false)
+            ->assertSee('<span>0</span>', false)
             ->assertSee('Why this was suggested')
             ->assertSee(Str::limit($reason, 250))
             ->assertSee('Read more')
             ->assertSee('Show less')
             ->assertSee('x-bind:aria-expanded="expanded.toString()"', false);
 
-        $this->post(route('recommendations.vote', [$creator, $recommendation]), [
-            'confirm_favorite' => true,
-            'vote_action' => 'add',
-        ])
-            ->assertRedirect();
+        UserPick::factory()->create([
+            'creator_id' => $creator->id,
+            'recommendation_id' => $recommendation->id,
+            'user_id' => $viewer->id,
+            'vote_count' => 1,
+        ]);
 
-        $this->get(route('creator.queue', $creator))
+        $this->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertDontSee('Remove upvote')
             ->assertSee('aria-label="Remove vote from this request"', false)
-            ->assertSee('name="vote_action" value="remove"', false)
+            ->assertSee('name="_method" value="DELETE"', false)
+            ->assertSee('You voted')
             ->assertSee('1')
             ->assertSee('vote');
     }
@@ -1500,26 +1504,14 @@ class PublicCreatorQueueTest extends TestCase
             'creator_id' => $creator->id,
             'recommendation_id' => $recommendation->id,
             'user_id' => $guide->id,
-            'vote_count' => 10,
+            'vote_count' => 1,
         ]);
 
         $response = $this->actingAs($guide)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $recommendation))
             ->assertOk()
-            ->assertSee('data-vote-controls', false)
-            ->assertSee('grid-cols-[2.75rem_minmax(4.5rem,auto)_2.75rem]', false)
-            ->assertSee('sm:flex sm:w-auto sm:max-w-none sm:justify-end', false)
-            ->assertSee('>10/10</p>', false)
-            ->assertSee('whitespace-nowrap', false)
             ->assertSee('aria-label="Remove vote from this request"', false)
-            ->assertSee('aria-label="Add vote to this request"', false);
-
-        $voteModule = Str::of($response->getContent())
-            ->after('data-vote-controls')
-            ->before('</div>\n                    @else');
-
-        $this->assertGreaterThanOrEqual(2, substr_count((string) $voteModule, 'size-11'));
-        $this->assertStringContainsString('disabled', (string) $voteModule);
+            ->assertSee('You voted');
     }
 
     public function test_mobile_expanded_support_uses_generic_founder_og_and_future_accolades(): void
@@ -1562,7 +1554,7 @@ class PublicCreatorQueueTest extends TestCase
             ]);
         }
 
-        $response = $this->get(route('creator.queue', $creator))->assertOk();
+        $response = $this->get(route('requests.card-details', $recommendation))->assertOk();
 
         foreach ([
             ['accolade-founding', '#45'],
@@ -1575,7 +1567,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('guide-avatar relative inline-flex', false)
             ->assertSee('z-10 accolade-', false)
             ->assertSee('guide-accolade__number absolute bottom-0 left-1/2 z-30', false)
-            ->assertSee('grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))]', false)
+            ->assertSee('grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 lg:grid-cols-7', false)
             ->assertSee('overflow-visible', false);
 
         $accoladeCss = file_get_contents(resource_path('css/app.css'));
@@ -1593,7 +1585,7 @@ class PublicCreatorQueueTest extends TestCase
         $guide = User::factory()->create();
 
         $this->actingAs($guide)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('Suggest alternative')
             ->assertSee('Suggest an alternative')
@@ -1645,13 +1637,13 @@ class PublicCreatorQueueTest extends TestCase
         ]);
 
         $response = $this->actingAs($submitter)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $guideRecommendation))
             ->assertOk()
             ->assertSee('Guide owned request')
             ->assertSee('Suggest alternative')
             ->assertSee('aria-label="Withdraw this request"', false)
             ->assertSee('Withdraw this request?')
-            ->assertSee('This removes it from the active list and returns any active votes placed on it.')
+            ->assertSee('This removes it from the active list. Existing supporter history is preserved.')
             ->assertSee(route('recommendations.withdraw', [$creator, $guideRecommendation]), false)
             ->assertSeeInOrder(['Suggest alternative', 'Withdraw request']);
 
@@ -1661,14 +1653,14 @@ class PublicCreatorQueueTest extends TestCase
         );
 
         $this->actingAs($otherGuide)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $guideRecommendation))
             ->assertOk()
             ->assertDontSee('aria-label="Withdraw this request"', false)
             ->assertDontSee('Withdraw this request?');
 
         auth()->logout();
 
-        $this->get(route('creator.queue', $creator))
+        $this->get(route('requests.card-details', $guideRecommendation))
             ->assertOk()
             ->assertDontSee('aria-label="Withdraw this request"', false)
             ->assertDontSee('Withdraw this request?');
@@ -1700,14 +1692,14 @@ class PublicCreatorQueueTest extends TestCase
         ]);
 
         $this->actingAs($guide)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertDontSee('Alternative suggestions')
             ->assertDontSee('PRIVATEalt1')
             ->assertDontSee('This version has official captions.');
 
         $this->actingAs($owner)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('Creator only')
             ->assertSee('1 alternative suggested')
@@ -1773,14 +1765,14 @@ class PublicCreatorQueueTest extends TestCase
     {
         $creator = Creator::factory()->create(['slug' => 'jfragment']);
 
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'A safely rendered recommendation',
             'reason' => '<script>alert(1)</script> Visit https://example.com for context.',
             'status' => 'approved',
         ]);
 
-        $this->get(route('creator.queue', $creator))
+        $this->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('Why this was suggested')
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt; Visit https://example.com for context.', false)
@@ -1805,17 +1797,15 @@ class PublicCreatorQueueTest extends TestCase
         $this->addPicks($creator, $top, 3);
         $this->addPicks($creator, $other, 1);
 
-        $response = $this->get(route('creator.queue', $creator));
-
-        $response
+        $this->get(route('requests.card-details', ['recommendation' => $top, 'top' => 1]))
             ->assertOk()
-            ->assertSeeInOrder([
-                'Top requested',
-                'Highest voted request',
-                'Lower voted request',
-            ]);
+            ->assertSee('Top requested')
+            ->assertSee('Highest voted request');
 
-        $this->assertSame(1, substr_count($response->getContent(), 'Top requested'));
+        $this->get(route('requests.card-details', $other))
+            ->assertOk()
+            ->assertDontSee('Top requested')
+            ->assertSee('Lower voted request');
     }
 
     public function test_inactive_creator_pages_return_not_found(): void
@@ -1837,13 +1827,13 @@ class PublicCreatorQueueTest extends TestCase
             'submissions_open' => false,
         ]);
 
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'title' => 'Visible recommendation',
             'status' => 'approved',
         ]);
 
-        $this->get(route('creator.queue', $creator))
+        $this->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('Visible recommendation');
 
@@ -1882,7 +1872,7 @@ class PublicCreatorQueueTest extends TestCase
 
         $this->post(route('creator.favorite', $creator))
             ->assertRedirect()
-            ->assertSessionHas('success', 'Creator removed from your favorites.');
+            ->assertSessionHas('success', 'Creator removed from your favorites. Your votes were preserved.');
 
         $this->assertDatabaseMissing('creator_favorites', [
             'creator_id' => $creator->id,
@@ -1981,29 +1971,19 @@ class PublicCreatorQueueTest extends TestCase
         $this->actingAs($user)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('Remove favorite?')
-            ->assertSee('Unfavoriting removes your active votes from this creator. Requests with no other votes may be removed.')
-            ->assertSee('Remove favorite and active votes')
-            ->assertSee('Active votes on this creator: 1')
-            ->assertSee('request-participation-confirmation', false)
-            ->assertSee('data-modal-root="participation-confirmation"', false)
-            ->assertSee('pointer-events-none invisible', false)
-            ->assertSee('data-modal-backdrop="participation-confirmation"', false)
-            ->assertSee('x-bind:hidden="! show"', false)
-            ->assertSee('hidden', false)
-            ->assertDontSee('confirm(', false);
+            ->assertSee('Favorited');
 
         $this->post(route('creator.favorite', $creator))
             ->assertSessionHas(
                 'success',
-                'Creator removed from your favorites. Your active votes for this creator were removed.',
+                'Creator removed from your favorites. Your votes were preserved.',
             );
 
         $this->assertDatabaseMissing('creator_favorites', [
             'creator_id' => $creator->id,
             'user_id' => $user->id,
         ]);
-        $this->assertDatabaseMissing('user_picks', [
+        $this->assertDatabaseHas('user_picks', [
             'recommendation_id' => $recommendation->id,
             'user_id' => $user->id,
         ]);
@@ -2077,11 +2057,11 @@ class PublicCreatorQueueTest extends TestCase
             ->post(route('creator.favorite', $creator))
             ->assertSessionHas(
                 'success',
-                'Creator removed from your favorites. Your active votes for this creator were removed.',
+                'Creator removed from your favorites. Your votes were preserved.',
             );
 
-        $this->assertDatabaseMissing('recommendations', ['id' => $pending->id]);
-        $this->assertDatabaseMissing('recommendations', ['id' => $approved->id]);
+        $this->assertDatabaseHas('recommendations', ['id' => $pending->id]);
+        $this->assertDatabaseHas('recommendations', ['id' => $approved->id]);
         $this->assertDatabaseHas('recommendations', ['id' => $approvedWithSupport->id]);
         $this->assertDatabaseHas('recommendations', ['id' => $published->id]);
         $this->assertDatabaseHas('recommendations', ['id' => $creatorAdded->id]);
@@ -2167,9 +2147,9 @@ class PublicCreatorQueueTest extends TestCase
             'creator_id' => $creator->id,
             'user_id' => $user->id,
         ]);
-        $this->assertDatabaseMissing('recommendations', ['id' => $unsupported->id]);
+        $this->assertDatabaseHas('recommendations', ['id' => $unsupported->id]);
         $this->assertDatabaseHas('recommendations', ['id' => $otherRecommendation->id]);
-        $this->assertDatabaseMissing('user_picks', [
+        $this->assertDatabaseHas('user_picks', [
             'creator_id' => $creator->id,
             'user_id' => $user->id,
         ]);
@@ -2181,8 +2161,8 @@ class PublicCreatorQueueTest extends TestCase
             'creator_id' => $creator->id,
             'user_id' => $user->id,
         ]);
-        $this->assertDatabaseMissing('recommendations', ['id' => $unsupported->id]);
-        $this->assertDatabaseMissing('user_picks', [
+        $this->assertDatabaseHas('recommendations', ['id' => $unsupported->id]);
+        $this->assertDatabaseHas('user_picks', [
             'creator_id' => $creator->id,
             'user_id' => $user->id,
         ]);
@@ -2205,20 +2185,17 @@ class PublicCreatorQueueTest extends TestCase
         $recommendation = $recommendations->first();
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)
-            ->get(route('creator.queue', $creator))
-            ->assertOk()
-            ->assertDontSee('votes total')
-            ->assertDontSee('No longer accepting votes')
-            ->assertDontSee('aria-label="Add vote to this request"', false);
-
         foreach ($recommendations as $status => $lockedRecommendation) {
-            $response
+            $this->actingAs($user)
+                ->get(route('requests.card-details', $lockedRecommendation))
+                ->assertOk()
                 ->assertSee($lockedRecommendation->title)
-                ->assertSee($lockedRecommendation->statusLabel(), false);
+                ->assertSee($lockedRecommendation->statusLabel(), false)
+                ->assertDontSee('votes total')
+                ->assertDontSee('No longer accepting votes')
+                ->assertDontSee('aria-label="Add vote to this request"', false)
+                ->assertSee('Voting closed');
         }
-
-        $response->assertSee('Voting closed');
 
         $this->post(route('recommendations.vote', [$creator, $recommendation]))
             ->assertSessionHasErrors([
@@ -2475,7 +2452,7 @@ class PublicCreatorQueueTest extends TestCase
     public function test_playlist_rows_render_compact_and_expanded_playlist_treatment(): void
     {
         $creator = Creator::factory()->create(['slug' => 'playlist-creator']);
-        Recommendation::factory()->create([
+        $recommendation = Recommendation::factory()->create([
             'creator_id' => $creator->id,
             'media_type' => 'playlist',
             'youtube_url' => 'https://www.youtube.com/playlist?list=PL1234567890',
@@ -2490,7 +2467,7 @@ class PublicCreatorQueueTest extends TestCase
             'status' => 'approved',
         ]);
 
-        $this->get(route('creator.queue', $creator))
+        $this->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('YouTube Playlist')
             ->assertSee('18 videos')

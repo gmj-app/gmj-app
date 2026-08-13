@@ -105,16 +105,24 @@ class CreatorStarterSuggestionsTest extends TestCase
         $this->get(route('creator.queue', $creator))
             ->assertOk()
             ->assertSee('React to this live performance')
-            ->assertSee('Explore the history of local bridges')
+            ->assertSee('Explore the history of local bridges');
+
+        $bridgeSuggestion = Recommendation::query()
+            ->where('title', 'Explore the history of local bridges')
+            ->firstOrFail();
+        $this->get(route('requests.card-details', $bridgeSuggestion))
+            ->assertOk()
             ->assertSee('Added by creator')
             ->assertSee('aria-label="Open original link for Explore the history of local bridges"', false)
-            ->assertSee('rel="noopener noreferrer nofollow ugc"', false)
-            ->assertSee('aria-label="Add vote to this request"', false);
+            ->assertSee('rel="noopener noreferrer nofollow ugc"', false);
 
         $fan = User::factory()->create();
         $youtubeSuggestion = Recommendation::query()
             ->where('title', 'React to this live performance')
             ->firstOrFail();
+        $this->get(route('requests.card-details', $youtubeSuggestion))
+            ->assertOk()
+            ->assertSee('aria-label="Add vote to this request"', false);
 
         $this->actingAs($fan)
             ->post(route('recommendations.vote', [$creator, $youtubeSuggestion]))

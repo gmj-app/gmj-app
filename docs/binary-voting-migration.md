@@ -5,7 +5,7 @@ Guide My Journey now treats each active `user_picks` row as one Guide supporting
 ## Historical cutoff policy
 
 - Active rows with a positive `vote_count` are normalized to `1`.
-- Invalid active rows with a non-positive quantity are removed because they represent no support.
+- Active rows with a zero, negative, or null `vote_count` stop the migration before any data changes. Repair those rows explicitly and rerun the deploy.
 - Existing released rows retain their legacy quantity and supporter identity.
 - Existing `vote_total_at_close` values are preserved without recalculation.
 - Requests closed after this release snapshot the unique supporter count, so their vote total and supporter count use binary semantics.
@@ -15,13 +15,13 @@ This intentionally creates a documented historical cutoff: an older closed Reque
 
 ## Required pre-deployment audit
 
-Run against production before applying the schema migration:
+Take a database backup and record the current schema/index state. An optional read-only application audit is:
 
 ```sh
 php artisan votes:migrate-to-binary --dry-run
 ```
 
-Review multi-vote rows, weighted versus unique totals, and the reported ranking-position changes. Take a database backup and record the current schema/index state before continuing.
+Review multi-vote rows, weighted versus unique totals, and the reported ranking-position changes. The corrected schema migration performs the authoritative audit and normalization itself so a normal failed-deploy retry is sufficient.
 
 ## Laravel Cloud release commands
 
@@ -29,13 +29,12 @@ After the production backup is confirmed, use this release sequence in the Larav
 
 ```sh
 php artisan votes:migrate-to-binary --dry-run
-php artisan votes:migrate-to-binary --apply
 php artisan migrate --force
 php artisan optimize
 php artisan queue:restart
 ```
 
-The apply command is transactional and idempotent. The migration then adds the active binary check and the `(recommendation_id, released_at)` lookup index. Do not run `migrate` before the apply command on a database that still contains active quantities above one.
+The migration logs aggregate pre-normalization counts, refuses corrupt active values before mutation, normalizes positive active quantities, verifies the result, and only then installs the lookup index and binary check. It introspects both schema objects, so rerunning after a MySQL implicit-commit/partial-DDL failure is safe. The separate apply command is no longer required for deployment.
 
 ## Backup and rollback
 

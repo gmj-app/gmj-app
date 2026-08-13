@@ -155,7 +155,10 @@ class AuthenticationTest extends TestCase
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertSee('id="recommendation-'.$recommendation->id.'"', false)
+            ->assertSee('id="recommendation-'.$recommendation->id.'"', false);
+
+        $this->get(route('requests.card-details', $recommendation))
+            ->assertOk()
             ->assertSee(route('login.required', ['return' => $returnUrl]), false);
 
         $this->get(route('login.required', ['return' => $returnUrl]))

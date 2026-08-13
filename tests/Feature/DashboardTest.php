@@ -42,7 +42,7 @@ class DashboardTest extends TestCase
             ->assertSee('Favorite creators, suggest ideas or links, and vote for what you want to see next.')
             ->assertSee('Explore creators')
             ->assertSee('Favorite creators used')
-            ->assertSee('Votes per creator')
+            ->assertSee('Requests supported')
             ->assertSee('Requests per creator')
             ->assertDontSee('Your resources')
             ->assertDontSee('Link Creator Account')
@@ -95,10 +95,10 @@ class DashboardTest extends TestCase
         $this->actingAs($user)->get(route('dashboard'))
             ->assertOk()
             ->assertSee('aria-label="2 of 3 favorite creator slots used"', false)
-            ->assertSee('aria-label="3 votes available per creator"', false)
+            ->assertSee('aria-label="0 active requests supported"', false)
             ->assertSee('aria-label="3 requests available per creator"', false)
             ->assertSee('Favorite creators used')
-            ->assertSee('Votes per creator')
+            ->assertSee('Requests supported')
             ->assertSee('Requests per creator')
             ->assertDontSee('Requests submitted');
     }
@@ -108,7 +108,7 @@ class DashboardTest extends TestCase
         $this->actingAs(User::factory()->create(['plan_slug' => 'pro']))
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('aria-label="10 votes available per creator"', false)
+            ->assertSee('aria-label="0 active requests supported"', false)
             ->assertSee('aria-label="10 requests available per creator"', false)
             ->assertSee('aria-label="0 of 10 favorite creator slots used"', false);
     }
@@ -293,7 +293,9 @@ class DashboardTest extends TestCase
                 'user_id' => $user->id,
                 'creator_id' => $favoriteCreator->id,
                 'recommendation_id' => $recommendation->id,
-                'vote_count' => $recommendation->is($activeRecommendation) ? 2 : 5,
+                'vote_count' => $recommendation->is($activeRecommendation) ? 1 : 5,
+                'released_at' => $recommendation->is($closedRecommendation) ? now() : null,
+                'release_reason' => $recommendation->is($closedRecommendation) ? 'request_published' : null,
             ]);
         }
 
@@ -301,12 +303,12 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSeeInOrder(['1', '/ 3', 'Favorite creators used'])
-            ->assertSeeInOrder(['3', 'Votes per creator'])
+            ->assertSeeInOrder(['1', 'Requests supported'])
             ->assertSeeInOrder(['3', 'Requests per creator'])
             ->assertDontSee('Requests submitted')
             ->assertSee('My Activity')
             ->assertSee('Your votes and requests')
-            ->assertSee('2 active votes')
+            ->assertSee('1 active vote')
             ->assertSee('2 requests')
             ->assertSee('1 published')
             ->assertSee('View My Activity')

@@ -75,7 +75,7 @@ class CreatorPagePerformanceTest extends TestCase
             'creator_id' => $creator->id,
             'recommendation_id' => $recommendation->id,
             'user_id' => $viewer->id,
-            'vote_count' => 2,
+            'vote_count' => 1,
         ]);
 
         $this->actingAs($viewer)->get(route('creator.queue', $creator))
@@ -88,6 +88,6 @@ class CreatorPagePerformanceTest extends TestCase
             ->assertOk()
             ->assertSee('Deferred request details')
             ->assertSee('You requested')
-            ->assertSee('data-current-user-votes="2"', false);
+            ->assertSee('You voted');
     }
 }

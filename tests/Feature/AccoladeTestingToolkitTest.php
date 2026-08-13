@@ -71,7 +71,7 @@ class AccoladeTestingToolkitTest extends TestCase
 
         $submitted = User::where('email', 'accolade.submitted.exact@example.test')->firstOrFail();
         $ownRequest = $submitted->recommendationsSubmitted()->firstOrFail();
-        UserPick::create(['user_id' => $submitted->id, 'creator_id' => $ownRequest->creator_id, 'recommendation_id' => $ownRequest->id, 'vote_count' => 9]);
+        UserPick::create(['user_id' => $submitted->id, 'creator_id' => $ownRequest->creator_id, 'recommendation_id' => $ownRequest->id, 'vote_count' => 1]);
         $selfSupport = $evaluation->evaluateGuide($submitted, ['guide_supported_publications'], persist: false)->tracks['guide_supported_publications'];
         $this->assertSame(0, $selfSupport['current_value']);
 

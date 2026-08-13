@@ -189,7 +189,7 @@ class SubmitRecommendationTest extends TestCase
             'confirm_favorite' => '1',
         ]);
 
-        $response->assertRedirect('/jfragment')
+        $response->assertRedirect('/@jfragment')
             ->assertSessionHas('success', 'Request submitted and waiting for creator review.');
 
         $this->assertDatabaseHas('recommendations', [
@@ -205,7 +205,7 @@ class SubmitRecommendationTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/jfragment')
+            ->get('/@jfragment')
             ->assertOk()
             ->assertSee('Request submitted and waiting for creator review.')
             ->assertDontSee('Never Gonna Give You Up');
@@ -235,7 +235,7 @@ class SubmitRecommendationTest extends TestCase
             'confirm_favorite' => '1',
         ]);
 
-        $response->assertRedirect('/jfragment')
+        $response->assertRedirect('/@jfragment')
             ->assertSessionHas('success', 'Request submitted and added to the journey.');
 
         $this->assertDatabaseHas('recommendations', [
@@ -246,7 +246,7 @@ class SubmitRecommendationTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/jfragment')
+            ->get('/@jfragment')
             ->assertOk()
             ->assertSee('Request submitted and added to the journey.')
             ->assertSee('Auto-approved recommendation');
@@ -275,7 +275,7 @@ class SubmitRecommendationTest extends TestCase
                 'reason' => '',
                 'confirm_favorite' => '1',
             ])
-            ->assertRedirect('/jfragment')
+            ->assertRedirect('/@jfragment')
             ->assertSessionDoesntHaveErrors(['category', 'reason']);
 
         $this->assertDatabaseHas('recommendations', [
@@ -301,7 +301,7 @@ class SubmitRecommendationTest extends TestCase
                 'title' => 'Short YouTube URL',
                 'confirm_favorite' => '1',
             ])
-            ->assertRedirect('/jfragment');
+            ->assertRedirect('/@jfragment');
 
         $this->assertDatabaseHas('recommendations', [
             'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -327,7 +327,7 @@ class SubmitRecommendationTest extends TestCase
                 'reason' => 'It opens the door to several follow-up reactions.',
                 'confirm_favorite' => '1',
             ])
-            ->assertRedirect('/jfragment');
+            ->assertRedirect('/@jfragment');
 
         $this->assertDatabaseHas('recommendations', [
             'creator_id' => $creator->id,
@@ -453,7 +453,7 @@ class SubmitRecommendationTest extends TestCase
                 'channel_title' => 'Example Channel',
                 'confirm_favorite' => '1',
             ])
-            ->assertRedirect('/jfragment');
+            ->assertRedirect('/@jfragment');
 
         $this->assertDatabaseHas('recommendations', [
             'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -481,11 +481,11 @@ class SubmitRecommendationTest extends TestCase
             'creator_id' => $creator->id,
             'recommendation_id' => $recommendation->id,
             'user_id' => $voter->id,
-            'vote_count' => 2,
+            'vote_count' => 1,
         ]);
 
         $this->assertSame(1, $suggester->suggestionsUsedFor($creator));
-        $this->assertSame(2, $voter->votesUsedFor($creator));
+        $this->assertSame(1, $voter->votesUsedFor($creator));
 
         $this->actingAs($suggester)
             ->post(route('recommendations.withdraw', [$creator, $recommendation]))
@@ -553,14 +553,14 @@ class SubmitRecommendationTest extends TestCase
         ]);
 
         $this->actingAs($suggester)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertSee('Withdraw request')
             ->assertSee('Withdraw this request?')
             ->assertSee(route('recommendations.withdraw', [$creator, $recommendation]), false);
 
         $this->actingAs($otherUser)
-            ->get(route('creator.queue', $creator))
+            ->get(route('requests.card-details', $recommendation))
             ->assertOk()
             ->assertDontSee('Withdraw request');
 
