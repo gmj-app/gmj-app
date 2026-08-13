@@ -234,11 +234,10 @@ class CreatorRequestOrderingTest extends TestCase
 
     private function giveVotes(Recommendation $recommendation, int $votes): void
     {
-        UserPick::factory()->create([
+        UserPick::factory()->count($votes)->create([
             'creator_id' => $recommendation->creator_id,
             'recommendation_id' => $recommendation->id,
-            'user_id' => User::factory()->create()->id,
-            'vote_count' => $votes,
+            'vote_count' => 1,
         ]);
     }
 }

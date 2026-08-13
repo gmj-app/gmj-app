@@ -28,7 +28,7 @@ class CreatorPageHeaderViewModel
         $voteCount = (int) $creator->userPicks()
             ->validHistoricalSupport()
             ->whereHas('recommendation', fn ($query) => $query->publiclyVisible())
-            ->sum('vote_count');
+            ->count();
         $progressCounts = $creator->recommendations()
             ->whereIn('status', ['recorded', 'published'])
             ->selectRaw('status, COUNT(*) as aggregate')
@@ -94,9 +94,7 @@ class CreatorPageHeaderViewModel
             'suggestions_limit' => $limits['suggestions_per_reactor'],
             'suggestions_used' => $user->suggestionsUsedFor($creator),
             'suggestions_remaining' => $user->suggestionsRemainingFor($creator),
-            'votes_limit' => $limits['votes_per_reactor'],
             'votes_used' => $user->votesUsedFor($creator),
-            'votes_remaining' => $user->votesRemainingFor($creator),
             'can_suggest' => $user->canSuggestTo($creator),
             'is_favorited' => $user->hasFavoritedCreator($creator),
         ];

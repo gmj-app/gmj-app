@@ -38,7 +38,7 @@ class SearchController extends Controller
                 ->whereIn('creator_id', $creators->pluck('id'))
                 ->publiclyVisible()
                 ->where(fn (Builder $recommendationQuery) => $this->applyRecommendationMatch($recommendationQuery, $like))
-                ->withSum('userPicks as user_picks_count', 'vote_count')
+                ->withCount('userPicks')
                 ->orderByRaw(
                     'case
                         when lower(coalesce(display_title_override, title)) = ? then 1

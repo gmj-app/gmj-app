@@ -118,7 +118,7 @@ class RepairRequestVoteHistory extends Command
             if ($apply) {
                 DB::transaction(fn () => Recommendation::withTrashed()->lockForUpdate()->findOrFail($request->id)->update($changes));
                 $cache->forget($request);
-                $this->info('Applied. Existing allocations remain released.');
+                $this->info('Applied. Existing historical support remains inactive.');
             }
         }, max(1, (int) $this->option('chunk')));
 

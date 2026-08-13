@@ -57,20 +57,22 @@ class MyActivityTest extends TestCase
             'user_id' => $guide->id,
             'creator_id' => $creator->id,
             'recommendation_id' => $active->id,
-            'vote_count' => 3,
+            'vote_count' => 1,
         ]);
         UserPick::factory()->create([
             'user_id' => $guide->id,
             'creator_id' => $creator->id,
             'recommendation_id' => $published->id,
             'vote_count' => 7,
+            'released_at' => now(),
+            'release_reason' => 'request_published',
         ]);
 
         $this->actingAs($guide)->get(route('activity.index'))
             ->assertOk()
             ->assertSee('My Activity')
             ->assertSee('Activity Creator')
-            ->assertSee('3 active votes')
+            ->assertSee('1 active vote')
             ->assertSee('Published suggestion title')
             ->assertSee('Published')
             ->assertSee(route('creator.queue', $creator).'#recommendation-'.$active->id, false)
@@ -95,6 +97,8 @@ class MyActivityTest extends TestCase
             'creator_id' => $creator->id,
             'recommendation_id' => $suggestion->id,
             'vote_count' => 2,
+            'released_at' => now(),
+            'release_reason' => 'request_published',
         ]);
 
         $this->actingAs($guide)->get(route('activity.index', ['type' => 'published']))

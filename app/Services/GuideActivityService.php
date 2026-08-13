@@ -31,7 +31,7 @@ class GuideActivityService
             'active_vote_count' => (int) $user->userPicks()
                 ->whereNull('released_at')
                 ->whereHas('recommendation', fn ($query) => $query->votable())
-                ->sum('vote_count'),
+                ->count(),
             'suggestion_count' => (int) ($suggestions?->suggestion_count ?? 0),
             'published_count' => (int) ($suggestions?->published_count ?? 0),
         ];
@@ -66,7 +66,7 @@ class GuideActivityService
         $activeVoteCounts = $user->userPicks()
             ->whereNull('released_at')
             ->whereHas('recommendation', fn ($query) => $query->votable())
-            ->selectRaw('creator_id, sum(vote_count) as active_vote_count, max(updated_at) as latest_at')
+            ->selectRaw('creator_id, count(*) as active_vote_count, max(updated_at) as latest_at')
             ->groupBy('creator_id')
             ->get()
             ->keyBy('creator_id');
@@ -128,7 +128,7 @@ class GuideActivityService
             ->whereIn('creator_id', $visibleIds)
             ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
             ->whereNotIn('status', ['hidden', 'withdrawn'])
-            ->withSum('userPicks as user_picks_count', 'vote_count')
+            ->withCount('userPicks')
             ->latest()
             ->limit(self::CREATOR_LIMIT * self::SUGGESTION_LIMIT_PER_CREATOR)
             ->get()

@@ -16,7 +16,7 @@
                     @foreach ([
                         ['label' => Str::plural('request', $stats['suggestions']), 'value' => $stats['suggestions']],
                         ['label' => 'published', 'value' => $stats['published']],
-                        ['label' => 'votes cast', 'value' => $stats['votes_cast']],
+                        ['label' => 'requests supported', 'value' => $stats['requests_supported']],
                         ['label' => 'creators supported', 'value' => $stats['creators_supported']],
                     ] as $stat)
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/60">
@@ -27,7 +27,7 @@
                 </dl>
 
                 @if ($activeSupportCount > 0)
-                    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Currently supporting {{ $activeSupportCount }} active {{ Str::plural('request', $activeSupportCount) }}. Active selections and allocations are private.</p>
+                    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Currently supporting {{ $activeSupportCount }} active {{ Str::plural('request', $activeSupportCount) }}. Active selections are private.</p>
                 @endif
             </section>
 
@@ -108,7 +108,7 @@
                                     <a href="{{ $url }}" class="break-words font-bold text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">{{ $recommendation->displayTitle() }}</a>
                                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $recommendation->creator->display_name }} · {{ $recommendation->statusLabel() }} · {{ $recommendation->totalVotes() }} community {{ Str::plural('vote', $recommendation->totalVotes()) }}</p>
                                 </div>
-                                <span class="shrink-0 text-sm font-bold text-slate-700 dark:text-slate-200">{{ $support->vote_count }} {{ Str::plural('vote', $support->vote_count) }} contributed</span>
+                                <span class="shrink-0 text-sm font-bold text-emerald-700 dark:text-emerald-300">Supported</span>
                             </article>
                         @endforeach
                     </div>

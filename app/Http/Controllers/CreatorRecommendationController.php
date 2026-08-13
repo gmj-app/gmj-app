@@ -180,7 +180,7 @@ class CreatorRecommendationController extends Controller
 
         return back()->with(
             'success',
-            $this->statusMessage('Status updated.', $result['released_votes']),
+            $this->statusMessage('Status updated.', $result['closed_supports']),
         );
     }
 
@@ -203,7 +203,7 @@ class CreatorRecommendationController extends Controller
 
         return back()->with(
             'success',
-            $this->statusMessage('Request hidden.', $result['released_votes']),
+            $this->statusMessage('Request hidden.', $result['closed_supports']),
         );
     }
 
@@ -252,7 +252,7 @@ class CreatorRecommendationController extends Controller
                 ->findOrFail($recommendation->id);
             $newStatus = $attributes['status'] ?? $lockedRecommendation->status;
             $releasedVotes = $lockedRecommendation->shouldClearUpvotesWhenStatusIs($newStatus)
-                ? (int) $lockedRecommendation->userPicks()->sum('vote_count')
+                ? (int) $lockedRecommendation->userPicks()->count()
                 : 0;
             $closesVoting = $lockedRecommendation->shouldClearUpvotesWhenStatusIs($newStatus);
 
@@ -292,10 +292,7 @@ class CreatorRecommendationController extends Controller
             return $message;
         }
 
-        $votes = str('vote')->plural($releasedVotes);
-        $verb = $releasedVotes === 1 ? 'is' : 'are';
-
-        return "{$message} {$releasedVotes} {$votes} {$verb} no longer active and returned to Guides.";
+        return "{$message} Supporter history was preserved.";
     }
 
     /**

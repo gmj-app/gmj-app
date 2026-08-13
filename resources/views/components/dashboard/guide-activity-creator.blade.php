@@ -6,7 +6,7 @@
 ])
 
 @php
-    $activeVoteCount = (int) ($creator->active_vote_count ?? $activeVotes->sum('vote_count'));
+    $activeVoteCount = (int) ($creator->active_vote_count ?? $activeVotes->count());
     $suggestionCount = (int) ($creator->suggestion_count ?? $suggestions->count());
     $publishedCount = (int) ($creator->published_count ?? $suggestions->where('status', 'published')->count());
     $detailsId = 'guide-activity-creator-'.$creator->id;
@@ -55,10 +55,10 @@
     >
         <div class="grid gap-5 lg:grid-cols-2">
             <section aria-labelledby="{{ $detailsId }}-votes">
-                <x-subsection-label as="h3" id="{{ $detailsId }}-votes">Your active votes</x-subsection-label>
+                <x-subsection-label as="h3" id="{{ $detailsId }}-votes">Requests you support</x-subsection-label>
 
                 @if ($activeVotes->isEmpty())
-                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">No active votes with this creator.</p>
+                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">You do not currently support an active request from this creator.</p>
                 @else
                     <ul class="mt-2 divide-y divide-slate-200 dark:divide-slate-800">
                         @foreach ($activeVotes as $vote)
@@ -66,7 +66,7 @@
                                 <a href="{{ route('creator.queue', $creator).'#recommendation-'.$vote->recommendation_id }}" class="min-w-0 break-words text-sm font-semibold text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">
                                     {{ $vote->recommendation->displayTitle() }}
                                 </a>
-                                <span class="shrink-0 text-sm font-bold text-slate-700 dark:text-slate-200">{{ $vote->vote_count }} {{ Str::plural('vote', $vote->vote_count) }}</span>
+                                <span class="shrink-0 text-sm font-bold text-emerald-700 dark:text-emerald-300">You voted</span>
                             </li>
                         @endforeach
                     </ul>

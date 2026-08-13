@@ -8,7 +8,7 @@
             <dl class="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <div class="rounded-xl bg-white/80 px-3 py-2 dark:bg-slate-900/70"><dt class="text-xs font-bold text-slate-500 dark:text-slate-400">Favorite status</dt><dd class="mt-1 font-extrabold text-slate-950 dark:text-white">{{ $usage['is_favorited'] ? 'Favorited' : 'Not favorited' }}</dd></div>
                 <div class="rounded-xl bg-white/80 px-3 py-2 dark:bg-slate-900/70"><dt class="text-xs font-bold text-slate-500 dark:text-slate-400">Requests</dt><dd class="mt-1 font-extrabold text-slate-950 dark:text-white">{{ $usage['suggestions_used'] }} / {{ $usage['suggestions_limit'] }} used</dd><p class="text-xs text-slate-500">{{ $usage['suggestions_remaining'] }} remaining</p></div>
-                <div class="rounded-xl bg-white/80 px-3 py-2 dark:bg-slate-900/70"><dt class="text-xs font-bold text-slate-500 dark:text-slate-400">Votes</dt><dd class="mt-1 font-extrabold text-slate-950 dark:text-white">{{ $usage['votes_used'] }} / {{ $usage['votes_limit'] }} used</dd><p class="text-xs text-slate-500">{{ $usage['votes_remaining'] }} remaining</p></div>
+                <div class="rounded-xl bg-white/80 px-3 py-2 dark:bg-slate-900/70"><dt class="text-xs font-bold text-slate-500 dark:text-slate-400">Requests supported</dt><dd class="mt-1 font-extrabold text-slate-950 dark:text-white">{{ $usage['votes_used'] }}</dd><p class="text-xs text-slate-500">No support limit</p></div>
             </dl>
         </div>
     </section>

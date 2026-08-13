@@ -54,7 +54,7 @@ class RequestSupportService
 
     public function activeVoteQuantity(Recommendation $request): int
     {
-        return (int) $this->activeSupport($request)->sum('vote_count');
+        return $this->activeSupporterCount($request);
     }
 
     public function activeSupporterCount(Recommendation $request): int

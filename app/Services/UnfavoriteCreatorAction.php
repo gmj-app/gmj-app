@@ -33,14 +33,6 @@ class UnfavoriteCreatorAction
                 ];
             }
 
-            $activeVotesQuery = $lockedUser->userPicks()
-                ->where('creator_id', $creator->id)
-                ->whereHas('recommendation', fn ($query) => $query
-                    ->whereIn('status', Recommendation::unfavoriteRemovableStatuses()));
-
-            $removedUpvotes = (int) $activeVotesQuery->sum('vote_count');
-            $activeVotesQuery->delete();
-
             $removedRecommendations = Recommendation::query()
                 ->where('creator_id', $creator->id)
                 ->where('submitted_by', $lockedUser->id)
@@ -52,7 +44,7 @@ class UnfavoriteCreatorAction
             $favorite->delete();
 
             return [
-                'removed_upvotes' => $removedUpvotes,
+                'removed_upvotes' => 0,
                 'removed_recommendations' => $removedRecommendations,
             ];
         });

@@ -30,7 +30,7 @@ class CreatorRequestController extends Controller
     {
         $filters = $request->validate(['q' => ['nullable', 'string', 'max:255'], 'status' => ['nullable', Rule::in([...Recommendation::STATUSES, 'soft_deleted', 'spam'])], 'type' => ['nullable', Rule::in(['video', 'playlist', 'topic', 'link'])], 'sort' => ['nullable', Rule::in(['newest', 'oldest', 'most_votes', 'least_votes', 'updated', 'status', 'published'])]]);
         $query = $creator->recommendations()->with(['submittedBy:id,name,public_display_name,email', 'creatorTags:id,creator_id,name,slug'])
-            ->withSum('allUserPicks as total_vote_quantity', 'vote_count')->withCount('allUserPicks as voter_count');
+            ->withEffectiveVoteTotal('support_total')->withCount('historicalUserPicks as supporter_count');
         if (in_array(($filters['status'] ?? ''), ['soft_deleted', 'spam'], true)) {
             $query->onlyTrashed();
         } else {
@@ -46,7 +46,7 @@ class CreatorRequestController extends Controller
             ->when(($filters['status'] ?? '') === 'spam', fn ($q) => $q->where('moderation_status', 'removed'))
             ->when($filters['type'] ?? null, fn ($q, $type) => $q->where(fn ($q) => $q->where('media_type', $type)->orWhere('recommendation_type', $type)));
         match ($filters['sort'] ?? 'newest') {
-            'oldest' => $query->oldest(), 'most_votes' => $query->orderByDesc('total_vote_quantity'), 'least_votes' => $query->orderBy('total_vote_quantity'), 'updated' => $query->latest('updated_at'), 'status' => $query->orderBy('status'), 'published' => $query->latest('published_at'), default => $query->latest()
+            'oldest' => $query->oldest(), 'most_votes' => $query->orderByDesc('support_total'), 'least_votes' => $query->orderBy('support_total'), 'updated' => $query->latest('updated_at'), 'status' => $query->orderBy('status'), 'published' => $query->latest('published_at'), default => $query->latest()
         };
 
         return view('super-admin.creators.requests.index', ['creator' => $creator, 'requests' => $query->paginate(25)->withQueryString(), 'filters' => $filters]);
@@ -91,15 +91,15 @@ class CreatorRequestController extends Controller
         $item = $this->owned($creator, $recommendation);
         $result = $this->transitions->transition($item, $request->validated('status'), $request->user(), $request->validated(), 'super_admin');
         $action = $request->validated('status') === 'published' ? 'request.published' : 'request.status_changed';
-        $this->audit->record($request->user(), $item, $action, 'Request status changed on behalf of the creator.', $result['before'], $result['after'], ['creator_id' => $creator->id, 'reason' => $request->validated('reason'), 'released_votes' => $result['released_votes'], 'affected_guides' => $result['affected_guides']], $request);
+        $this->audit->record($request->user(), $item, $action, 'Request status changed on behalf of the creator.', $result['before'], $result['after'], ['creator_id' => $creator->id, 'reason' => $request->validated('reason'), 'closed_supports' => $result['closed_supports'], 'affected_guides' => $result['affected_guides']], $request);
 
-        return back()->with('success', 'Request status updated. '.$result['released_votes'].' active votes released.');
+        return back()->with('success', 'Request status updated. Supporter history was preserved.');
     }
 
     public function destroy(SuperAdminRemoveRecommendationRequest $request, Creator $creator, int $recommendation): RedirectResponse
     {
         $item = $this->owned($creator, $recommendation);
-        $votes = (int) $item->userPicks()->sum('vote_count');
+        $votes = (int) $item->userPicks()->count();
         $guides = $item->userPicks()->distinct('user_id')->count('user_id');
         DB::transaction(function () use ($item, $request): void {
             $now = now();
@@ -109,7 +109,7 @@ class CreatorRequestController extends Controller
         });
         $this->audit->record($request->user(), $item, 'request.soft_deleted', 'Request removed as spam or abuse.', [], ['moderation_reason' => $request->validated('moderation_reason'), 'deleted_at' => $item->deleted_at], ['creator_id' => $creator->id, 'released_votes' => $votes, 'affected_guides' => $guides], $request);
 
-        return redirect()->route('super-admin.creators.requests.index', $creator)->with('success', 'Request removed. Active votes and request capacity were released.');
+        return redirect()->route('super-admin.creators.requests.index', $creator)->with('success', 'Request removed. Invalid support was retained for audit and excluded from totals.');
     }
 
     public function restore(SuperAdminRestoreRecommendationRequest $request, Creator $creator, int $recommendation): RedirectResponse
@@ -122,7 +122,7 @@ class CreatorRequestController extends Controller
         });
         $this->audit->record($request->user(), $item, 'request.restored', 'Request restored without reactivating released resources.', ['deleted_at' => $item->deleted_at], ['status' => $item->status, 'deleted_at' => null], ['creator_id' => $creator->id], $request);
 
-        return redirect()->route('super-admin.creators.requests.edit', [$creator, $item])->with('success', 'Request restored. Previous votes and request capacity remain released.');
+        return redirect()->route('super-admin.creators.requests.edit', [$creator, $item])->with('success', 'Request restored. Previously invalidated support was not reactivated.');
     }
 
     public function clearPresentation(Request $request, Creator $creator, int $recommendation, RequestPresentationService $service): RedirectResponse

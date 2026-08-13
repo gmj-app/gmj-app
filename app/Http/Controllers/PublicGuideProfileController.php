@@ -30,7 +30,7 @@ class PublicGuideProfileController extends Controller
         $stats = [
             'suggestions' => $publicMetrics['requests_count'],
             'published' => $publicMetrics['published_requests_count'],
-            'votes_cast' => $publicMetrics['votes_cast_count'],
+            'requests_supported' => $publicMetrics['requests_supported_count'],
             'creators_supported' => $publicMetrics['creators_supported_count'],
         ];
         $activeSupportCount = $publicMetrics['active_requests_supported_count'];

@@ -143,12 +143,14 @@ class PublicGuideProfileTest extends TestCase
             'creator_id' => $creator->id,
             'recommendation_id' => $finishedSupport->id,
             'vote_count' => 3,
+            'released_at' => now(),
+            'release_reason' => 'request_passed',
         ]);
         UserPick::factory()->create([
             'user_id' => $guide->id,
             'creator_id' => $creator->id,
             'recommendation_id' => $activeSupport->id,
-            'vote_count' => 2,
+            'vote_count' => 1,
         ]);
 
         $response = $this->get(route('guides.show', ['handle' => $guide->public_handle]));
@@ -163,7 +165,7 @@ class PublicGuideProfileTest extends TestCase
             ->assertSee('Public active suggestion')
             ->assertSee('Approved')
             ->assertSee('Finished supported recommendation')
-            ->assertSee('3 votes contributed')
+            ->assertSee('Supported')
             ->assertSee('Currently supporting 1 active request')
             ->assertSee(route('creators.published', $creator).'#recommendation-'.$published->id, false)
             ->assertSee(route('creator.queue', $creator).'#recommendation-'.$activeSuggestion->id, false)
@@ -176,7 +178,7 @@ class PublicGuideProfileTest extends TestCase
             ->assertDontSee('votes remaining')
             ->assertDontSee('membership_tier');
 
-        $this->assertMatchesRegularExpression('/>5<.*votes cast/s', $response->getContent());
+        $this->assertMatchesRegularExpression('/>2<.*requests supported/s', $response->getContent());
         $this->assertMatchesRegularExpression('/>1<.*creators supported/s', $response->getContent());
     }
 
@@ -194,7 +196,7 @@ class PublicGuideProfileTest extends TestCase
         $published = Recommendation::factory()->create(['creator_id' => $secondCreator->id, 'status' => 'published']);
         $invalid = Recommendation::factory()->create(['creator_id' => $secondCreator->id, 'status' => 'passed']);
 
-        foreach ([[$activeA, 2, null], [$activeB, 1, null], [$published, 4, 'request_published'], [$invalid, 9, 'request_removed']] as [$request, $quantity, $reason]) {
+        foreach ([[$activeA, 1, null], [$activeB, 1, null], [$published, 4, 'request_published'], [$invalid, 9, 'request_removed']] as [$request, $quantity, $reason]) {
             UserPick::factory()->create([
                 'user_id' => $guide->id,
                 'creator_id' => $request->creator_id,
@@ -206,23 +208,23 @@ class PublicGuideProfileTest extends TestCase
         }
 
         $metrics = app(PublicGuideMetricsService::class)->forGuide($guide);
-        $this->assertSame(7, $metrics['votes_cast_count']);
+        $this->assertSame(3, $metrics['votes_cast_count']);
         $this->assertSame(2, $metrics['creators_supported_count']);
         $this->assertSame(2, $metrics['active_requests_supported_count']);
-        $this->assertSame(3, $metrics['active_vote_quantity']);
-        $this->assertSame(4, $metrics['historical_vote_quantity']);
+        $this->assertSame(2, $metrics['active_vote_quantity']);
+        $this->assertSame(1, $metrics['historical_vote_quantity']);
 
         $this->get(route('guides.show', ['handle' => $guide->public_handle]))
             ->assertOk()
             ->assertSee('Currently supporting 2 active requests')
-            ->assertSee('Active selections and allocations are private.')
+            ->assertSee('Active selections are private.')
             ->assertDontSee('Private Active Alpha')
             ->assertDontSee('Private Active Beta')
             ->assertDontSee('2 votes contributed')
             ->assertDontSee('1 vote contributed');
 
         $this->artisan('guides:audit-public-metrics --handle=@aggregate-guide -v')
-            ->expectsOutputToContain('Historical/lifetime vote quantity: 4 / 7')
+            ->expectsOutputToContain('Historical/lifetime requests supported: 1 / 3')
             ->expectsOutputToContain('Mismatch: none')
             ->assertSuccessful();
     }

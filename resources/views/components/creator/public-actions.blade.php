@@ -22,9 +22,6 @@
                 method="POST"
                 action="{{ route('creator.favorite', $creator) }}"
                 class="w-full sm:w-auto"
-                @if ($actions['favorite_state'] && $header['guide_activity']['votes_used'] > 0)
-                    x-on:submit="if ($el.dataset.participationConfirmed === '1') return; $event.preventDefault(); $dispatch('request-participation-confirmation', { formId: $el.id, mode: 'confirm', title: 'Remove favorite?', body: @js('Unfavoriting removes your active votes from this creator. Requests with no other votes may be removed.'), resourceLine: @js('Active votes on this creator: '.$header['guide_activity']['votes_used']), confirmLabel: 'Remove favorite and active votes', destructive: true });"
-                @endif
             >
                 @csrf
                 <x-creator.header-action-button

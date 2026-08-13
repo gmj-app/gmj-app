@@ -22,19 +22,19 @@
                 ],
                 [
                     'What are resources?',
-                    'Resources are the limits that help keep participation meaningful. Your resources include how many creators you can favorite, how many requests you can submit, and how many active votes you can use for each creator.',
+                    'Request creation is limited to keep the board meaningful: Free Guides can submit up to 3 Requests per creator. Voting does not use a resource balance.',
                 ],
                 [
-                    'Why do I have a limited number of votes?',
-                    'Limited votes make each choice more meaningful. Instead of every idea getting a casual like, Guides choose the requests they care about most.',
+                    'How many Requests can I vote for?',
+                    'You can vote once on any active Request and support as many different Requests as you like. Click your selected vote again to remove it.',
                 ],
                 [
-                    'Why do I need to favorite a creator before suggesting or upvoting?',
-                    'Favoriting a creator means you want to participate in that creator\'s journey. Once you favorite a creator, you can use your request and vote resources on that creator\'s page.',
+                    'Why do I need to favorite a creator before suggesting?',
+                    'Favoriting a creator means you want to participate in that creator\'s journey. Voting is independent and does not require a favorite slot.',
                 ],
                 [
                     'What happens if I unfavorite a creator?',
-                    'If you unfavorite a creator, your active votes on that creator\'s requests are removed. This frees that creator slot so you can favorite someone else.',
+                    'Unfavoriting frees that creator slot. Your votes remain because supporting a Request is independent from following a creator.',
                 ],
                 [
                     'Do votes guarantee a creator will make something?',
@@ -52,11 +52,11 @@
                 ],
                 [
                     'Can I vote for my own request?',
-                    'Yes. If you suggest something you care about, you can also use one of your votes on it.',
+                    'Yes. If you suggest something you care about, you can also vote for it once.',
                 ],
                 [
                     'What happens when a creator marks a request as Scheduled, Published, Passed, Hidden, or Already Seen?',
-                    'When a request is no longer actively being considered, its votes stop counting against active limits. This lets Guides use those votes on other active requests while preserving historical support.',
+                    'Voting closes and supporter history is preserved. There is no vote balance to return or replenish.',
                 ],
                 [
                     'What does Already Seen mean?',

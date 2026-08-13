@@ -20,11 +20,12 @@ class FaqPageTest extends TestCase
             ->assertSee('Reaction channels are one use case, but the platform is built for creators broadly.')
             ->assertSee('For Fans and Guides')
             ->assertSee('A Guide is a fan who helps shape a creator')
-            ->assertSee('Resources are the limits that help keep participation meaningful.')
-            ->assertSee('If you unfavorite a creator, your active votes')
+            ->assertSee('Free Guides can submit up to 3 Requests per creator.')
+            ->assertSee('support as many different Requests as you like')
+            ->assertSee('Your votes remain because supporting a Request is independent')
             ->assertSee('Requests and Voting')
-            ->assertSee('Yes. If you suggest something you care about, you can also use one of your votes on it.')
-            ->assertSee('its votes stop counting against active limits.')
+            ->assertSee('you can also vote for it once.')
+            ->assertSee('There is no vote balance to return or replenish.')
             ->assertSee('Already Seen means the creator has already seen')
             ->assertSee('For Creators')
             ->assertSee('Review mode keeps new requests private until approved.')
@@ -37,7 +38,9 @@ class FaqPageTest extends TestCase
             ->assertSee('The core product is free first.')
             ->assertDontSee('claim or create a page')
             ->assertDontSee('picks')
-            ->assertDontSee('fans decide what creators make');
+            ->assertDontSee('fans decide what creators make')
+            ->assertDontSee('limited number of votes')
+            ->assertDontSee('votes stop counting against active limits');
     }
 
     public function test_faq_remains_available_to_authenticated_users(): void

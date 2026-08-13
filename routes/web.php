@@ -160,9 +160,14 @@ Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(functio
         ->name('recommendations.youtube-metadata');
     Route::post('/{creator:slug}/favorite', [RecommendationController::class, 'toggleFavorite'])
         ->name('creator.favorite');
-    Route::post('/{creator:slug}/recommendations/{recommendation}/vote', [RecommendationController::class, 'toggleVote'])
+    Route::post('/{creator:slug}/recommendations/{recommendation}/vote', [RecommendationController::class, 'storeVote'])
         ->scopeBindings()
+        ->middleware('throttle:30,1')
         ->name('recommendations.vote');
+    Route::delete('/{creator:slug}/recommendations/{recommendation}/vote', [RecommendationController::class, 'destroyVote'])
+        ->scopeBindings()
+        ->middleware('throttle:30,1')
+        ->name('recommendations.vote.destroy');
     Route::post('/{creator:slug}/recommendations/{recommendation}/withdraw', [RecommendationController::class, 'withdraw'])
         ->scopeBindings()
         ->name('recommendations.withdraw');

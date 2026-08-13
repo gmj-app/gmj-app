@@ -606,7 +606,4 @@
         </div>
     </section>
 
-    @if (auth()->check() && $isFavorited && $usage['votes_used'] > 0)
-        <x-participation-confirmation-modal />
-    @endif
 </x-public-layout>

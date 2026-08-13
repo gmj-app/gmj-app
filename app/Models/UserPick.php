@@ -54,8 +54,8 @@ class UserPick extends Model
     }
 
     /**
-     * Released capacity is still valid history unless moderation explicitly
-     * invalidated the allocation.
+     * Released support is still valid history unless moderation explicitly
+     * invalidated the relationship.
      *
      * @param  Builder<UserPick>  $query
      */

@@ -82,7 +82,7 @@ class ReconcileUnavailableCreatorResources extends Command
         $this->table(['Metric', 'Count'], [
             ['Guides scanned', $totals['scanned']], ['Unavailable creators found', $unavailable->count()],
             ['Missing/orphaned creator IDs', count($totals['missing'])], ['Favorites requiring release', $totals['favorites']],
-            ['Suggestions requiring release', $totals['suggestions']], ['Active vote allocations requiring release', $totals['votes']],
+            ['Suggestions requiring release', $totals['suggestions']], ['Active support relationships requiring closure', $totals['votes']],
             ['Active vote quantity requiring release', $totals['vote_quantity']], ['Votes already released/resolved', $totals['votes_already_released']],
             ['Guides affected', $totals['affected']], ['Guides requiring no changes', $totals['clean']],
         ]);
@@ -127,7 +127,7 @@ class ReconcileUnavailableCreatorResources extends Command
         $this->line("Suggestions: {$suggestionBefore} used -> ".($suggestionBefore - $audit['suggestions']->count()).' used');
         $this->line("Active votes: {$votesBefore} used -> ".($votesBefore - $audit['votes']->sum('vote_count')).' used');
         $this->line("Changes required: favorites {$audit['favorites']->count()}, suggestions {$audit['suggestions']->count()}, votes {$audit['votes']->count()}");
-        $this->line('Vote allocations already correct: '.$audit['votes_already_released']->count());
+        $this->line('Support relationships already inactive: '.$audit['votes_already_released']->count());
         $this->line('Unavailable creators: '.($creatorIds->implode(', ') ?: 'none'));
         $this->line('Rows: favorites ['.$audit['favorites']->pluck('id')->implode(', ').']; suggestions ['.$audit['suggestions']->pluck('id')->implode(', ').']; votes ['.$audit['votes']->pluck('id')->implode(', ').']');
     }

@@ -232,6 +232,6 @@ class CreatorController extends Controller
         $model->restore();
         $this->audit->record($request->user(), $model, 'creator.restored', 'Creator restored. Previously released Guide resources were not restored.', [], ['deleted_at' => null], [], $request);
 
-        return back()->with('success', 'Creator restored. Previous Guide allocations remain released.');
+        return back()->with('success', 'Creator restored. Previous inactive support remains historical.');
     }
 }

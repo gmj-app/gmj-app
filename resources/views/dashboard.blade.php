@@ -22,9 +22,9 @@
                         </dd>
                         <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Favorite creators used</dt>
                     </div>
-                    <div aria-label="{{ $resources['votes_per_creator'] }} votes available per creator" class="min-w-0 px-3 py-3 text-center sm:px-4">
-                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['votes_per_creator'] }}</dd>
-                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Votes per creator</dt>
+                    <div aria-label="{{ $resources['requests_supported'] }} active requests supported" class="min-w-0 px-3 py-3 text-center sm:px-4">
+                        <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['requests_supported'] }}</dd>
+                        <dt class="mt-1.5 text-xs font-medium leading-4 text-slate-500 dark:text-slate-400">Requests supported</dt>
                     </div>
                     <div aria-label="{{ $resources['requests_per_creator'] }} requests available per creator" class="min-w-0 px-3 py-3 text-center sm:px-4">
                         <dd class="text-xl font-semibold leading-none text-slate-950 dark:text-white">{{ $resources['requests_per_creator'] }}</dd>
@@ -89,7 +89,7 @@
                                 <span aria-hidden="true">&middot;</span>
                                 {{ $activitySummary['published_count'] }} published
                             </span>
-                            <span class="mt-2 block text-sm leading-6 text-slate-400">See where your votes are allocated and track what happened to your requests.</span>
+                            <span class="mt-2 block text-sm leading-6 text-slate-400">See what you support and track what happened to your requests.</span>
                         @else
                             <span class="mt-1 block text-sm font-semibold text-slate-200">No activity yet</span>
                             <span class="mt-2 block text-sm leading-6 text-slate-400">Favorite a creator, submit a request, or cast a vote to start building your activity history.</span>
@@ -224,7 +224,7 @@
                             'Favorite creators you follow',
                             'Submit requests',
                             'Vote for active ideas',
-                            'Track your resources',
+                            'Support as many requests as you like',
                         ] as $benefit)
                             <li class="flex gap-3">
                                 <svg class="mt-0.5 size-5 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

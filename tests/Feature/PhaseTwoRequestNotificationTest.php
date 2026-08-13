@@ -33,8 +33,8 @@ class PhaseTwoRequestNotificationTest extends TestCase
             'published_title' => 'Published reaction title',
             'status' => 'approved',
         ]);
-        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'user_id' => $submitter->id, 'vote_count' => 2]);
-        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'user_id' => $supporter->id, 'vote_count' => 5]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'user_id' => $submitter->id, 'vote_count' => 1]);
+        UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'user_id' => $supporter->id, 'vote_count' => 1]);
         UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'user_id' => $releasedSupporter->id, 'vote_count' => 3, 'released_at' => now(), 'release_reason' => 'creator_unavailable']);
         UserPick::factory()->create(['creator_id' => $creator->id, 'recommendation_id' => $request->id, 'user_id' => $deletedSupporter->id, 'vote_count' => 1]);
         $deletedSupporter->delete();

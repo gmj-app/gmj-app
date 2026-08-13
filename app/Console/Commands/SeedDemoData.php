@@ -356,11 +356,6 @@ class SeedDemoData extends Command
                     continue;
                 }
 
-                $voteLimit = $voter->membershipLimits()['votes_per_reactor'];
-                if ($usageByUser[$voter->id] >= $voteLimit) {
-                    continue;
-                }
-
                 $pick = UserPick::query()->updateOrCreate(
                     [
                         'user_id' => $voter->id,

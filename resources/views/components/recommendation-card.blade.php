@@ -17,12 +17,7 @@
         ? $recommendation->alternatives
         : collect();
     $totalVotes = $recommendation->totalVotes();
-    $currentUserVotes = auth()->check()
-        ? $recommendation->activeVoteQuantityFor(auth()->user())
-        : 0;
-    $voteLimit = (int) ($usage['votes_limit'] ?? auth()->user()?->membershipLimits()['votes_per_reactor'] ?? 0);
-    $votesRemaining = (int) ($usage['votes_remaining'] ?? 0);
-    $canAddVote = ! auth()->check() || $votesRemaining > 0;
+    $hasVoted = auth()->check() && $recommendation->votedBy(auth()->user());
     $canWithdraw = $recommendation->canBeWithdrawnBy(auth()->user());
 @endphp
 
@@ -312,79 +307,56 @@
 
         <div class="mt-5 flex items-center justify-end">
             @if ($showVotingControls && $recommendation->isVotable())
-                <div class="inline-flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:w-auto sm:flex-row sm:items-center sm:gap-5">
-                    <div class="flex min-h-11 items-center justify-center leading-none sm:justify-start">
-                        <p aria-hidden="true" class="text-3xl font-extrabold leading-none text-slate-950 dark:text-white">{{ $totalVotes }}</p>
-                        <span class="sr-only">{{ $totalVotes }} total {{ Str::plural('vote', $totalVotes) }}</span>
-                    </div>
-
+                <div class="inline-flex w-full items-center justify-end sm:w-auto">
                     @auth
-                        <div data-vote-controls class="grid w-full max-w-xs grid-cols-[2.75rem_minmax(4.5rem,auto)_2.75rem] items-center justify-center gap-2 sm:flex sm:w-auto sm:max-w-none sm:justify-end">
+                        @if ($hasVoted)
                             <form
                                 method="POST"
-                                action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
-                                class="shrink-0"
+                                action="{{ route('recommendations.vote.destroy', [$creator, $recommendation]) }}"
                             >
                                 @csrf
-                                <input type="hidden" name="vote_action" value="remove">
+                                @method('DELETE')
                                 <button
                                     type="submit"
-                                    @disabled($currentUserVotes === 0)
                                     aria-label="Remove vote from this request"
-                                    class="inline-flex size-11 items-center justify-center rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-offset-slate-950 {{ $currentUserVotes > 0 ? 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300' : 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600' }}"
+                                    aria-pressed="true"
+                                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-500 bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-indigo-400 dark:bg-indigo-500 dark:focus-visible:ring-offset-slate-950"
                                 >
-                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
-                                        <path stroke-linecap="round" d="M6 12h12" />
-                                    </svg>
+                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
+                                    <span>You voted</span>
+                                    <span aria-hidden="true">&middot;</span>
+                                    <span>{{ $totalVotes }}</span>
                                 </button>
                             </form>
-
-                            <div data-current-user-votes="{{ $currentUserVotes }}" class="min-w-0 rounded-xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sm:min-w-14">
-                                <p class="whitespace-nowrap text-sm font-extrabold leading-none text-slate-950 dark:text-white">{{ $currentUserVotes }}/{{ $voteLimit }}</p>
-                                <p class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">yours</p>
-                            </div>
-
+                        @else
                             <form
                                 id="recommendation-vote-{{ $recommendation->id }}"
                                 method="POST"
                                 action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
-                                class="shrink-0"
                             >
                                 @csrf
-                                <input type="hidden" name="vote_action" value="add">
                                 <button
                                     type="submit"
-                                    @disabled(! $canAddVote)
                                     aria-label="Add vote to this request"
-                                    class="inline-flex size-11 items-center justify-center rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:focus-visible:ring-offset-slate-950 {{ $canAddVote ? 'border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 dark:border-indigo-400 dark:bg-indigo-500' : 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600' }}"
+                                    aria-pressed="false"
+                                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300"
                                 >
-                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
-                                        <path stroke-linecap="round" d="M12 6v12M6 12h12" />
-                                    </svg>
+                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 10v10H4V10h3Zm0 10h10.2a2 2 0 0 0 1.94-1.52l1.5-6A2 2 0 0 0 18.7 10H14l.7-3.5A2.08 2.08 0 0 0 12.66 4L7 10Z" /></svg>
+                                    <span>Vote</span>
+                                    <span aria-hidden="true">&middot;</span>
+                                    <span>{{ $totalVotes }}</span>
                                 </button>
                             </form>
-                        </div>
+                        @endif
                     @else
-                        <div data-vote-controls class="grid w-full max-w-xs grid-cols-[2.75rem_minmax(4.5rem,auto)_2.75rem] items-center justify-center gap-2 sm:flex sm:w-auto sm:max-w-none sm:justify-end">
-                            <span class="inline-flex size-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 opacity-45 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600" aria-hidden="true">
-                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25">
-                                    <path stroke-linecap="round" d="M6 12h12" />
-                                </svg>
-                            </span>
-                            <div class="min-w-0 rounded-xl bg-white px-3 py-2 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sm:min-w-14">
-                                <p class="whitespace-nowrap text-sm font-extrabold leading-none text-slate-950 dark:text-white">0/{{ $voteLimit ?: 3 }}</p>
-                                <p class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">yours</p>
-                            </div>
-                            <a
-                                href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id]) }}"
-                                aria-label="Add vote to this request"
-                                class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-indigo-400 dark:bg-indigo-500 dark:focus-visible:ring-offset-slate-950"
-                            >
-                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
-                                    <path stroke-linecap="round" d="M12 6v12M6 12h12" />
-                                </svg>
-                            </a>
-                        </div>
+                        <a
+                            href="{{ route('login.required', ['return' => route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id]) }}"
+                            aria-label="Add vote to this request"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                        >
+                            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 10v10H4V10h3Zm0 10h10.2a2 2 0 0 0 1.94-1.52l1.5-6A2 2 0 0 0 18.7 10H14l.7-3.5A2.08 2.08 0 0 0 12.66 4L7 10Z" /></svg>
+                            <span>Vote</span><span aria-hidden="true">&middot;</span><span>{{ $totalVotes }}</span>
+                        </a>
                     @endauth
                 </div>
             @elseif ($showVotingControls && $recommendation->isVotingClosed())
@@ -443,7 +415,7 @@
                         <div>
                             <h3 id="withdraw-title-{{ $recommendation->id }}" class="text-lg font-extrabold text-slate-950 dark:text-white">Withdraw this request?</h3>
                             <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                This removes it from the active list and returns any active votes placed on it.
+                                This removes it from the active list. Existing supporter history is preserved.
                             </p>
                         </div>
                         <button type="button" x-on:click="withdrawOpen = false" class="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200" aria-label="Cancel withdrawal">

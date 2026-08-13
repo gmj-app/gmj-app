@@ -35,18 +35,18 @@ class AuditPublicGuideMetrics extends Command
             $inspected++;
             $values = $metrics->forGuide($guide);
             $issues = collect([
-                $values['active_requests_supported_count'] > 0 && $values['votes_cast_count'] === 0 ? 'active-requests-with-zero-lifetime-votes' : null,
+                $values['active_requests_supported_count'] > 0 && $values['requests_supported_count'] === 0 ? 'active-requests-with-zero-lifetime-support' : null,
                 $values['active_requests_supported_count'] > 0 && $values['creators_supported_count'] === 0 ? 'active-requests-with-zero-creators' : null,
                 $values['published_requests_count'] > $values['requests_count'] ? 'published-exceeds-requests' : null,
-                $values['votes_cast_count'] !== $values['active_vote_quantity'] + $values['historical_vote_quantity'] ? 'lifetime-quantity-does-not-reconcile' : null,
+                $values['requests_supported_count'] !== $values['active_requests_supported_count'] + $values['historical_vote_quantity'] ? 'lifetime-support-does-not-reconcile' : null,
             ])->filter()->values();
             $mismatches += $issues->isNotEmpty() ? 1 : 0;
 
             $this->newLine();
             $this->line("Guide #{$guide->id} @".($guide->public_handle ?: 'none'));
             $this->line("Submitted/published requests: {$values['requests_count']} / {$values['published_requests_count']}");
-            $this->line("Active quantity/requests/creators: {$values['active_vote_quantity']} / {$values['active_requests_supported_count']} / {$values['active_creators_supported_count']}");
-            $this->line("Historical/lifetime vote quantity: {$values['historical_vote_quantity']} / {$values['votes_cast_count']}");
+            $this->line("Active requests/creators supported: {$values['active_requests_supported_count']} / {$values['active_creators_supported_count']}");
+            $this->line("Historical/lifetime requests supported: {$values['historical_vote_quantity']} / {$values['requests_supported_count']}");
             $this->line("Lifetime requests/creators supported: {$values['requests_supported_count']} / {$values['creators_supported_count']}");
             $this->line('Public metric cache: not configured; values are authoritative queries');
             $this->line('Mismatch: '.($issues->isEmpty() ? 'none' : $issues->implode(', ')));

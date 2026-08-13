@@ -19,7 +19,7 @@ class RecommendationStatusTransitionService
         private readonly RequestCacheInvalidator $cache,
     ) {}
 
-    /** @return array{recommendation:Recommendation,released_votes:int,affected_guides:int,supporter_user_ids:array<int,int>,before:array,after:array} */
+    /** @return array{recommendation:Recommendation,closed_supports:int,affected_guides:int,supporter_user_ids:array<int,int>,before:array,after:array} */
     public function transition(Recommendation $recommendation, string $newStatus, User $actor, array $metadata = [], string $actorContext = 'creator'): array
     {
         if (! in_array($newStatus, Recommendation::STATUSES, true)) {
@@ -38,7 +38,7 @@ class RecommendationStatusTransitionService
             $locked = Recommendation::withTrashed()->lockForUpdate()->findOrFail($recommendation->id);
             $before = $locked->only(['status', 'scheduled_for', 'published_at', 'resolved_at', 'published_reaction_url', 'moderation_reason', 'moderation_note', 'public_resolution_note', 'private_resolution_reason', 'prior_coverage_url', 'prior_coverage_title']);
             $closesVoting = $locked->shouldClearUpvotesWhenStatusIs($newStatus);
-            $releasedVotes = $closesVoting ? (int) $locked->userPicks()->sum('vote_count') : 0;
+            $closedSupports = $closesVoting ? (int) $locked->userPicks()->count() : 0;
             $affectedGuides = $closesVoting ? $locked->userPicks()->distinct()->count('user_id') : 0;
             $supporterUserIds = $closesVoting ? $locked->userPicks()->distinct()->pluck('user_id')->map(fn ($id) => (int) $id)->all() : [];
             $attributes = [
@@ -54,7 +54,7 @@ class RecommendationStatusTransitionService
             if ($closesVoting && $locked->voting_closed_at === null) {
                 $attributes += [
                     'voting_closed_at' => now(),
-                    'vote_total_at_close' => $releasedVotes,
+                    'vote_total_at_close' => $closedSupports,
                     'supporter_count_at_close' => $affectedGuides,
                 ];
             }
@@ -84,7 +84,7 @@ class RecommendationStatusTransitionService
                 ]);
             }
 
-            return ['recommendation' => $locked->fresh(), 'released_votes' => $releasedVotes, 'affected_guides' => $affectedGuides, 'supporter_user_ids' => $supporterUserIds, 'before' => $before, 'after' => $locked->fresh()->only(array_keys($before))];
+            return ['recommendation' => $locked->fresh(), 'closed_supports' => $closedSupports, 'affected_guides' => $affectedGuides, 'supporter_user_ids' => $supporterUserIds, 'before' => $before, 'after' => $locked->fresh()->only(array_keys($before))];
         });
         $this->cache->forget($result['recommendation']);
         foreach ($result['supporter_user_ids'] as $supporterUserId) {

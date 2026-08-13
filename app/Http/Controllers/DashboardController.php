@@ -26,7 +26,7 @@ class DashboardController extends Controller
         $resources = [
             'creator_favorites_used' => $favoriteCreators->count(),
             'creator_favorites_limit' => $limits['creator_favorites_limit'],
-            'votes_per_creator' => $limits['upvotes_per_creator_limit'],
+            'requests_supported' => $activitySummary['active_vote_count'],
             'requests_per_creator' => $limits['suggestions_per_creator_limit'],
         ];
 

@@ -573,95 +573,69 @@ class RecommendationController extends Controller
         ]);
     }
 
-    public function toggleVote(
+    public function storeVote(
         Request $request,
         Creator $creator,
         Recommendation $recommendation,
     ): RedirectResponse {
-        $validated = $request->validate([
-            'vote_action' => ['nullable', 'in:add,remove'],
+        $request->validate([
+            'quantity' => ['prohibited'],
+            'amount' => ['prohibited'],
+            'votes_to_add' => ['prohibited'],
+            'vote_action' => ['prohibited'],
         ]);
-        $voteAction = $validated['vote_action'] ?? null;
+        $this->ensureVoteable($recommendation);
 
-        abort_unless(
-            $recommendation->isPubliclyVisible(),
-            404,
-        );
-
-        if (! $recommendation->isVotable()) {
-            throw ValidationException::withMessages([
-                'limit' => 'This request is no longer accepting votes.',
-            ]);
-        }
-
-        $removed = DB::transaction(function () use ($creator, $recommendation, $request, $voteAction): bool {
+        $created = DB::transaction(function () use ($creator, $recommendation, $request): bool {
             /** @var User $user */
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
-            $existingPick = $user->userPicks()
-                ->where('recommendation_id', $recommendation->id)
-                ->lockForUpdate()
-                ->first();
-            $voteAction ??= 'add';
-
-            if ($existingPick) {
-                if ($voteAction === 'remove') {
-                    if ($existingPick->vote_count > 1) {
-                        $existingPick->decrement('vote_count');
-
-                        return true;
-                    }
-
-                    $existingPick->delete();
-
-                    return true;
-                }
-
-                if ($user->votesRemainingFor($creator) === 0) {
-                    throw ValidationException::withMessages([
-                        'limit' => "You've used all your votes for this creator. You'll get them back when supported requests are published or closed.",
-                    ]);
-                }
-
-                $existingPick->increment('vote_count');
-
-                return false;
-            }
-
-            if ($voteAction === 'remove') {
-                return true;
-            }
-
-            $this->participation->ensureFavoritedForUpvote($user, $creator);
-
-            if ($user->votesRemainingFor($creator) === 0) {
-                throw ValidationException::withMessages([
-                    'limit' => "You've used all your votes for this creator. You'll get them back when supported requests are published or closed.",
-                ]);
-            }
-
-            $user->userPicks()->firstOrCreate([
+            $pick = $user->userPicks()->firstOrCreate([
                 'recommendation_id' => $recommendation->id,
             ], [
                 'creator_id' => $creator->id,
                 'vote_count' => 1,
             ]);
 
-            return false;
+            return $pick->wasRecentlyCreated;
         });
 
-        if (! $removed) {
+        if ($created) {
             VoteAllocated::dispatch($request->user()->id, $creator->id, $recommendation->id, 1);
         }
         $this->requestCache->forget($recommendation);
         $this->requestCache->forgetGuide($request->user()->id);
 
-        return redirect()
-            ->to(route('creator.queue', $creator)."#recommendation-{$recommendation->id}")
-            ->with('recommendation_action', [
-                'recommendation_id' => $recommendation->id,
-                'message' => $removed ? 'Your vote was removed.' : 'Your vote was added.',
-                'type' => $removed ? 'removed' : 'added',
-            ]);
+        return $this->voteRedirect($creator, $recommendation, $created ? 'Your vote was added.' : 'You already voted.', 'added');
+    }
+
+    public function destroyVote(Request $request, Creator $creator, Recommendation $recommendation): RedirectResponse
+    {
+        $this->ensureVoteable($recommendation);
+
+        $removed = (bool) $request->user()->userPicks()
+            ->where('recommendation_id', $recommendation->id)
+            ->whereNull('released_at')
+            ->delete();
+
+        $this->requestCache->forget($recommendation);
+        $this->requestCache->forgetGuide($request->user()->id);
+
+        return $this->voteRedirect($creator, $recommendation, $removed ? 'Your vote was removed.' : 'Your vote was already removed.', 'removed');
+    }
+
+    private function ensureVoteable(Recommendation $recommendation): void
+    {
+        abort_unless($recommendation->isPubliclyVisible(), 404);
+
+        if (! $recommendation->isVotable()) {
+            throw ValidationException::withMessages(['limit' => 'This request is no longer accepting votes.']);
+        }
+    }
+
+    private function voteRedirect(Creator $creator, Recommendation $recommendation, string $message, string $type): RedirectResponse
+    {
+        return redirect()->to(route('creator.queue', $creator)."#recommendation-{$recommendation->id}")
+            ->with('recommendation_action', compact('message', 'type') + ['recommendation_id' => $recommendation->id]);
     }
 
     public function toggleFavorite(Request $request, Creator $creator): RedirectResponse
@@ -682,12 +656,7 @@ class RecommendationController extends Controller
         if ($creator->creatorFavorites()->where('user_id', $request->user()->id)->whereNull('released_at')->exists()) {
             $result = $this->unfavoriteCreator->handle($request->user(), $creator);
 
-            return back()->with(
-                'success',
-                $result['removed_upvotes'] > 0
-                    ? 'Creator removed from your favorites. Your active votes for this creator were removed.'
-                    : 'Creator removed from your favorites.',
-            );
+            return back()->with('success', 'Creator removed from your favorites. Your votes were preserved.');
         }
 
         return DB::transaction(function () use ($creator, $request): RedirectResponse {
@@ -717,9 +686,6 @@ class RecommendationController extends Controller
             'suggestions_limit' => $limits['suggestions_per_reactor'],
             'suggestions_used' => $user->suggestionsUsedFor($creator),
             'suggestions_remaining' => $user->suggestionsRemainingFor($creator),
-            'votes_limit' => $limits['votes_per_reactor'],
-            'votes_used' => $user->votesUsedFor($creator),
-            'votes_remaining' => $user->votesRemainingFor($creator),
             'can_suggest' => $user->canSuggestTo($creator),
             'is_favorited' => $user->hasFavoritedCreator($creator),
         ];

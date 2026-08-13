@@ -449,16 +449,16 @@ class Recommendation extends Model
         }
 
         if ($this->relationLoaded('userPicks')) {
-            return (int) $this->userPicks->sum('vote_count');
+            return $this->userPicks->count();
         }
 
         if ($this->isVotingClosed()) {
             Log::warning('Voting-closed request is missing its vote snapshot; reconstructing from history.', ['request_id' => $this->id]);
 
-            return (int) $this->historicalUserPicks()->sum('vote_count');
+            return (int) $this->historicalUserPicks()->count();
         }
 
-        return (int) $this->userPicks()->sum('vote_count');
+        return (int) $this->userPicks()->count();
     }
 
     public function currentUserVoteCount(?User $user): int
@@ -477,14 +477,10 @@ class Recommendation extends Model
         }
 
         if ($this->relationLoaded('userPicks')) {
-            return (int) $this->userPicks
-                ->where('user_id', $user->id)
-                ->sum('vote_count');
+            return $this->userPicks->contains('user_id', $user->id) ? 1 : 0;
         }
 
-        return (int) $this->userPicks()
-            ->where('user_id', $user->id)
-            ->sum('vote_count');
+        return $this->userPicks()->where('user_id', $user->id)->exists() ? 1 : 0;
     }
 
     public function votedBy(?User $user): bool
@@ -527,7 +523,7 @@ class Recommendation extends Model
     /** @param Builder<Recommendation> $query */
     public function scopeWithEffectiveVoteTotal(Builder $query, string $alias = 'user_picks_count'): Builder
     {
-        $active = UserPick::query()->selectRaw('COALESCE(SUM(vote_count), 0)')
+        $active = UserPick::query()->selectRaw('COUNT(*)')
             ->whereColumn('recommendation_id', 'recommendations.id')->whereNull('released_at');
         $historical = UserPick::query()->selectRaw('COALESCE(SUM(vote_count), 0)')
             ->whereColumn('recommendation_id', 'recommendations.id')

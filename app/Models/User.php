@@ -343,7 +343,7 @@ class User extends Authenticatable
     }
 
     /**
-     * @return array{label: string, reactors: int, suggestions_per_reactor: int, votes_per_reactor: int}
+     * @return array{label: string, reactors: int, suggestions_per_reactor: int}
      */
     public function membershipLimits(): array
     {
@@ -443,15 +443,7 @@ class User extends Authenticatable
             ->whereHas('recommendation', fn ($query) => $query
                 ->where('creator_id', $creator->id)
                 ->votable())
-            ->sum('vote_count');
-    }
-
-    public function votesRemainingFor(Creator $creator): int
-    {
-        return max(
-            0,
-            $this->membershipLimits()['votes_per_reactor'] - $this->votesUsedFor($creator),
-        );
+            ->count();
     }
 
     public function canSuggestTo(Creator $creator): bool
@@ -475,9 +467,9 @@ class User extends Authenticatable
 
     public function votesAllocatedToRecommendation(Recommendation $recommendation): int
     {
-        return (int) $this->userPicks()
+        return $this->userPicks()
             ->where('recommendation_id', $recommendation->id)
             ->whereNull('released_at')
-            ->sum('vote_count');
+            ->exists() ? 1 : 0;
     }
 }

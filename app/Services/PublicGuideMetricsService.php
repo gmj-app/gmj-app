@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Builder;
 class PublicGuideMetricsService
 {
     /**
-     * Allocation rows are the sole vote source. Active and released rows are
-     * mutually exclusive states of the same row, so snapshots are never added.
+     * Support rows are binary. Active and released rows are mutually exclusive
+     * states of the same relationship, so snapshots are never added.
      *
      * @return array<string, int>
      */
@@ -27,13 +27,13 @@ class PublicGuideMetricsService
             ->implode(',');
         $support = $this->lifetimeSupport($guide)
             ->join('recommendations as metric_recommendations', 'metric_recommendations.id', '=', 'user_picks.recommendation_id')
-            ->selectRaw("COALESCE(SUM(user_picks.vote_count), 0) as votes_cast_count,
+            ->selectRaw("COUNT(DISTINCT user_picks.recommendation_id) as votes_cast_count,
                 COUNT(DISTINCT user_picks.creator_id) as creators_supported_count,
                 COUNT(DISTINCT user_picks.recommendation_id) as requests_supported_count,
                 COUNT(DISTINCT CASE WHEN user_picks.released_at IS NULL AND metric_recommendations.status IN ({$votableStatuses}) THEN user_picks.recommendation_id END) as active_requests_supported_count,
                 COUNT(DISTINCT CASE WHEN user_picks.released_at IS NULL AND metric_recommendations.status IN ({$votableStatuses}) THEN user_picks.creator_id END) as active_creators_supported_count,
-                COALESCE(SUM(CASE WHEN user_picks.released_at IS NULL AND metric_recommendations.status IN ({$votableStatuses}) THEN user_picks.vote_count ELSE 0 END), 0) as active_vote_quantity,
-                COALESCE(SUM(CASE WHEN user_picks.released_at IS NOT NULL THEN user_picks.vote_count ELSE 0 END), 0) as historical_vote_quantity")
+                COUNT(DISTINCT CASE WHEN user_picks.released_at IS NULL AND metric_recommendations.status IN ({$votableStatuses}) THEN user_picks.recommendation_id END) as active_vote_quantity,
+                COUNT(DISTINCT CASE WHEN user_picks.released_at IS NOT NULL THEN user_picks.recommendation_id END) as historical_vote_quantity")
             ->first();
 
         return [

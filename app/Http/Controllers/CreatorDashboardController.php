@@ -29,14 +29,14 @@ class CreatorDashboardController extends Controller
             'pending' => $creator->recommendations()->where('status', 'pending')->count(),
             'votes' => $creator->userPicks()
                 ->whereHas('recommendation', fn ($query) => $query->votable())
-                ->sum('vote_count'),
+                ->count(),
             'followers' => $creator->creatorFavorites()->whereNull('released_at')->count(),
             'published' => $creator->recommendations()->where('status', 'published')->count(),
         ];
 
         $pendingRecommendations = $creator->recommendations()
             ->where('status', 'pending')
-            ->withSum('userPicks as user_picks_count', 'vote_count')
+            ->withCount('userPicks')
             ->latest()
             ->limit(5)
             ->get();
