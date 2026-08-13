@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { creatorRequestAccordion, visibleRequestIdFromHash } from '../../resources/js/creator-request-accordion.js';
 
-test('the server-selected first visible request is the only initial expansion', () => {
-    const accordion = creatorRequestAccordion([41, 42, 43], 41);
+test('all visible requests are collapsed when no explicit initial request exists', () => {
+    const accordion = creatorRequestAccordion([41, 42, 43]);
 
-    assert.equal(accordion.expandedRequestId, 41);
+    assert.equal(accordion.expandedRequestId, null);
 });
 
 test('opening another request replaces the expanded stable request ID', () => {
@@ -35,6 +35,12 @@ test('a user-collapsed first request is not automatically reopened', () => {
     assert.equal(accordion.expandedRequestId, null);
 });
 
+test('an invalid explicit initial request falls back to all collapsed', () => {
+    const accordion = creatorRequestAccordion([41, 42], 99);
+
+    assert.equal(accordion.expandedRequestId, null);
+});
+
 test('a visible deep link takes priority and malformed or hidden IDs do not', () => {
     assert.equal(visibleRequestIdFromHash('#recommendation-42', [41, 42]), 42);
     assert.equal(visibleRequestIdFromHash('#recommendation-99', [41, 42]), null);
@@ -45,6 +51,23 @@ test('a visible deep link takes priority and malformed or hidden IDs do not', ()
     assert.equal(accordion.expandedRequestId, 42);
     assert.equal(accordion.openHashRequest('#recommendation-99'), false);
     assert.equal(accordion.expandedRequestId, 42);
+});
+
+test('a visible hash deep link is the only request opened during initialization', () => {
+    const originalLocation = globalThis.location;
+    globalThis.location = { hash: '#recommendation-42' };
+
+    try {
+        const accordion = creatorRequestAccordion([41, 42, 43]);
+
+        assert.equal(accordion.expandedRequestId, 42);
+    } finally {
+        if (originalLocation === undefined) {
+            delete globalThis.location;
+        } else {
+            globalThis.location = originalLocation;
+        }
+    }
 });
 
 test('an empty result set is safe and cannot expand an unknown request', () => {

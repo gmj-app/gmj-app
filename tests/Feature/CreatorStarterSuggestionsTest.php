@@ -126,9 +126,7 @@ class CreatorStarterSuggestionsTest extends TestCase
 
         $this->actingAs($fan)
             ->post(route('recommendations.vote', [$creator, $youtubeSuggestion]))
-            ->assertRedirect(
-                route('creator.queue', $creator)."#recommendation-{$youtubeSuggestion->id}",
-            );
+            ->assertRedirect(route('creator.queue', $creator));
 
         $this->assertDatabaseHas('user_picks', [
             'user_id' => $fan->id,

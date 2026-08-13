@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 class CreatorRequestPerPageResolver
 {
-    public const DEFAULT = 10;
+    public const DEFAULT = 50;
 
     public const ALLOWED = [10, 25, 50, 100];
 

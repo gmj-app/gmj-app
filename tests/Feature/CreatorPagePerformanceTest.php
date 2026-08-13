@@ -19,7 +19,7 @@ class CreatorPagePerformanceTest extends TestCase
         $creator = Creator::factory()->create(['slug' => 'performance-creator', 'status' => 'active']);
         $supporters = User::factory()->count(10)->create();
 
-        Recommendation::factory()->count(30)->create([
+        Recommendation::factory()->count(60)->create([
             'creator_id' => $creator->id,
             'status' => 'approved',
         ])->each(function (Recommendation $recommendation) use ($creator, $supporters): void {
@@ -53,9 +53,9 @@ class CreatorPagePerformanceTest extends TestCase
         ));
 
         $response->assertOk();
-        $this->assertSame(10, substr_count($html, 'data-creator-request-row'));
+        $this->assertSame(50, substr_count($html, 'data-creator-request-row'));
         $this->assertLessThanOrEqual(20, $queries);
-        $this->assertLessThan(350 * 1024, strlen($html));
+        $this->assertLessThan(600 * 1024, strlen($html));
         $this->assertStringNotContainsString('data-recommendation-expanded-card', $html);
         $this->assertStringContainsString('mqdefault.jpg', $html);
         $this->assertStringNotContainsString('hqdefault.jpg', $html);

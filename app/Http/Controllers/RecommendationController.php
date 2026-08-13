@@ -134,16 +134,7 @@ class RecommendationController extends Controller
         $recommendations = $recommendationsQuery
             ->paginate($perPage)
             ->withQueryString();
-        $initialExpandedRequestId = $recommendations->first()?->id;
-
-        $recommendationAction = session('recommendation_action');
-        $actionRecommendationId = is_array($recommendationAction)
-            ? (int) ($recommendationAction['recommendation_id'] ?? 0)
-            : null;
-
-        if ($actionRecommendationId && $recommendations->getCollection()->contains('id', $actionRecommendationId)) {
-            $initialExpandedRequestId = $actionRecommendationId;
-        }
+        $initialExpandedRequestId = null;
         $tagOptions = $creator->creatorTags()
             ->whereHas('recommendations', fn ($query) => $query
                 ->activePubliclyVisible())
@@ -648,7 +639,7 @@ class RecommendationController extends Controller
 
     private function voteRedirect(Creator $creator, Recommendation $recommendation, string $message, string $type): RedirectResponse
     {
-        return redirect()->to(route('creator.queue', $creator)."#recommendation-{$recommendation->id}")
+        return redirect()->to(route('creator.queue', $creator))
             ->with('recommendation_action', compact('message', 'type') + ['recommendation_id' => $recommendation->id]);
     }
 

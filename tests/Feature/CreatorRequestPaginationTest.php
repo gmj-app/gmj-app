@@ -15,16 +15,18 @@ class CreatorRequestPaginationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_active_requests_default_to_ten_results_per_page(): void
+    public function test_active_requests_default_to_fifty_results_per_page(): void
     {
-        $creator = $this->creatorWithActiveRequests(26);
+        $creator = $this->creatorWithActiveRequests(56);
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertViewHas('recommendations', fn (LengthAwarePaginator $requests) => $requests->perPage() === 10
-                && $requests->count() === 10
-                && $requests->total() === 26)
-            ->assertSee('Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">26</span> results', false);
+            ->assertViewHas('perPage', 50)
+            ->assertViewHas('recommendations', fn (LengthAwarePaginator $requests) => $requests->perPage() === 50
+                && $requests->count() === 50
+                && $requests->total() === 56)
+            ->assertSee('<option value="50" selected', false)
+            ->assertSee('Showing <span class="font-medium">1</span> to <span class="font-medium">50</span> of <span class="font-medium">56</span> results', false);
     }
 
     #[DataProvider('allowedPageSizes')]
@@ -38,7 +40,7 @@ class CreatorRequestPaginationTest extends TestCase
                 && $requests->count() === $perPage
                 && $requests->lastPage() === (int) ceil(120 / $perPage));
 
-        $this->assertSame(2, substr_count($response->getContent(), 'aria-expanded="true"'));
+        $this->assertSame(0, substr_count($response->getContent(), 'aria-expanded="true"'));
     }
 
     /** @return array<string, array{int}> */
@@ -53,14 +55,14 @@ class CreatorRequestPaginationTest extends TestCase
     }
 
     #[DataProvider('invalidPageSizes')]
-    public function test_invalid_page_sizes_fall_back_to_ten_without_reaching_paginate(mixed $invalid): void
+    public function test_invalid_page_sizes_fall_back_to_fifty_without_reaching_paginate(mixed $invalid): void
     {
-        $creator = $this->creatorWithActiveRequests(12);
+        $creator = $this->creatorWithActiveRequests(52);
 
         $this->get(route('creator.queue', ['creator' => $creator, 'per_page' => $invalid]))
             ->assertOk()
-            ->assertViewHas('perPage', 10)
-            ->assertViewHas('recommendations', fn (LengthAwarePaginator $requests) => $requests->perPage() === 10 && $requests->count() === 10);
+            ->assertViewHas('perPage', 50)
+            ->assertViewHas('recommendations', fn (LengthAwarePaginator $requests) => $requests->perPage() === 50 && $requests->count() === 50);
     }
 
     /** @return array<string, array{mixed}> */
@@ -68,9 +70,12 @@ class CreatorRequestPaginationTest extends TestCase
     {
         return [
             'zero' => [0],
-            'negative' => [-10],
-            'over maximum' => [101],
-            'arbitrary string' => ['everything'],
+            'negative' => [-1],
+            'unsupported twenty' => [20],
+            'unsupported seventy five' => [75],
+            'over maximum' => [500],
+            'arbitrary string' => ['foo'],
+            'null-like string' => ['null'],
         ];
     }
 
@@ -100,16 +105,40 @@ class CreatorRequestPaginationTest extends TestCase
         $guide = User::factory()->create();
         $creator = $this->creatorWithActiveRequests(60);
 
-        $this->actingAs($guide)->get(route('creator.queue', ['creator' => $creator, 'per_page' => 50]))->assertOk();
+        $this->actingAs($guide)->get(route('creator.queue', ['creator' => $creator, 'per_page' => 25]))->assertOk();
 
         $this->get(route('creator.queue', ['creator' => $creator, 'per_page' => 'invalid']))
             ->assertOk()
-            ->assertViewHas('perPage', 10)
-            ->assertSessionHas("creator_requests_per_page.users.{$guide->id}", 50);
+            ->assertViewHas('perPage', 50)
+            ->assertSessionHas("creator_requests_per_page.users.{$guide->id}", 25);
 
         $this->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertViewHas('perPage', 50);
+            ->assertViewHas('perPage', 25);
+    }
+
+    #[DataProvider('savedPageSizes')]
+    public function test_each_explicit_authenticated_preference_remains_respected(int $perPage): void
+    {
+        $guide = User::factory()->create();
+        $creator = $this->creatorWithActiveRequests(110);
+
+        $this->actingAs($guide)
+            ->withSession(["creator_requests_per_page.users.{$guide->id}" => $perPage])
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertViewHas('perPage', $perPage)
+            ->assertViewHas('recommendations', fn (LengthAwarePaginator $requests) => $requests->perPage() === $perPage);
+    }
+
+    /** @return array<string, array{int}> */
+    public static function savedPageSizes(): array
+    {
+        return [
+            'explicit ten' => [10],
+            'explicit twenty five' => [25],
+            'explicit one hundred' => [100],
+        ];
     }
 
     public function test_preferences_are_isolated_between_authenticated_guides(): void
@@ -123,7 +152,7 @@ class CreatorRequestPaginationTest extends TestCase
         $this->actingAs($secondGuide)
             ->get(route('creator.queue', $creator))
             ->assertOk()
-            ->assertViewHas('perPage', 10);
+            ->assertViewHas('perPage', 50);
     }
 
     public function test_guest_preference_persists_in_the_session_and_never_requires_login(): void
@@ -138,6 +167,24 @@ class CreatorRequestPaginationTest extends TestCase
         $this->get(route('creator.queue', $secondCreator))
             ->assertOk()
             ->assertViewHas('perPage', 25);
+    }
+
+    public function test_fresh_guest_and_fresh_authenticated_guide_both_default_to_fifty(): void
+    {
+        $creator = $this->creatorWithActiveRequests(55);
+
+        $this->withSession(['creator_requests_per_page.guest' => null])
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertViewHas('perPage', 50);
+
+        $guide = User::factory()->create();
+
+        $this->actingAs($guide)
+            ->withSession([])
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertViewHas('perPage', 50);
     }
 
     public function test_selector_is_accessible_exact_and_drops_stale_page_while_preserving_filters(): void
@@ -220,6 +267,18 @@ class CreatorRequestPaginationTest extends TestCase
 
         $this->assertLessThanOrEqual(2, max($counts) - min($counts), json_encode($counts, JSON_THROW_ON_ERROR));
         $this->assertLessThan(30, max($counts), json_encode($counts, JSON_THROW_ON_ERROR));
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->withSession(['creator_requests_per_page.guest' => null])
+            ->get(route('creator.queue', $creator))
+            ->assertOk()
+            ->assertViewHas('perPage', 50);
+        $defaultCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        fwrite(STDERR, sprintf("\ndefault-50-request-list queries=%d\n", $defaultCount));
+        $this->assertLessThan(30, $defaultCount);
     }
 
     public function test_authenticated_vote_state_query_count_is_bounded_at_ten_and_one_hundred_rows(): void

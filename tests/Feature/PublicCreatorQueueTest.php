@@ -249,7 +249,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->addPicks($creator, $newer, 3);
 
         $this->get(route('creator.queue', $creator))
-            ->assertViewHas('initialExpandedRequestId', $older->id)
+            ->assertViewHas('initialExpandedRequestId', null)
             ->assertSeeInOrder([$older->title, $newer->title]);
 
         $extraVote = UserPick::factory()->create([
@@ -259,13 +259,13 @@ class PublicCreatorQueueTest extends TestCase
         ]);
 
         $this->get(route('creator.queue', $creator))
-            ->assertViewHas('initialExpandedRequestId', $newer->id)
+            ->assertViewHas('initialExpandedRequestId', null)
             ->assertSeeInOrder([$newer->title, $older->title]);
 
         $extraVote->delete();
 
         $this->get(route('creator.queue', $creator))
-            ->assertViewHas('initialExpandedRequestId', $older->id)
+            ->assertViewHas('initialExpandedRequestId', null)
             ->assertSeeInOrder([$older->title, $newer->title]);
     }
 
@@ -303,9 +303,9 @@ class PublicCreatorQueueTest extends TestCase
             'created_at' => $submittedAt,
         ]));
 
-        $firstPage = $this->get(route('creator.queue', $creator))->assertOk();
-        $secondPage = $this->get(route('creator.queue', ['creator' => $creator, 'page' => 2]))->assertOk();
-        $thirdPage = $this->get(route('creator.queue', ['creator' => $creator, 'page' => 3]))->assertOk();
+        $firstPage = $this->get(route('creator.queue', ['creator' => $creator, 'per_page' => 10]))->assertOk();
+        $secondPage = $this->get(route('creator.queue', ['creator' => $creator, 'per_page' => 10, 'page' => 2]))->assertOk();
+        $thirdPage = $this->get(route('creator.queue', ['creator' => $creator, 'per_page' => 10, 'page' => 3]))->assertOk();
 
         $this->assertSame(
             $recommendations->take(10)->pluck('id')->all(),
@@ -319,9 +319,9 @@ class PublicCreatorQueueTest extends TestCase
             $recommendations->skip(20)->pluck('id')->all(),
             $thirdPage->viewData('recommendations')->getCollection()->pluck('id')->all(),
         );
-        $this->assertSame($recommendations->first()->id, $firstPage->viewData('initialExpandedRequestId'));
-        $this->assertSame($recommendations->get(10)->id, $secondPage->viewData('initialExpandedRequestId'));
-        $this->assertSame($recommendations->get(20)->id, $thirdPage->viewData('initialExpandedRequestId'));
+        $this->assertNull($firstPage->viewData('initialExpandedRequestId'));
+        $this->assertNull($secondPage->viewData('initialExpandedRequestId'));
+        $this->assertNull($thirdPage->viewData('initialExpandedRequestId'));
         $secondPage->assertSee('11th')->assertSee('20th')->assertDontSee('21st');
         $thirdPage->assertSee('21st')->assertSee('27th')->assertDontSee('20th');
     }
@@ -378,7 +378,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('x-data="creatorRequestAccordion(', false)
             ->assertSee('x-effect="if (open) loadDetails()"', false);
 
-        $this->assertSame($second->id, $response->viewData('initialExpandedRequestId'));
+        $this->assertNull($response->viewData('initialExpandedRequestId'));
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$first->id.'"'));
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
     }
@@ -433,7 +433,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringNotContainsString('data-collapsed-vote-button', (string) $recordedRow);
         $this->assertStringContainsString('creatorRequestVote({', $html);
         $this->assertStringContainsString('x-bind:aria-expanded="open.toString()"', $html);
-        $this->assertSame($selected->id, $response->viewData('initialExpandedRequestId'));
+        $this->assertNull($response->viewData('initialExpandedRequestId'));
 
         $this->actingAs($guide)
             ->get(route('requests.card-details', $selected), ['X-Requested-With' => 'XMLHttpRequest'])
@@ -447,7 +447,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('x-data="creatorRequestVote(', false);
     }
 
-    public function test_first_visible_request_is_server_rendered_expanded_and_all_others_are_collapsed(): void
+    public function test_all_requests_are_server_rendered_collapsed_by_default(): void
     {
         $creator = Creator::factory()->create(['slug' => 'initial-expanded']);
         $first = Recommendation::factory()->create(['creator_id' => $creator->id, 'status' => 'approved']);
@@ -462,17 +462,17 @@ class PublicCreatorQueueTest extends TestCase
         $firstRow = substr($html, $firstStart, $secondStart - $firstStart);
         $secondRow = substr($html, $secondStart);
 
-        $this->assertSame($first->id, $response->viewData('initialExpandedRequestId'));
-        $this->assertStringContainsString('aria-expanded="true"', $firstRow);
-        $this->assertStringNotContainsString('x-cloak style="display: none;"', $firstRow);
+        $this->assertNull($response->viewData('initialExpandedRequestId'));
+        $this->assertStringContainsString('aria-expanded="false"', $firstRow);
+        $this->assertStringContainsString('x-cloak style="display: none;"', $firstRow);
         $this->assertStringContainsString('aria-expanded="false"', $secondRow);
         $this->assertStringContainsString('x-cloak style="display: none;"', $secondRow);
-        $this->assertSame(2, substr_count($html, 'aria-expanded="true"'));
+        $this->assertSame(0, substr_count($html, 'aria-expanded="true"'));
         $this->assertStringNotContainsString('<iframe', $html);
         $this->assertStringNotContainsString('autoplay', $html);
     }
 
-    public function test_single_empty_and_filtered_result_sets_choose_their_first_visible_request_safely(): void
+    public function test_single_empty_and_filtered_result_sets_remain_collapsed_safely(): void
     {
         $creator = Creator::factory()->create(['slug' => 'result-states']);
         $rock = Recommendation::factory()->create([
@@ -488,8 +488,8 @@ class PublicCreatorQueueTest extends TestCase
 
         $this->get(route('creator.queue', [$creator, 'category' => 'jazz']))
             ->assertOk()
-            ->assertViewHas('initialExpandedRequestId', $jazz->id)
-            ->assertSee('aria-expanded="true"', false)
+            ->assertViewHas('initialExpandedRequestId', null)
+            ->assertDontSee('aria-expanded="true"', false)
             ->assertDontSee('id="recommendation-'.$rock->id.'"', false);
 
         $this->get(route('creator.queue', [$creator, 'category' => 'missing']))
@@ -500,7 +500,7 @@ class PublicCreatorQueueTest extends TestCase
         $rock->delete();
         $this->get(route('creator.queue', [$creator, 'category' => 'jazz']))
             ->assertOk()
-            ->assertViewHas('initialExpandedRequestId', $jazz->id);
+            ->assertViewHas('initialExpandedRequestId', null);
     }
 
     public function test_folded_request_rows_show_only_meaningful_public_status_badges(): void
