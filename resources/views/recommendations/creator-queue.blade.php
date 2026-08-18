@@ -503,7 +503,14 @@
                                     @if($duplicateSource && $duplicateSource->id !== $recommendation->id && $recommendation->isVotable())
                                         <a x-on:click.stop href="{{ route('creator.queue', ['creator'=>$creator] + $duplicateQuery + ['duplicate_source'=>$duplicateSource->id,'duplicate_target'=>$recommendation->id]) }}" aria-label="Select “{{ $requestTitle }}” as possible duplicate" class="inline-flex min-h-11 items-center rounded-xl border border-amber-400 px-2 text-xs font-bold text-amber-800 dark:text-amber-200">Select as duplicate</a>
                                     @elseif(!$duplicateSource && $recommendation->isVotable())
-                                        <a x-on:click.stop href="{{ route('creator.queue', ['creator'=>$creator] + request()->query() + ['duplicate_source'=>$recommendation->id]) }}" aria-label="Report “{{ $requestTitle }}” as a possible duplicate" class="inline-flex size-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100" title="Report possible duplicate">⋮<span class="sr-only">Report possible duplicate</span></a>
+                                        <div x-data="requestOverflowMenu(@js($recommendation->id), @js(route('creator.queue', ['creator'=>$creator] + request()->query() + ['duplicate_source'=>$recommendation->id])))" x-on:keydown.escape.window="close(true)" class="shrink-0">
+                                            <button type="button" x-ref="trigger" x-on:click.stop="toggle()" aria-label="More actions for “{{ $requestTitle }}”" aria-haspopup="menu" aria-controls="request-actions-{{ $recommendation->id }}" x-bind:aria-expanded="open.toString()" class="inline-flex size-11 items-center justify-center rounded-xl text-xl leading-none text-slate-500 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:bg-slate-800">⋮</button>
+                                            <template x-teleport="body">
+                                                <div id="request-actions-{{ $recommendation->id }}" x-ref="menu" x-show="open" x-cloak x-bind:style="`position: fixed; top: ${top}px; left: ${left}px; width: min(15rem, calc(100vw - 1rem));`" class="z-30 rounded-xl border border-slate-700 bg-slate-900 p-1.5 text-slate-100 shadow-xl" role="menu" aria-label="Request actions">
+                                                    <button type="button" x-ref="action" x-on:click.stop="beginDuplicateMode()" role="menuitem" class="flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-left text-sm font-semibold transition hover:bg-slate-800 focus:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Report possible duplicate</button>
+                                                </div>
+                                            </template>
+                                        </div>
                                     @endif
                                 @endauth
 

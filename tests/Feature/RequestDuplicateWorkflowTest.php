@@ -80,6 +80,27 @@ class RequestDuplicateWorkflowTest extends TestCase
         $this->assertNotContains('merged_duplicate', Recommendation::suggestionConsumingStatuses());
     }
 
+    public function test_request_overflow_is_a_local_button_menu_before_duplicate_mode_begins(): void
+    {
+        [$creator, $a, $b] = $this->pair();
+        $guide = User::factory()->create();
+
+        $normal = $this->actingAs($guide)->get(route('creator.queue', $creator))->assertOk();
+        $normal->assertSee('x-data="requestOverflowMenu('.$a->id, false)
+            ->assertSee('type="button" x-ref="trigger"', false)
+            ->assertSee('aria-label="More actions for “Song A”"', false)
+            ->assertSee('aria-haspopup="menu"', false)
+            ->assertSee('x-bind:aria-expanded="open.toString()"', false)
+            ->assertSee('x-teleport="body"', false)
+            ->assertSee('role="menuitem"', false)
+            ->assertSee('Report possible duplicate')
+            ->assertDontSee('Possible duplicate</p>', false)
+            ->assertDontSee('Select as duplicate');
+
+        $selection = $this->get(route('creator.queue', ['creator' => $creator, 'duplicate_source' => $a->id]))->assertOk();
+        $selection->assertSee('Possible duplicate')->assertSee('Select as duplicate');
+    }
+
     private function pair(): array
     {
         $creator = Creator::factory()->create(['status' => 'active']);
