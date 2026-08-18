@@ -214,6 +214,16 @@ class Recommendation extends Model
         return $this->hasMany(self::class, 'merged_into_request_id');
     }
 
+    public function reports(): HasMany
+    {
+        return $this->hasMany(RequestReport::class);
+    }
+
+    public function isReportable(): bool
+    {
+        return in_array($this->status, self::ACTIVE_PUBLIC_STATUSES, true) && ! $this->trashed();
+    }
+
     public function userPicks(): HasMany
     {
         return $this->hasMany(UserPick::class)->activeSupport();

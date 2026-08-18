@@ -94,6 +94,10 @@ class RequestDuplicateWorkflowTest extends TestCase
             ->assertSee('x-teleport="body"', false)
             ->assertSee('role="menuitem"', false)
             ->assertSee('Report possible duplicate')
+            ->assertSee('>Report</button>', false)
+            ->assertSee('Report Request')
+            ->assertSee('Additional details')
+            ->assertSee('M5 21V4m0 0h11l-2 4 2 4H5', false)
             ->assertDontSee('Possible duplicate</p>', false)
             ->assertDontSee('Select as duplicate');
 

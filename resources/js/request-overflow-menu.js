@@ -1,7 +1,9 @@
-export const requestOverflowMenu = (requestId, duplicateModeUrl) => ({
+export const requestOverflowMenu = (requestId, duplicateModeUrl, reportUrl) => ({
     requestId,
     duplicateModeUrl,
+    reportUrl,
     open: false,
+    reportOpen: false,
     top: 0,
     left: 0,
     _outsideHandler: null,
@@ -55,5 +57,27 @@ export const requestOverflowMenu = (requestId, duplicateModeUrl) => ({
     beginDuplicateMode() {
         this.close(false);
         window.location.assign(this.duplicateModeUrl);
+    },
+
+    signIn(url) {
+        this.close(false);
+        window.location.assign(url);
+    },
+
+    openReport() {
+        this.close(false);
+        this.reportOpen = true;
+        this.$nextTick(() => this.$refs.reason?.focus());
+    },
+
+    closeReport() {
+        if (!this.reportOpen) return;
+        this.reportOpen = false;
+        this.$nextTick(() => this.$refs.trigger?.focus());
+    },
+
+    escape() {
+        if (this.reportOpen) this.closeReport();
+        else this.close(true);
     },
 });
