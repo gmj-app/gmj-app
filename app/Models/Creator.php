@@ -206,6 +206,11 @@ class Creator extends Model
         return $this->hasMany(CreatorOwner::class);
     }
 
+    public function duplicateCases(): HasMany
+    {
+        return $this->hasMany(RequestDuplicateCase::class);
+    }
+
     public function creatorFavorites(): HasMany
     {
         return $this->hasMany(CreatorFavorite::class);

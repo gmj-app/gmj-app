@@ -18,7 +18,7 @@ class RequestStatusPresenter
             'published' => 'emerald',
             'already_seen' => 'slate',
             'passed' => 'rose',
-            'hidden', 'withdrawn' => 'slate',
+            'hidden', 'withdrawn', 'merged_duplicate' => 'slate',
             default => 'indigo',
         };
         $public = in_array($status, Recommendation::PUBLIC_STATUSES, true);

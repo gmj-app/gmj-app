@@ -4,6 +4,7 @@ use App\Http\Controllers\AdvertisementClickController;
 use App\Http\Controllers\BetaFeedbackController;
 use App\Http\Controllers\CreatorAccoladeController;
 use App\Http\Controllers\CreatorDashboardController;
+use App\Http\Controllers\CreatorDuplicateCaseController;
 use App\Http\Controllers\CreatorRecommendationController;
 use App\Http\Controllers\CreatorSettingsController;
 use App\Http\Controllers\CreatorSetupController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\RecommendationAlternativeController;
 use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\RequestDuplicateReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SuperAdmin\AccoladeController as SuperAdminAccoladeController;
 use App\Http\Controllers\SuperAdmin\AnnouncementController;
@@ -127,6 +129,8 @@ Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(functio
                 ->name('dashboard');
             Route::get('/recommendations', [CreatorRecommendationController::class, 'index'])
                 ->name('recommendations.index');
+            Route::get('/possible-duplicates', [CreatorDuplicateCaseController::class, 'index'])->name('duplicates.index');
+            Route::post('/possible-duplicates/{duplicateCase}/resolve', [CreatorDuplicateCaseController::class, 'resolve'])->name('duplicates.resolve');
             Route::patch('/recommendations/{recommendation}', [CreatorRecommendationController::class, 'update'])
                 ->name('recommendations.update');
             Route::patch('/recommendations/{recommendation}/status', [CreatorRecommendationController::class, 'updateStatus'])
@@ -164,6 +168,8 @@ Route::middleware(['auth', EnsurePublicProfileIsComplete::class])->group(functio
         ->scopeBindings()
         ->middleware('throttle:30,1')
         ->name('recommendations.vote');
+    Route::post('/{creator:slug}/recommendations/{recommendation}/possible-duplicate', [RequestDuplicateReportController::class, 'store'])
+        ->scopeBindings()->middleware('throttle:10,60')->name('recommendations.duplicates.store');
     Route::delete('/{creator:slug}/recommendations/{recommendation}/vote', [RecommendationController::class, 'destroyVote'])
         ->scopeBindings()
         ->middleware('throttle:30,1')
@@ -273,6 +279,10 @@ Route::get('/@{creator:slug}', PublicProfileController::class)
     ->where('creator', '[A-Za-z0-9_-]+')
     ->withoutMiddleware(SubstituteBindings::class)
     ->name('creator.queue');
+
+Route::get('/@{creator:slug}/requests/{recommendation}', [RecommendationController::class, 'merged'])
+    ->scopeBindings()
+    ->name('recommendations.merged');
 
 Route::get('/{creator:slug}/published', [RecommendationController::class, 'published'])
     ->name('creators.published');

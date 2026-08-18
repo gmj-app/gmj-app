@@ -134,6 +134,16 @@ class RecommendationController extends Controller
         $recommendations = $recommendationsQuery
             ->paginate($perPage)
             ->withQueryString();
+        $duplicateSource = null;
+        $duplicateTarget = null;
+        if ($request->user() && $request->integer('duplicate_source')) {
+            $duplicateSource = $creator->recommendations()->votable()->find($request->integer('duplicate_source'));
+            if ($duplicateSource && $request->integer('duplicate_target') && $request->integer('duplicate_target') !== $duplicateSource->id) {
+                $duplicateTarget = $creator->recommendations()->votable()->find($request->integer('duplicate_target'));
+            }
+            $duplicateSource?->load('submittedBy:id,name,public_display_name,public_handle');
+            $duplicateTarget?->load('submittedBy:id,name,public_display_name,public_handle');
+        }
         $initialExpandedRequestId = null;
         $tagOptions = $creator->creatorTags()
             ->whereHas('recommendations', fn ($query) => $query
@@ -160,6 +170,8 @@ class RecommendationController extends Controller
             'categoryOptions',
             'creator',
             'creatorAccolades',
+            'duplicateSource',
+            'duplicateTarget',
             'filters',
             'header',
             'hasMorePublishedRecommendations',
@@ -226,6 +238,14 @@ class RecommendationController extends Controller
         return view('recommendations.partials.card-details', compact(
             'creator', 'ownsCreator', 'recommendation', 'topRequestedId', 'usage'
         ));
+    }
+
+    public function merged(Request $request, Creator $creator, Recommendation $recommendation): View
+    {
+        abort_unless((int) $recommendation->creator_id === (int) $creator->id && $recommendation->status === 'merged_duplicate', 404);
+        $recommendation->load('mergedInto');
+
+        return view('recommendations.merged', compact('creator', 'recommendation'));
     }
 
     public function supporters(Recommendation $recommendation): JsonResponse

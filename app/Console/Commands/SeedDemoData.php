@@ -62,7 +62,7 @@ class SeedDemoData extends Command
         ['title' => 'Demo: Explainer on festival rituals', 'artist' => 'Open Map Media', 'category' => 'culture', 'status' => 'published', 'video_id' => 'DEMO0000018'],
         ['title' => 'Demo: Forgotten TV theme song reaction', 'artist' => 'Retro Frame', 'category' => 'other', 'status' => 'already_seen', 'video_id' => 'DEMO0000019'],
         ['title' => 'Demo: Bass line that deserves more attention', 'artist' => 'Low End Theory', 'category' => 'music', 'status' => 'approved', 'video_id' => 'DEMO0000020'],
-        ['title' => 'Demo: Short documentary about buskers', 'artist' => 'Corner Stage', 'category' => 'documentary', 'status' => 'hidden', 'video_id' => 'DEMO0000021'],
+        ['title' => 'Demo: Short documentary about buskers', 'artist' => 'Corner Stage', 'category' => 'documentary', 'status' => 'merged_duplicate', 'video_id' => 'DEMO0000021'],
         ['title' => 'Demo: First listen to progressive metal odd meters', 'artist' => 'Fractal Bridge', 'category' => 'music', 'status' => 'scheduled', 'video_id' => 'DEMO0000022'],
         ['title' => 'Demo: Interview with a choir arranger', 'artist' => 'Harmony Lab', 'category' => 'interview', 'status' => 'pending', 'video_id' => 'DEMO0000023'],
         ['title' => 'Demo: Street art culture around album covers', 'artist' => 'Wall Notes', 'category' => 'culture', 'status' => 'recorded', 'video_id' => 'DEMO0000024'],
@@ -152,6 +152,11 @@ class SeedDemoData extends Command
                 $recommendationsCreated += (int) $recommendation->wasRecentlyCreated;
                 $recommendations->push($recommendation);
                 $this->assignDemoTags($mainCreator, $recommendation, $recommendationData);
+            }
+            if (Schema::hasColumn('recommendations', 'merged_into_request_id')) {
+                $merged = $recommendations->firstWhere('status', 'merged_duplicate');
+                $survivor = $recommendations->firstWhere('status', 'approved');
+                $merged?->update(['merged_into_request_id' => $survivor?->id, 'merged_at' => now(), 'merged_by_user_id' => $testUser->id]);
             }
 
             $voters = User::query()

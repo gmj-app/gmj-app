@@ -315,6 +315,7 @@
                         >
                             <form method="GET" action="{{ route('creator.queue', $creator) }}" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[repeat(14,minmax(0,1fr))] xl:items-end">
                                 <input type="hidden" name="per_page" value="{{ $perPage }}">
+                                @if($duplicateSource)<input type="hidden" name="duplicate_source" value="{{ $duplicateSource->id }}">@endif
                             <div class="md:col-span-2 xl:col-span-4">
                                 <label for="queue-search" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Search requests</label>
                                 <input
@@ -397,6 +398,13 @@
                             ->values();
                     @endphp
 
+                    @if($duplicateSource)
+                        <div class="sticky top-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-lg dark:border-amber-700 dark:bg-amber-950" role="status">
+                            <div><p class="font-bold">Possible duplicate</p><p class="text-sm">Select the Request that matches “{{ $duplicateSource->displayTitle() }}”.</p></div>
+                            <a href="{{ route('creator.queue', ['creator'=>$creator] + request()->except(['duplicate_source','duplicate_target'])) }}" class="rounded-xl border px-4 py-2 text-sm font-bold">Cancel</a>
+                        </div>
+                    @endif
+
                     <div
                         data-creator-request-accordion
                         class="space-y-5"
@@ -438,6 +446,7 @@
                             $totalVotes = $recommendation->totalVotes();
                             $isVotable = $recommendation->isVotable();
                             $loginReturnUrl = route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id;
+                            $duplicateQuery = request()->except(['duplicate_target','page']);
                         @endphp
 
                         <div
@@ -489,6 +498,14 @@
                                         />
                                     </span>
                                 </button>
+
+                                @auth
+                                    @if($duplicateSource && $duplicateSource->id !== $recommendation->id && $recommendation->isVotable())
+                                        <a x-on:click.stop href="{{ route('creator.queue', ['creator'=>$creator] + $duplicateQuery + ['duplicate_source'=>$duplicateSource->id,'duplicate_target'=>$recommendation->id]) }}" aria-label="Select “{{ $requestTitle }}” as possible duplicate" class="inline-flex min-h-11 items-center rounded-xl border border-amber-400 px-2 text-xs font-bold text-amber-800 dark:text-amber-200">Select as duplicate</a>
+                                    @elseif(!$duplicateSource && $recommendation->isVotable())
+                                        <a x-on:click.stop href="{{ route('creator.queue', ['creator'=>$creator] + request()->query() + ['duplicate_source'=>$recommendation->id]) }}" aria-label="Report “{{ $requestTitle }}” as a possible duplicate" class="inline-flex size-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100" title="Report possible duplicate">⋮<span class="sr-only">Report possible duplicate</span></a>
+                                    @endif
+                                @endauth
 
                                 @if ($isVotable)
                                     @auth
@@ -621,6 +638,7 @@
                         </p>
 
                         <form method="GET" action="{{ route('creator.queue', $creator) }}" class="flex min-w-0 items-center gap-2" data-request-per-page-form>
+                            @if($duplicateSource)<input type="hidden" name="duplicate_source" value="{{ $duplicateSource->id }}">@endif
                             @foreach (['q', 'status', 'category', 'tag', 'sort'] as $parameter)
                                 @if ($filters[$parameter] !== '' && ! ($parameter === 'sort' && $filters[$parameter] === 'votes'))
                                     <input type="hidden" name="{{ $parameter }}" value="{{ $filters[$parameter] }}">
@@ -655,5 +673,15 @@
             </div>
         </div>
     </section>
+
+    @if($duplicateSource && $duplicateTarget)
+        <div class="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/70 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="duplicate-dialog-title">
+            <div class="w-full max-w-4xl rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900 sm:p-7">
+                <h2 id="duplicate-dialog-title" class="text-xl font-bold">Report possible duplicate</h2><p class="mt-2 text-sm text-slate-600 dark:text-slate-300">These Requests look like they may ask for the same thing. The Creator will review them and decide whether they should be merged.</p>
+                <div class="mt-5 grid gap-4 md:grid-cols-2">@foreach([$duplicateSource,$duplicateTarget] as $item)<section class="rounded-xl border p-4"><h3 class="font-bold">{{ $item->displayTitle() }}</h3><p class="mt-2 text-sm">{{ $item->totalVotes() }} unique supporters · {{ $item->statusLabel() }}</p><p class="text-sm text-slate-500">{{ $item->submittedBy?->publicName() ?: 'Creator' }} · {{ $item->created_at->format('M j, Y') }}</p>@if($item->canonicalMediaUrl())<p class="mt-2 break-all text-xs">{{ parse_url($item->canonicalMediaUrl(), PHP_URL_HOST) }}</p>@endif</section>@endforeach</div>
+                <form method="POST" action="{{ route('recommendations.duplicates.store',[$creator,$duplicateSource]) }}" class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">@csrf<input type="hidden" name="duplicate_request_id" value="{{ $duplicateTarget->id }}"><a href="{{ route('creator.queue',['creator'=>$creator] + request()->except('duplicate_target')) }}" class="rounded-xl border px-5 py-3 text-center font-bold">Cancel</a><button class="rounded-xl bg-indigo-600 px-5 py-3 font-bold text-white">Report duplicate pair</button></form>
+            </div>
+        </div>
+    @endif
 
 </x-public-layout>

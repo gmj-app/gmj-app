@@ -30,6 +30,7 @@ class Recommendation extends Model
         'passed',
         'hidden',
         'withdrawn',
+        'merged_duplicate',
     ];
 
     public const PUBLIC_STATUSES = [
@@ -57,7 +58,7 @@ class Recommendation extends Model
     ];
 
     public const VOTING_CLOSED_STATUSES = [
-        'coming_soon', 'scheduled', 'recorded', 'published', 'already_seen', 'passed', 'hidden', 'withdrawn',
+        'coming_soon', 'scheduled', 'recorded', 'published', 'already_seen', 'passed', 'hidden', 'withdrawn', 'merged_duplicate',
     ];
 
     public const UNFAVORITE_REMOVABLE_STATUSES = [
@@ -98,6 +99,7 @@ class Recommendation extends Model
         'passed' => 'Passed',
         'hidden' => 'Hidden',
         'withdrawn' => 'Withdrawn',
+        'merged_duplicate' => 'Merged as duplicate',
         'planned' => 'Coming Soon',
         'declined' => 'Passed',
     ];
@@ -126,6 +128,9 @@ class Recommendation extends Model
         'reason',
         'request_context',
         'status',
+        'merged_into_request_id',
+        'merged_at',
+        'merged_by_user_id',
         'voting_closed_at',
         'vote_total_at_close',
         'supporter_count_at_close',
@@ -175,6 +180,7 @@ class Recommendation extends Model
             'vote_total_at_close' => 'integer',
             'supporter_count_at_close' => 'integer',
             'deleted_at' => 'datetime',
+            'merged_at' => 'datetime',
         ];
     }
 
@@ -196,6 +202,16 @@ class Recommendation extends Model
     public function withdrawnBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'withdrawn_by_user_id');
+    }
+
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'merged_into_request_id');
+    }
+
+    public function mergedDuplicates(): HasMany
+    {
+        return $this->hasMany(self::class, 'merged_into_request_id');
     }
 
     public function userPicks(): HasMany
@@ -579,7 +595,7 @@ class Recommendation extends Model
     /** @param Builder<Recommendation> $query */
     public function scopeActiveManagementQueue(Builder $query): Builder
     {
-        return $query->where('status', '!=', 'published');
+        return $query->whereNotIn('status', ['published', 'merged_duplicate']);
     }
 
     /** @param Builder<Recommendation> $query */
