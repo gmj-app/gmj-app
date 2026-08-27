@@ -4,7 +4,7 @@
 
 @layer components {
     .request-blade-header {
-        @apply grid w-full min-w-0 grid-cols-[3rem_4rem_minmax(0,1fr)_2.75rem] items-center gap-x-2 gap-y-2.5 px-3 py-3 transition hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 md:flex md:min-h-[66px] md:gap-2 md:px-3 md:py-2;
+        @apply grid w-full min-w-0 grid-cols-[3rem_4rem_minmax(0,1fr)_2.75rem] items-center gap-x-2 gap-y-1.5 px-3 py-2.5 transition hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 md:flex md:min-h-[66px] md:gap-2 md:px-3 md:py-2;
     }
 
     .request-blade-disclosure {
@@ -32,7 +32,7 @@
     }
 
     .request-blade-title {
-        @apply line-clamp-3 min-w-0 flex-1 break-words text-[15px] font-semibold leading-snug text-slate-800 dark:text-slate-100 md:line-clamp-none md:text-base;
+        @apply line-clamp-3 min-w-0 flex-1 break-words text-[15px] font-semibold leading-[1.35] text-slate-800 dark:text-slate-100 md:line-clamp-none md:text-base md:leading-snug;
     }
 
     .request-blade-actions {

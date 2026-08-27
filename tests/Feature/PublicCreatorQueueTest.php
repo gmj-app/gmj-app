@@ -414,7 +414,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee("x-bind:class=\"open ? 'line-clamp-none' : ''\"", false)
             ->assertSee('request-blade-rank', false)
             ->assertSee('h-9 w-16', false)
-            ->assertSee('pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0', false);
+            ->assertSee('pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0', false);
 
         $this->assertStringContainsString('data-request-status="recorded"', (string) $row);
         $this->assertStringContainsString('data-collapsed-vote-count', (string) $row);
@@ -426,6 +426,7 @@ class PublicCreatorQueueTest extends TestCase
 
         $css = file_get_contents(resource_path('css/app.css'));
         $this->assertStringContainsString('grid-cols-[3rem_4rem_minmax(0,1fr)_2.75rem]', $css);
+        $this->assertStringContainsString('gap-y-1.5 px-3 py-2.5', $css);
         $this->assertStringContainsString('col-span-4 row-start-2', $css);
         $this->assertStringContainsString('request-blade-overflow', $css);
         $this->assertStringContainsString('col-start-4 row-start-1', $css);
@@ -438,6 +439,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringContainsString('md:line-clamp-none', $css);
         $this->assertStringContainsString('.request-blade-actions', $css);
         $this->assertStringContainsString('@apply contents', $css);
+        $this->assertStringContainsString('text-[15px] font-semibold leading-[1.35]', $css);
     }
 
     public function test_collapsed_vote_controls_are_independent_accessible_and_status_aware(): void
@@ -1521,8 +1523,9 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringContainsString('A compact community topic', (string) $collapsedHeader);
         $this->assertStringNotContainsString('<img', (string) $collapsedHeader);
         $this->assertStringContainsString('md:h-[50px] md:w-[88px]', (string) $collapsedHeader);
-        $this->assertStringContainsString('bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-800', (string) $collapsedHeader);
-        $this->assertStringContainsString('tracking-[0.18em]', (string) $collapsedHeader);
+        $this->assertStringContainsString('bg-gradient-to-br from-slate-900 via-indigo-900 to-indigo-700', (string) $collapsedHeader);
+        $this->assertStringContainsString('text-[8px] font-bold', (string) $collapsedHeader);
+        $this->assertStringContainsString('tracking-[0.14em]', (string) $collapsedHeader);
         $this->assertStringContainsString('Topic</span>', (string) $collapsedHeader);
         $this->assertStringNotContainsString('fill-current', (string) $collapsedHeader);
     }

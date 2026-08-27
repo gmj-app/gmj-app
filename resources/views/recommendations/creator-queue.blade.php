@@ -409,7 +409,7 @@
                         data-creator-request-accordion
                         @class([
                             'space-y-3 sm:space-y-5',
-                            'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0' => config('gmj.beta_feedback_enabled'),
+                            'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0' => config('gmj.beta_feedback_enabled'),
                         ])
                         x-data="creatorRequestAccordion(@js($visibleRecommendationIds), @js($initialExpandedRequestId))"
                         x-init="
