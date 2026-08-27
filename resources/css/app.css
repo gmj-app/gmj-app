@@ -3,6 +3,34 @@
 @tailwind utilities;
 
 @layer components {
+    .request-blade-header {
+        @apply grid w-full min-w-0 grid-cols-[3rem_4rem_minmax(0,1fr)] gap-x-2 gap-y-1 px-3 py-3 transition hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 md:flex md:min-h-[66px] md:items-center md:gap-2 md:px-3 md:py-2;
+    }
+
+    .request-blade-disclosure {
+        @apply col-span-3 grid min-w-0 cursor-pointer grid-cols-[3rem_4rem_minmax(0,1fr)] items-start gap-2 rounded-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 md:flex md:flex-1 md:items-center md:gap-4 md:px-2 md:py-1;
+    }
+
+    .request-blade-rank {
+        @apply inline-flex h-10 w-12 shrink-0 items-center justify-center rounded-xl border px-2 text-sm font-semibold md:h-11 md:min-w-14 md:w-auto md:px-2.5;
+    }
+
+    .request-blade-title-wrap {
+        @apply min-w-0 flex-1 self-start md:self-auto;
+    }
+
+    .request-blade-title-row {
+        @apply flex min-w-0 flex-col items-start gap-1 md:flex-row md:items-center md:gap-2;
+    }
+
+    .request-blade-title {
+        @apply line-clamp-3 min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 md:line-clamp-none md:text-base;
+    }
+
+    .request-blade-actions {
+        @apply col-start-3 col-end-4 flex min-w-0 flex-wrap items-center justify-end gap-1 md:contents;
+    }
+
     .ci-page {
         @apply min-w-0 text-slate-900 dark:text-slate-100;
         color-scheme: light;

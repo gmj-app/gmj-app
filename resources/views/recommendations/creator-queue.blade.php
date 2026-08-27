@@ -407,7 +407,10 @@
 
                     <div
                         data-creator-request-accordion
-                        class="space-y-5"
+                        @class([
+                            'space-y-3 sm:space-y-5',
+                            'pb-20 md:pb-0' => config('gmj.beta_feedback_enabled'),
+                        ])
                         x-data="creatorRequestAccordion(@js($visibleRecommendationIds), @js($initialExpandedRequestId))"
                         x-init="
                             if (window.location.hash && openHashRequest()) {
@@ -468,7 +471,7 @@
                             class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 motion-reduce:transition-none hover:border-emerald-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700"
                             x-bind:class="open ? 'border-emerald-400 ring-2 ring-emerald-300/70 dark:border-emerald-500 dark:ring-emerald-500/40' : ''"
                         >
-                            <div class="group flex min-h-14 w-full min-w-0 items-center gap-1.5 px-2 py-2 transition hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 sm:min-h-[66px] sm:gap-2 sm:px-3">
+                            <div data-request-mobile-grid class="request-blade-header group">
                                 <button
                                     type="button"
                                     data-request-disclosure-body
@@ -476,20 +479,19 @@
                                     aria-expanded="{{ $isInitiallyExpanded ? 'true' : 'false' }}"
                                     x-bind:aria-expanded="open.toString()"
                                     aria-controls="recommendation-details-{{ $recommendation->id }}"
-                                    class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl px-1 py-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:gap-4 sm:px-2"
+                                    class="request-blade-disclosure"
                                 >
-                                    <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
+                                    <span class="request-blade-rank {{ $rankClasses }}">
                                         {{ $rankLabel }}
                                     </span>
 
                                     <x-recommendation-compact-media :recommendation="$recommendation" />
 
-                                    <span class="min-w-0 flex-1">
-                                        <span class="flex min-w-0 flex-col items-start gap-1 lg:flex-row lg:items-center lg:gap-2">
-                                            <span class="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
+                                    <span class="request-blade-title-wrap">
+                                        <span class="request-blade-title-row">
+                                            <span data-request-mobile-title title="{{ $requestTitle }}" class="request-blade-title" x-bind:class="open ? 'line-clamp-none' : ''">
                                                 {{ $requestTitle }}
                                             </span>
-                                            <x-requests.status-badge :request="$recommendation" variant="compact" />
                                         </span>
                                         <x-recommendation-user-indicators
                                             :recommendation="$recommendation"
@@ -498,6 +500,9 @@
                                         />
                                     </span>
                                 </button>
+
+                                <div data-request-secondary-actions class="request-blade-actions">
+                                <x-requests.status-badge :request="$recommendation" variant="compact" class="mr-auto md:mr-0" />
 
                                 @auth
                                     @if($duplicateSource && $duplicateSource->id !== $recommendation->id && $recommendation->isVotable())
@@ -593,6 +598,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
                                     </svg>
                                 </button>
+                                </div>
                             </div>
 
                             <p x-show="voteError" x-cloak class="border-t border-red-100 px-4 py-2 text-xs font-semibold text-red-700 dark:border-red-950 dark:text-red-300">

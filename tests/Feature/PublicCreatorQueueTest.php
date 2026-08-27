@@ -383,6 +383,48 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
     }
 
+    public function test_mobile_request_blades_use_a_two_row_grid_with_readable_clamped_titles(): void
+    {
+        config(['gmj.beta_feedback_enabled' => true]);
+        $creator = Creator::factory()->create(['slug' => 'mobile-request-blades']);
+        $request = Recommendation::factory()->create([
+            'creator_id' => $creator->id,
+            'status' => 'recorded',
+            'title' => 'Kamikazee ft. Chito Miranda, Ian Tayao, Reg Rubio - Meron Akong Ano (Official Music Video)',
+        ]);
+
+        $response = $this->get(route('creator.queue', $creator))->assertOk();
+        $row = Str::of($response->getContent())
+            ->after('id="recommendation-'.$request->id.'"')
+            ->before('id="recommendation-details-'.$request->id.'"');
+
+        $response
+            ->assertSee('data-request-mobile-grid', false)
+            ->assertSee('request-blade-header group', false)
+            ->assertSee('request-blade-disclosure', false)
+            ->assertSee('data-request-secondary-actions', false)
+            ->assertSee('request-blade-actions', false)
+            ->assertSee('data-request-mobile-title', false)
+            ->assertSee('class="request-blade-title"', false)
+            ->assertSee("x-bind:class=\"open ? 'line-clamp-none' : ''\"", false)
+            ->assertSee('request-blade-rank', false)
+            ->assertSee('h-9 w-16', false)
+            ->assertSee('pb-20 md:pb-0', false);
+
+        $this->assertStringContainsString('data-request-status="recorded"', (string) $row);
+        $this->assertStringContainsString('data-collapsed-vote-count', (string) $row);
+        $this->assertStringContainsString('data-request-disclosure-chevron', (string) $row);
+        $this->assertStringNotContainsString('break-all', (string) $row);
+        $this->assertTrue(strpos((string) $row, 'data-request-mobile-title') < strpos((string) $row, 'data-request-secondary-actions'));
+
+        $css = file_get_contents(resource_path('css/app.css'));
+        $this->assertStringContainsString('grid-cols-[3rem_4rem_minmax(0,1fr)]', $css);
+        $this->assertStringContainsString('md:flex md:min-h-[66px]', $css);
+        $this->assertStringContainsString('line-clamp-3', $css);
+        $this->assertStringContainsString('md:line-clamp-none', $css);
+        $this->assertStringContainsString('md:contents', $css);
+    }
+
     public function test_collapsed_vote_controls_are_independent_accessible_and_status_aware(): void
     {
         $creator = Creator::factory()->create(['slug' => 'collapsed-voting']);
@@ -560,7 +602,7 @@ class PublicCreatorQueueTest extends TestCase
         $response->assertDontSee('Private pending request')
             ->assertDontSee('Private hidden request')
             ->assertDontSee('Private withdrawn request')
-            ->assertSee('flex min-w-0 flex-col items-start gap-1 lg:flex-row', false)
+            ->assertSee('request-blade-title-row', false)
             ->assertSee('Ordinary active request with a deliberately long title')
             ->assertSee('vote');
     }
@@ -761,8 +803,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringNotContainsString('Suggested by Original Fan', (string) $collapsedHeader);
         $this->assertStringNotContainsString('Supported by Voter', (string) $collapsedHeader);
         $this->assertStringNotContainsString('more supporters', (string) $collapsedHeader);
-        $this->assertStringContainsString('items-center', (string) $collapsedHeader);
-        $this->assertStringContainsString('focus-visible:ring-emerald-500', (string) $collapsedHeader);
+        $this->assertStringContainsString('request-blade-disclosure', (string) $collapsedHeader);
     }
 
     public function test_full_community_support_separates_up_to_twenty_larger_avatars(): void
@@ -1440,7 +1481,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringContainsString('loading="lazy"', (string) $collapsedHeader);
         $this->assertStringContainsString('decoding="async"', (string) $collapsedHeader);
         $this->assertStringContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
-        $this->assertStringContainsString('dark:text-slate-100', (string) $collapsedHeader);
+        $this->assertStringContainsString('request-blade-title', (string) $collapsedHeader);
         $this->assertStringNotContainsString('fill-current', (string) $collapsedHeader);
     }
 
