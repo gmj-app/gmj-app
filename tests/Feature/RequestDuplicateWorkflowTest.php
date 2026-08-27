@@ -102,7 +102,10 @@ class RequestDuplicateWorkflowTest extends TestCase
             ->assertDontSee('Select as duplicate');
 
         $selection = $this->get(route('creator.queue', ['creator' => $creator, 'duplicate_source' => $a->id]))->assertOk();
-        $selection->assertSee('Possible duplicate')->assertSee('Select as duplicate');
+        $selection->assertSee('Possible duplicate')
+            ->assertSee('Select as duplicate')
+            ->assertSee('request-blade-has-duplicate', false)
+            ->assertSee('request-blade-duplicate', false);
     }
 
     private function pair(): array

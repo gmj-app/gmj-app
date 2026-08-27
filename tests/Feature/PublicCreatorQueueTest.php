@@ -383,7 +383,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
     }
 
-    public function test_mobile_request_blades_use_a_two_row_grid_with_readable_clamped_titles(): void
+    public function test_mobile_request_blades_use_a_three_row_grid_with_readable_clamped_titles(): void
     {
         config(['gmj.beta_feedback_enabled' => true]);
         $creator = Creator::factory()->create(['slug' => 'mobile-request-blades']);
@@ -402,27 +402,42 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('data-request-mobile-grid', false)
             ->assertSee('request-blade-header group', false)
             ->assertSee('request-blade-disclosure', false)
+            ->assertSee('request-blade-media', false)
             ->assertSee('data-request-secondary-actions', false)
             ->assertSee('request-blade-actions', false)
+            ->assertSee('request-blade-overflow', false)
+            ->assertSee('request-blade-status', false)
+            ->assertSee('request-blade-vote', false)
+            ->assertSee('request-blade-chevron', false)
             ->assertSee('data-request-mobile-title', false)
             ->assertSee('class="request-blade-title"', false)
             ->assertSee("x-bind:class=\"open ? 'line-clamp-none' : ''\"", false)
             ->assertSee('request-blade-rank', false)
             ->assertSee('h-9 w-16', false)
-            ->assertSee('pb-20 md:pb-0', false);
+            ->assertSee('pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0', false);
 
         $this->assertStringContainsString('data-request-status="recorded"', (string) $row);
         $this->assertStringContainsString('data-collapsed-vote-count', (string) $row);
         $this->assertStringContainsString('data-request-disclosure-chevron', (string) $row);
         $this->assertStringNotContainsString('break-all', (string) $row);
+        $this->assertTrue(strpos((string) $row, 'request-blade-rank') < strpos((string) $row, 'request-blade-media'));
+        $this->assertTrue(strpos((string) $row, 'request-blade-media') < strpos((string) $row, 'data-request-mobile-title'));
         $this->assertTrue(strpos((string) $row, 'data-request-mobile-title') < strpos((string) $row, 'data-request-secondary-actions'));
 
         $css = file_get_contents(resource_path('css/app.css'));
-        $this->assertStringContainsString('grid-cols-[3rem_4rem_minmax(0,1fr)]', $css);
+        $this->assertStringContainsString('grid-cols-[3rem_4rem_minmax(0,1fr)_2.75rem]', $css);
+        $this->assertStringContainsString('col-span-4 row-start-2', $css);
+        $this->assertStringContainsString('request-blade-overflow', $css);
+        $this->assertStringContainsString('col-start-4 row-start-1', $css);
+        $this->assertStringContainsString('request-blade-status', $css);
+        $this->assertStringContainsString('request-blade-vote', $css);
+        $this->assertStringContainsString('request-blade-chevron', $css);
+        $this->assertStringContainsString('row-start-3', $css);
         $this->assertStringContainsString('md:flex md:min-h-[66px]', $css);
         $this->assertStringContainsString('line-clamp-3', $css);
         $this->assertStringContainsString('md:line-clamp-none', $css);
-        $this->assertStringContainsString('md:contents', $css);
+        $this->assertStringContainsString('.request-blade-actions', $css);
+        $this->assertStringContainsString('@apply contents', $css);
     }
 
     public function test_collapsed_vote_controls_are_independent_accessible_and_status_aware(): void
@@ -796,8 +811,8 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('original@example.test');
 
         $collapsedHeader = Str::of($response->getContent())
-            ->after('aria-controls="recommendation-details-'.$recommendation->id.'"')
-            ->before('</button>');
+            ->after('id="recommendation-'.$recommendation->id.'"')
+            ->before('id="recommendation-details-'.$recommendation->id.'"');
 
         $this->assertStringNotContainsString('recommendation-support-avatars', (string) $collapsedHeader);
         $this->assertStringNotContainsString('Suggested by Original Fan', (string) $collapsedHeader);
@@ -1473,14 +1488,14 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee('Thumbnail for Never Gonna Give You Up');
 
         $collapsedHeader = Str::of($response->getContent())
-            ->after('aria-controls="recommendation-details-'.$recommendation->id.'"')
-            ->before('</button>');
+            ->after('id="recommendation-'.$recommendation->id.'"')
+            ->before('id="recommendation-details-'.$recommendation->id.'"');
 
         $this->assertStringContainsString('width="88"', (string) $collapsedHeader);
         $this->assertStringContainsString('height="50"', (string) $collapsedHeader);
         $this->assertStringContainsString('loading="lazy"', (string) $collapsedHeader);
         $this->assertStringContainsString('decoding="async"', (string) $collapsedHeader);
-        $this->assertStringContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
+        $this->assertStringContainsString('md:h-[50px] md:w-[88px]', (string) $collapsedHeader);
         $this->assertStringContainsString('request-blade-title', (string) $collapsedHeader);
         $this->assertStringNotContainsString('fill-current', (string) $collapsedHeader);
     }
@@ -1500,12 +1515,12 @@ class PublicCreatorQueueTest extends TestCase
 
         $response = $this->get(route('creator.queue', $creator))->assertOk();
         $collapsedHeader = Str::of($response->getContent())
-            ->after('aria-controls="recommendation-details-'.$recommendation->id.'"')
-            ->before('</button>');
+            ->after('id="recommendation-'.$recommendation->id.'"')
+            ->before('id="recommendation-details-'.$recommendation->id.'"');
 
         $this->assertStringContainsString('A compact community topic', (string) $collapsedHeader);
         $this->assertStringNotContainsString('<img', (string) $collapsedHeader);
-        $this->assertStringContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
+        $this->assertStringContainsString('md:h-[50px] md:w-[88px]', (string) $collapsedHeader);
         $this->assertStringContainsString('bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-800', (string) $collapsedHeader);
         $this->assertStringContainsString('tracking-[0.18em]', (string) $collapsedHeader);
         $this->assertStringContainsString('Topic</span>', (string) $collapsedHeader);
