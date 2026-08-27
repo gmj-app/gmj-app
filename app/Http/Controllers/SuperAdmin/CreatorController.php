@@ -73,7 +73,7 @@ class CreatorController extends Controller
 
     public function assist(Creator $creator, AccoladeShowcaseService $showcase): View
     {
-        $creator->load(['creatorOwners.user:id,name,public_display_name,email', 'creatorTags']);
+        $creator->load(['creatorOwners.user:id,name,public_display_name,email', 'creatorTags', 'guideRequestOverrides.guide:id,name,public_display_name,email']);
         $history = $creator->adminAuditLogs()->with('admin:id,name')->latest()->limit(10)->get();
 
         return view('super-admin.creators.assist', ['creator' => $creator, 'setup' => $this->completeness->evaluate($creator), 'history' => $history, 'categories' => Recommendation::CATEGORY_OPTIONS, 'creatorAccolades' => $showcase->forSubject('creator', $creator->id)]);

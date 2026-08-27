@@ -91,7 +91,7 @@ class CreatorPageHeaderViewModel
             'reactors_limit' => $user->creatorFavoriteLimit(),
             'reactors_used' => $user->creatorFavoritesUsed(),
             'reactors_remaining' => $user->creatorFavoritesRemaining(),
-            'suggestions_limit' => $limits['suggestions_per_reactor'],
+            'suggestions_limit' => $user->requestLimitFor($creator),
             'suggestions_used' => $user->suggestionsUsedFor($creator),
             'suggestions_remaining' => $user->suggestionsRemainingFor($creator),
             'votes_used' => $user->votesUsedFor($creator),

@@ -29,6 +29,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SuperAdmin\AccoladeController as SuperAdminAccoladeController;
 use App\Http\Controllers\SuperAdmin\AnnouncementController;
 use App\Http\Controllers\SuperAdmin\CreatorController as SuperAdminCreatorController;
+use App\Http\Controllers\SuperAdmin\CreatorGuideOverrideController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\AnalyticsController as CreatorIntelligenceAnalyticsController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\AnalyticsExportController as CreatorIntelligenceAnalyticsExportController;
 use App\Http\Controllers\SuperAdmin\CreatorIntelligence\ContentItemController as CreatorIntelligenceContentItemController;
@@ -229,6 +230,9 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'verifie
     Route::patch('/creators/{creator}/accolades', [CreatorAccoladeController::class, 'update'])->name('creators.accolades.update');
     Route::put('/creators/{creator}', [SuperAdminCreatorController::class, 'update'])->name('creators.update');
     Route::post('/creators/{creator}/starter-requests', [SuperAdminCreatorController::class, 'starter'])->name('creators.starter');
+    Route::post('/creators/{creator}/super-guides', [CreatorGuideOverrideController::class, 'store'])->name('creators.super-guides.store');
+    Route::put('/creators/{creator}/super-guides/{override}', [CreatorGuideOverrideController::class, 'update'])->name('creators.super-guides.update');
+    Route::delete('/creators/{creator}/super-guides/{override}', [CreatorGuideOverrideController::class, 'destroy'])->name('creators.super-guides.destroy');
     Route::get('/creators/{creator}/preview', [SuperAdminCreatorController::class, 'preview'])->name('creators.preview');
     Route::patch('/creators/{creator}/disable', [SuperAdminCreatorController::class, 'disable'])->name('creators.disable');
     Route::patch('/creators/{creator}/enable', [SuperAdminCreatorController::class, 'enable'])->name('creators.enable');

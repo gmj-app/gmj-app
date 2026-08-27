@@ -425,7 +425,7 @@ class RecommendationController extends Controller
             if (! $user->canSuggestTo($creator)) {
                 throw ValidationException::withMessages([
                     'limit' => $user->suggestionsRemainingFor($creator) === 0
-                        ? "You've used all your requests for this creator."
+                        ? "You can have up to {$user->requestLimitFor($creator)} active Requests for this Creator."
                         : 'You’ve reached your creator favorite limit. Remove a favorite before suggesting something for this journey.',
                 ]);
             }
@@ -727,7 +727,7 @@ class RecommendationController extends Controller
             'reactors_limit' => $user->creatorFavoriteLimit(),
             'reactors_used' => $user->creatorFavoritesUsed(),
             'reactors_remaining' => $user->creatorFavoritesRemaining(),
-            'suggestions_limit' => $limits['suggestions_per_reactor'],
+            'suggestions_limit' => $user->requestLimitFor($creator),
             'suggestions_used' => $user->suggestionsUsedFor($creator),
             'suggestions_remaining' => $user->suggestionsRemainingFor($creator),
             'can_suggest' => $user->canSuggestTo($creator),

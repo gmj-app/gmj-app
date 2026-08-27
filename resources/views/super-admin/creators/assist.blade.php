@@ -42,6 +42,30 @@
                     </form>
                 </section>
             @endif
+            <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                <h3 class="font-extrabold">Super Guides</h3>
+                <p class="mt-1 text-sm text-slate-500">Super Guides can submit more Requests to this Creator. This does not grant moderation or Creator access.</p>
+                <div class="mt-4 space-y-3">
+                    @forelse($creator->guideRequestOverrides as $override)
+                        <div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                            <div class="font-bold">{{ $override->guide->public_display_name ?: $override->guide->name }}</div>
+                            <div class="break-all text-xs text-slate-500">{{ $override->guide->email }}</div>
+                            <div class="mt-1 text-xs text-slate-500">Added {{ $override->created_at->format('M j, Y') }}</div>
+                            <div class="mt-3 flex flex-wrap items-end gap-2">
+                                <form method="POST" action="{{ route('super-admin.creators.super-guides.update', [$creator, $override]) }}" class="flex items-end gap-2">@csrf @method('PUT')<div><x-input-label :for="'request_limit_'.$override->id" value="Request limit"/><input id="request_limit_{{ $override->id }}" name="request_limit" type="number" min="{{ config('request_limits.override_min') }}" max="{{ config('request_limits.override_max') }}" value="{{ $override->request_limit }}" required class="mt-1 w-24 rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"></div><button class="rounded-lg border border-indigo-300 px-3 py-2 font-bold text-indigo-700 dark:text-indigo-300">Save</button></form>
+                                <form method="POST" action="{{ route('super-admin.creators.super-guides.destroy', [$creator, $override]) }}" onsubmit="return confirm('Remove Super Guide access? This Guide will return to the normal {{ config('request_limits.default') }}-Request limit for this Creator. Existing Requests will not be removed.')">@csrf @method('DELETE')<button class="rounded-lg px-3 py-2 font-bold text-red-700 dark:text-red-300">Remove</button></form>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-sm text-slate-500">No Super Guides yet. Add a trusted Guide to give them more Request slots for this Creator.</p>
+                    @endforelse
+                </div>
+                <form method="POST" action="{{ route('super-admin.creators.super-guides.store', $creator) }}" class="mt-5 space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700">@csrf
+                    <div><x-input-label for="guide_email" value="Guide email"/><x-text-input id="guide_email" name="guide_email" type="email" class="mt-1 block w-full" :value="old('guide_email')" required/><x-input-error :messages="$errors->get('guide_email')" class="mt-2"/></div>
+                    <div><x-input-label for="new_request_limit" value="Request limit"/><input id="new_request_limit" name="request_limit" type="number" min="{{ config('request_limits.override_min') }}" max="{{ config('request_limits.override_max') }}" value="{{ old('request_limit', config('request_limits.override_default')) }}" required class="mt-1 w-28 rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"><x-input-error :messages="$errors->get('request_limit')" class="mt-2"/></div>
+                    <button class="rounded-lg bg-indigo-600 px-4 py-2 font-bold text-white">Add Super Guide</button>
+                </form>
+            </section>
             <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h3 class="font-extrabold">Add starter requests</h3><p class="mt-1 text-sm text-slate-500">Added as creator-origin content and attributed to the creator owner, not the Super Admin Guide.</p><form method="POST" action="{{ route('super-admin.creators.starter',$creator) }}" class="mt-4 space-y-3">@csrf<input name="suggestions[0][title]" placeholder="Request title" class="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"><input name="suggestions[0][url]" type="url" placeholder="Optional link" class="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"><select name="suggestions[0][category]" class="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"><option value="">No category</option>@foreach($categories as $category)<option value="{{ $category }}">{{ ucfirst($category) }}</option>@endforeach</select><textarea name="suggestions[0][note]" placeholder="Optional context" class="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-950"></textarea><button class="rounded-lg bg-indigo-600 px-4 py-2 font-bold text-white">Add starter request</button></form></section>
             <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h3 class="font-extrabold">Recent admin activity</h3><div class="mt-3 space-y-3 text-sm">@forelse($history as $entry)<div><div class="font-semibold">{{ $entry->description }}</div><div class="text-xs text-slate-500">{{ $entry->created_at->format('M j, Y g:i A') }} by {{ $entry->admin?->name ?: 'Former admin' }}</div></div>@empty<p class="text-slate-500">No administrative changes recorded yet.</p>@endforelse</div></section>
         </aside>

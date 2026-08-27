@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Services\GuideAccoladeResolver;
 use App\Services\GuideAccoladeService;
 use App\Services\GuideNumberService;
+use App\Services\GuideRequestLimitService;
 use App\Services\PlanEntitlementService;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -420,19 +421,14 @@ class User extends Authenticatable
 
     public function suggestionsUsedFor(Creator $creator): int
     {
-        return $this->recommendationsSubmitted()
-            ->where('creator_id', $creator->id)
-            ->where('submission_source', Recommendation::SUBMISSION_SOURCE_FAN)
-            ->whereNull('resource_released_at')
-            ->whereIn('status', Recommendation::suggestionConsumingStatuses())
-            ->count();
+        return app(GuideRequestLimitService::class)->getActiveRequestCount($this, $creator);
     }
 
     public function suggestionsRemainingFor(Creator $creator): int
     {
         return max(
             0,
-            $this->membershipLimits()['suggestions_per_reactor'] - $this->suggestionsUsedFor($creator),
+            app(GuideRequestLimitService::class)->getLimit($this, $creator) - $this->suggestionsUsedFor($creator),
         );
     }
 
@@ -450,6 +446,11 @@ class User extends Authenticatable
     {
         return ($this->hasFavoritedCreator($creator) || $this->canFavoriteMoreCreators())
             && $this->suggestionsRemainingFor($creator) > 0;
+    }
+
+    public function requestLimitFor(Creator $creator): int
+    {
+        return app(GuideRequestLimitService::class)->getLimit($this, $creator);
     }
 
     public function hasFavoritedCreator(Creator $creator): bool

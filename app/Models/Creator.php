@@ -206,6 +206,11 @@ class Creator extends Model
         return $this->hasMany(CreatorOwner::class);
     }
 
+    public function guideRequestOverrides(): HasMany
+    {
+        return $this->hasMany(CreatorGuideOverride::class);
+    }
+
     public function duplicateCases(): HasMany
     {
         return $this->hasMany(RequestDuplicateCase::class);
