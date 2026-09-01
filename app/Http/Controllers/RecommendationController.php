@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Accolades\AccoladeShowcaseService;
 use App\Services\CreatorParticipationService;
 use App\Services\CreatorRequestPerPageResolver;
+use App\Services\CreatorTagService;
 use App\Services\RequestCacheInvalidator;
 use App\Services\RequestSupportService;
 use App\Services\UnfavoriteCreatorAction;
@@ -32,6 +33,7 @@ class RecommendationController extends Controller
     public function __construct(
         private readonly CreatorParticipationService $participation,
         private readonly CreatorRequestPerPageResolver $creatorRequestPerPage,
+        private readonly CreatorTagService $creatorTags,
         private readonly UnfavoriteCreatorAction $unfavoriteCreator,
         private readonly YouTubeUrlService $youtubeUrls,
         private readonly YouTubePlaylistMetadataService $playlistMetadata,
@@ -393,6 +395,8 @@ class RecommendationController extends Controller
         }
 
         $validated = $request->validated();
+        $isChristmasRequest = (bool) ($validated['christmas'] ?? false);
+        unset($validated['christmas']);
         unset($validated['confirm_favorite']);
 
         $normalized = $validated['recommendation_type'] === 'youtube'
@@ -411,7 +415,7 @@ class RecommendationController extends Controller
             ? $this->playlistMetadata->fetch($normalized['youtube_playlist_id'])
             : null;
 
-        $createdRequestId = DB::transaction(function () use ($creator, $request, $validated, $normalized, $playlistMetadata): int {
+        $createdRequestId = DB::transaction(function () use ($creator, $request, $validated, $normalized, $playlistMetadata, $isChristmasRequest): int {
             /** @var User $user */
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
 
@@ -452,6 +456,10 @@ class RecommendationController extends Controller
                 'title' => filled($playlistMetadata['title'] ?? null) ? $playlistMetadata['title'] : $validated['title'],
                 'status' => $creator->defaultRecommendationStatus(),
             ]);
+
+            if ($isChristmasRequest) {
+                $this->creatorTags->attach($creator, $createdRequest, CreatorTagService::CHRISTMAS_TAG);
+            }
 
             return $createdRequest->id;
         });

@@ -342,6 +342,26 @@
                         @enderror
                     </div>
 
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+                        <label for="christmas" class="flex cursor-pointer items-start gap-3">
+                            <input
+                                id="christmas"
+                                name="christmas"
+                                type="checkbox"
+                                value="1"
+                                @checked(old('christmas'))
+                                class="mt-0.5 rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-950"
+                            >
+                            <span>
+                                <span class="block text-sm font-semibold text-gray-900 dark:text-slate-100"><span aria-hidden="true">🎄</span> Christmas Request</span>
+                                <span class="mt-1 block text-xs leading-5 text-gray-600 dark:text-slate-400">Tag this as Christmas content so Guides and the Creator can find it with the normal Request filters. It still uses one normal Request slot.</span>
+                            </span>
+                        </label>
+                        @error('christmas')
+                            <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <div class="flex justify-end">
                         <button
                             type="submit"

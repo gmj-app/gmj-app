@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class CreatorTagService
 {
+    public const CHRISTMAS_TAG = 'Christmas';
+
     public const DEFAULT_TAGS = [
         'Topic Idea',
         'YouTube Link',
@@ -51,6 +53,18 @@ class CreatorTagService
         }
 
         $recommendation->creatorTags()->sync($tags->pluck('id')->all());
+    }
+
+    public function attach(
+        Creator $creator,
+        Recommendation $recommendation,
+        string $name,
+    ): void {
+        abort_unless($recommendation->creator_id === $creator->id, 404);
+
+        $tag = $this->resolve($creator, [$name])->firstOrFail();
+
+        $recommendation->creatorTags()->syncWithoutDetaching([$tag->id]);
     }
 
     /**

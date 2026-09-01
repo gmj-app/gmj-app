@@ -32,6 +32,7 @@ class StoreRecommendationRequest extends FormRequest
             'category' => ['nullable', Rule::in(Recommendation::CATEGORY_OPTIONS)],
             'description' => ['nullable', 'required_if:recommendation_type,topic', 'string', 'max:1000'],
             'reason' => ['nullable', 'string', 'max:1000'],
+            'christmas' => ['nullable', 'boolean'],
             'confirm_favorite' => ['nullable', 'boolean'],
         ];
     }
