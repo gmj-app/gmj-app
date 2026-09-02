@@ -7,7 +7,6 @@ use App\Models\BetaFeedback;
 use App\Models\SuperAdminAuditLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use RuntimeException;
 use Tests\TestCase;
@@ -16,28 +15,24 @@ class BetaFeedbackTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function tearDown(): void
+    public function test_testing_feedback_launcher_is_not_rendered_for_any_account_type(): void
     {
-        File::delete(storage_path('framework/testing/changelog.json'));
-        parent::tearDown();
-    }
+        config([
+            'gmj.beta_feedback_enabled' => true,
+            'gmj.admin_emails' => ['admin@example.test'],
+        ]);
 
-    private function useTestChangelogPath(): string
-    {
-        $path = storage_path('framework/testing/changelog.json');
-        config(['changelog.path' => $path]);
+        $this->get('/')->assertOk()->assertDontSee('Testing Feedback');
 
-        return $path;
-    }
+        foreach (['guide@example.test', 'creator@example.test', 'admin@example.test'] as $email) {
+            $this->actingAs(User::factory()->create(['email' => $email]))
+                ->get('/')
+                ->assertOk()
+                ->assertDontSee('Testing Feedback')
+                ->assertDontSee('Open testing feedback', false);
 
-    public function test_feedback_button_renders_when_enabled(): void
-    {
-        config(['gmj.beta_feedback_enabled' => true]);
-
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('Testing Feedback')
-            ->assertSee('Tell us what happened. This form automatically includes the page and browser details so you do not have to.');
+            auth()->logout();
+        }
     }
 
     public function test_admin_feedback_viewer_sees_inbox_modal_instead_of_submit_form(): void
@@ -45,6 +40,7 @@ class BetaFeedbackTest extends TestCase
         config([
             'gmj.beta_feedback_enabled' => true,
             'gmj.admin_emails' => ['jfragment@gmail.com'],
+            'super_admin.emails' => ['jfragment@gmail.com'],
         ]);
 
         $admin = User::factory()->create([
@@ -74,11 +70,12 @@ class BetaFeedbackTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get('/')
+            ->get(route('super-admin.dashboard'))
             ->assertOk()
-            ->assertSee('Testing Feedback Inbox')
+            ->assertSee('Feedback Inbox')
             ->assertSee('Latest beta feedback from testers.')
-            ->assertSee('Open testing feedback inbox')
+            ->assertSee('Open feedback inbox')
+            ->assertDontSee('Testing Feedback')
             ->assertSee('Newest feedback message.')
             ->assertSee('Older feedback message.')
             ->assertSeeInOrder(['Newest feedback message.', 'Older feedback message.'])
@@ -96,51 +93,6 @@ class BetaFeedbackTest extends TestCase
 
         $this->assertNull($older->read_at);
         $this->assertNull($newer->read_at);
-    }
-
-    public function test_tester_defaults_to_send_feedback_and_can_open_changelog_tab(): void
-    {
-        config(['gmj.beta_feedback_enabled' => true]);
-
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('Send Feedback')
-            ->assertSee('Change Log')
-            ->assertSee("activeTab: 'feedback'", false)
-            ->assertSee("x-on:click=\"activeTab = 'changelog'\"", false)
-            ->assertSee('role="tablist"', false)
-            ->assertSee('role="tabpanel"', false);
-    }
-
-    public function test_missing_changelog_has_a_safe_unavailable_state(): void
-    {
-        config(['gmj.beta_feedback_enabled' => true]);
-        $this->useTestChangelogPath();
-
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('Change log is temporarily unavailable.')
-            ->assertDontSee(storage_path(), false);
-    }
-
-    public function test_valid_changelog_is_sorted_escaped_and_does_not_render_sensitive_fields(): void
-    {
-        config(['gmj.beta_feedback_enabled' => true]);
-        $path = $this->useTestChangelogPath();
-        File::ensureDirectoryExists(dirname($path));
-        File::put($path, json_encode([
-            ['hash' => 'old1234', 'date' => '2026-07-10T10:00:00Z', 'subject' => 'Older public update', 'author_email' => 'secret@example.test'],
-            ['hash' => 'new1234', 'date' => '2026-07-11T10:00:00Z', 'subject' => '<script>alert("x")</script> New update', 'author_email' => 'private@example.test'],
-        ], JSON_THROW_ON_ERROR));
-
-        $response = $this->get('/')->assertOk();
-
-        $response
-            ->assertSeeInOrder(['Jul 11, 2026', '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; New update', 'Jul 10, 2026', 'Older public update'], false)
-            ->assertDontSee('<script>alert', false)
-            ->assertDontSee('secret@example.test')
-            ->assertDontSee('private@example.test')
-            ->assertDontSee('new1234');
     }
 
     public function test_admin_feedback_inbox_routes_are_hidden_from_normal_users(): void
@@ -233,7 +185,11 @@ class BetaFeedbackTest extends TestCase
 
     public function test_admin_can_mark_feedback_as_spam_and_it_leaves_inbox_and_unread_count(): void
     {
-        config(['gmj.beta_feedback_enabled' => true, 'gmj.admin_emails' => ['admin@example.test']]);
+        config([
+            'gmj.beta_feedback_enabled' => true,
+            'gmj.admin_emails' => ['admin@example.test'],
+            'super_admin.emails' => ['admin@example.test'],
+        ]);
         $admin = User::factory()->create(['name' => 'Spam Moderator', 'email' => 'admin@example.test']);
         $spam = BetaFeedback::query()->create(['name' => 'Sales Bot', 'email' => 'sales@example.test', 'type' => 'Other', 'message' => 'Buy our service.']);
         $legitimate = BetaFeedback::query()->create(['name' => 'Real Tester', 'email' => 'real@example.test', 'type' => 'Bug', 'message' => 'A real bug.']);
@@ -254,12 +210,16 @@ class BetaFeedbackTest extends TestCase
 
     public function test_spam_can_be_reviewed_and_restored_without_changing_read_state(): void
     {
-        config(['gmj.beta_feedback_enabled' => true, 'gmj.admin_emails' => ['admin@example.test']]);
+        config([
+            'gmj.beta_feedback_enabled' => true,
+            'gmj.admin_emails' => ['admin@example.test'],
+            'super_admin.emails' => ['admin@example.test'],
+        ]);
         $admin = User::factory()->create(['email' => 'admin@example.test']);
         $readAt = now()->subHour();
         $feedback = BetaFeedback::query()->create(['name' => 'Gemma Marshall', 'email' => 'gemma@example.test', 'type' => 'Bug', 'message' => 'Review me.', 'read_at' => $readAt, 'spam_at' => now(), 'spam_by_user_id' => $admin->id]);
 
-        $this->actingAs($admin)->get('/')->assertOk()->assertSee('Review me.')->assertSee('Restore to inbox')->assertSee('Marked');
+        $this->actingAs($admin)->get(route('super-admin.dashboard'))->assertOk()->assertSee('Review me.')->assertSee('Restore to inbox')->assertSee('Marked');
         $this->postJson(route('internal.beta-feedback.restore', $feedback))->assertOk()->assertJsonPath('message', 'Feedback restored to inbox.');
 
         $feedback->refresh();
@@ -286,33 +246,6 @@ class BetaFeedbackTest extends TestCase
         $this->postJson(route('internal.beta-feedback.restore', $feedback))->assertOk();
         $this->postJson(route('internal.beta-feedback.restore', $feedback))->assertOk();
         $this->assertSame(1, SuperAdminAuditLog::query()->where('action', 'beta_feedback.restored_from_spam')->count());
-    }
-
-    public function test_feedback_modal_uses_direct_open_state_and_posts_to_feedback_route(): void
-    {
-        config(['gmj.beta_feedback_enabled' => true]);
-
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('type="button"', false)
-            ->assertSee('x-on:click="openModal()"', false)
-            ->assertSee('x-show="open"', false)
-            ->assertSee('role="dialog"', false)
-            ->assertSee('aria-labelledby="beta-feedback-title"', false)
-            ->assertSee('method="POST"', false)
-            ->assertSee('action="'.route('beta-feedback.store').'"', false)
-            ->assertSee('x-on:keydown.escape.window="open ? closeModal() : null"', false)
-            ->assertDontSee('$dispatch(&#039;open-modal&#039;, &#039;beta-feedback&#039;)', false)
-            ->assertDontSee('data-modal-root="beta-feedback"', false);
-    }
-
-    public function test_feedback_button_is_hidden_when_disabled(): void
-    {
-        config(['gmj.beta_feedback_enabled' => false]);
-
-        $this->get('/')
-            ->assertOk()
-            ->assertDontSee('Testing Feedback');
     }
 
     public function test_feedback_endpoint_is_unavailable_when_disabled(): void

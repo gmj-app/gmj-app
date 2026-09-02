@@ -385,7 +385,6 @@ class PublicCreatorQueueTest extends TestCase
 
     public function test_mobile_request_blades_use_a_three_row_grid_with_readable_clamped_titles(): void
     {
-        config(['gmj.beta_feedback_enabled' => true]);
         $creator = Creator::factory()->create(['slug' => 'mobile-request-blades']);
         $request = Recommendation::factory()->create([
             'creator_id' => $creator->id,
@@ -414,7 +413,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertSee("x-bind:class=\"open ? 'line-clamp-none' : ''\"", false)
             ->assertSee('request-blade-rank', false)
             ->assertSee('h-9 w-16', false)
-            ->assertSee('pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0', false);
+            ->assertDontSee('pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0', false);
 
         $this->assertStringContainsString('data-request-status="recorded"', (string) $row);
         $this->assertStringContainsString('data-collapsed-vote-count', (string) $row);

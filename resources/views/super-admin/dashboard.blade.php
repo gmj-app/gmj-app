@@ -7,4 +7,10 @@
             <p class="text-sm font-bold text-slate-500">Accolade engine</p><p class="mt-2 text-4xl font-extrabold">Inspect</p><p class="mt-4 text-sm text-indigo-600 dark:text-indigo-300">Evaluate and rebuild progress &rarr;</p>
         </a>
     </div>
+
+    @if (config('gmj.beta_feedback_enabled'))
+        <div class="mt-6">
+            <x-beta-feedback />
+        </div>
+    @endif
 </x-super-admin-layout>

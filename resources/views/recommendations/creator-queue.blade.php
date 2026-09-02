@@ -407,10 +407,7 @@
 
                     <div
                         data-creator-request-accordion
-                        @class([
-                            'space-y-3 sm:space-y-5',
-                            'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0' => config('gmj.beta_feedback_enabled'),
-                        ])
+                        class="space-y-3 sm:space-y-5"
                         x-data="creatorRequestAccordion(@js($visibleRecommendationIds), @js($initialExpandedRequestId))"
                         x-init="
                             if (window.location.hash && openHashRequest()) {

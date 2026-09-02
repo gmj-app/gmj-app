@@ -1,6 +1,6 @@
 # Beta changelog
 
-The Testing Feedback modal reads a static, public-safe artifact from `storage/app/changelog.json`. Normal web requests only parse this file and never execute Git.
+The Super Admin Feedback Inbox reads a static, public-safe artifact from `storage/app/changelog.json`. Normal web requests only parse this file and never execute Git.
 
 Generate it after source checkout and before serving a deployment:
 
