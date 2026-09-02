@@ -383,7 +383,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'id="recommendation-'.$second->id.'"'));
     }
 
-    public function test_mobile_request_blades_use_a_three_row_grid_with_readable_clamped_titles(): void
+    public function test_request_blades_restore_the_known_good_single_flex_presentation(): void
     {
         $creator = Creator::factory()->create(['slug' => 'mobile-request-blades']);
         $request = Recommendation::factory()->create([
@@ -398,53 +398,30 @@ class PublicCreatorQueueTest extends TestCase
             ->before('id="recommendation-details-'.$request->id.'"');
 
         $response
-            ->assertSee('data-request-mobile-grid', false)
-            ->assertSee('request-blade-header group', false)
-            ->assertSee('request-blade-disclosure', false)
-            ->assertSee('request-blade-media', false)
-            ->assertSee('data-request-secondary-actions', false)
-            ->assertSee('request-blade-actions', false)
-            ->assertSee('request-blade-overflow', false)
-            ->assertSee('request-blade-status', false)
-            ->assertSee('request-blade-vote', false)
-            ->assertSee('request-blade-chevron', false)
-            ->assertSee('data-request-mobile-title', false)
-            ->assertSee('class="request-blade-title"', false)
-            ->assertSee("x-bind:class=\"open ? 'line-clamp-none' : ''\"", false)
-            ->assertSee('request-blade-rank', false)
-            ->assertSee('h-9 w-16', false)
+            ->assertSee('data-creator-request-accordion', false)
+            ->assertSee('class="space-y-5"', false)
+            ->assertSee('group flex min-h-14 w-full min-w-0 items-center gap-1.5 px-2 py-2', false)
+            ->assertSee('sm:min-h-[66px] sm:gap-2 sm:px-3', false)
+            ->assertSee('flex min-w-0 flex-1 cursor-pointer items-center gap-2.5', false)
+            ->assertSee('sm:gap-4 sm:px-2', false)
+            ->assertSee('inline-flex h-10 min-w-12 shrink-0 items-center justify-center', false)
+            ->assertSee('flex min-w-0 flex-col items-start gap-1 lg:flex-row lg:items-center lg:gap-2', false)
+            ->assertSee('min-w-0 flex-1 break-words text-sm font-semibold leading-snug', false)
+            ->assertDontSee('data-request-mobile-grid', false)
+            ->assertDontSee('data-request-secondary-actions', false)
+            ->assertDontSee('request-blade-', false)
             ->assertDontSee('pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0', false);
 
-        $this->assertStringContainsString('data-request-status="recorded"', (string) $row);
+        $this->assertSame(1, substr_count((string) $row, 'data-request-status="recorded"'));
         $this->assertStringContainsString('data-collapsed-vote-count', (string) $row);
         $this->assertStringContainsString('data-request-disclosure-chevron', (string) $row);
         $this->assertStringNotContainsString('break-all', (string) $row);
-        $this->assertTrue(strpos((string) $row, 'request-blade-rank') < strpos((string) $row, 'request-blade-media'));
-        $this->assertTrue(strpos((string) $row, 'request-blade-media') < strpos((string) $row, 'data-request-mobile-title'));
-        $this->assertTrue(strpos((string) $row, 'data-request-mobile-title') < strpos((string) $row, 'data-request-secondary-actions'));
 
         $css = file_get_contents(resource_path('css/app.css'));
-        $this->assertStringContainsString('grid-cols-[3rem_4rem_minmax(0,1fr)_2.75rem]', $css);
-        $this->assertStringContainsString('gap-y-1.5 px-3 py-2.5', $css);
-        $this->assertStringContainsString('col-span-4 row-start-2', $css);
-        $this->assertStringContainsString('request-blade-overflow', $css);
-        $this->assertStringContainsString('col-start-4 row-start-1', $css);
-        $this->assertStringContainsString('request-blade-status', $css);
-        $this->assertStringContainsString('request-blade-vote', $css);
-        $this->assertStringContainsString('request-blade-chevron', $css);
-        $this->assertStringContainsString('row-start-3', $css);
-        $this->assertStringContainsString('md:flex md:min-h-[66px]', $css);
-        $this->assertStringContainsString('md:flex md:flex-1 md:items-center', $css);
-        $this->assertStringContainsString('@apply contents md:ml-auto md:flex md:shrink-0 md:items-center md:gap-1', $css);
+        $this->assertStringNotContainsString('.request-blade-', $css);
+        $this->assertStringNotContainsString('grid-cols-[3rem_4rem_minmax(0,1fr)_2.75rem]', $css);
         $this->assertStringNotContainsString('lg:grid-cols-[3.5rem_5.5rem_minmax(0,1fr)_2.75rem_5rem_2.75rem]', $css);
         $this->assertStringNotContainsString('lg:pr-36', $css);
-        $this->assertStringNotContainsString('border-r', Str::before($css, '.ci-page'));
-        $this->assertStringContainsString('md:w-14', $css);
-        $this->assertStringContainsString('line-clamp-3', $css);
-        $this->assertStringContainsString('md:line-clamp-none', $css);
-        $this->assertStringContainsString('.request-blade-actions', $css);
-        $this->assertStringContainsString('@apply contents', $css);
-        $this->assertStringContainsString('text-[15px] font-semibold leading-[1.35]', $css);
     }
 
     public function test_collapsed_vote_controls_are_independent_accessible_and_status_aware(): void
@@ -594,9 +571,7 @@ class PublicCreatorQueueTest extends TestCase
         $response = $this->get(route('creator.queue', $creator))->assertOk();
         $html = $response->getContent();
 
-        $this->assertSame(6, substr_count($html, 'data-status-variant="compact"'));
-        $this->assertSame(3, substr_count($html, 'request-blade-status'));
-        $this->assertSame(3, substr_count($html, 'hidden md:inline-flex'));
+        $this->assertSame(3, substr_count($html, 'data-status-variant="compact"'));
         foreach ([
             'coming_soon' => ['Coming Soon', 'violet'],
             'scheduled' => ['Scheduled', 'blue'],
@@ -605,7 +580,7 @@ class PublicCreatorQueueTest extends TestCase
             $response->assertSee('data-request-status="'.$status.'"', false)
                 ->assertSee('data-status-style="'.$style.'"', false)
                 ->assertSee('aria-label="Request status: '.$label.'. Voting is closed."', false);
-            $this->assertSame(2, substr_count($html, 'data-request-status="'.$status.'"'));
+            $this->assertSame(1, substr_count($html, 'data-request-status="'.$status.'"'));
         }
 
         $approved = Recommendation::query()->where('creator_id', $creator->id)->where('status', 'approved')->firstOrFail();
@@ -626,7 +601,7 @@ class PublicCreatorQueueTest extends TestCase
         $response->assertDontSee('Private pending request')
             ->assertDontSee('Private hidden request')
             ->assertDontSee('Private withdrawn request')
-            ->assertSee('request-blade-title-row', false)
+            ->assertSee('flex min-w-0 flex-col items-start gap-1 lg:flex-row', false)
             ->assertSee('Ordinary active request with a deliberately long title')
             ->assertSee('vote');
     }
@@ -827,7 +802,7 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringNotContainsString('Suggested by Original Fan', (string) $collapsedHeader);
         $this->assertStringNotContainsString('Supported by Voter', (string) $collapsedHeader);
         $this->assertStringNotContainsString('more supporters', (string) $collapsedHeader);
-        $this->assertStringContainsString('request-blade-disclosure', (string) $collapsedHeader);
+        $this->assertStringContainsString('data-request-disclosure-body', (string) $collapsedHeader);
     }
 
     public function test_full_community_support_separates_up_to_twenty_larger_avatars(): void
@@ -1504,8 +1479,8 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringContainsString('height="50"', (string) $collapsedHeader);
         $this->assertStringContainsString('loading="lazy"', (string) $collapsedHeader);
         $this->assertStringContainsString('decoding="async"', (string) $collapsedHeader);
-        $this->assertStringContainsString('md:h-[50px] md:w-[88px]', (string) $collapsedHeader);
-        $this->assertStringContainsString('request-blade-title', (string) $collapsedHeader);
+        $this->assertStringContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
+        $this->assertStringContainsString('min-w-0 flex-1 break-words text-sm font-semibold leading-snug', (string) $collapsedHeader);
         $this->assertStringNotContainsString('fill-current', (string) $collapsedHeader);
     }
 
@@ -1529,10 +1504,10 @@ class PublicCreatorQueueTest extends TestCase
 
         $this->assertStringContainsString('A compact community topic', (string) $collapsedHeader);
         $this->assertStringNotContainsString('<img', (string) $collapsedHeader);
-        $this->assertStringContainsString('md:h-[50px] md:w-[88px]', (string) $collapsedHeader);
-        $this->assertStringContainsString('bg-gradient-to-br from-slate-900 via-indigo-900 to-indigo-700', (string) $collapsedHeader);
-        $this->assertStringContainsString('text-[8px] font-bold', (string) $collapsedHeader);
-        $this->assertStringContainsString('tracking-[0.14em]', (string) $collapsedHeader);
+        $this->assertStringContainsString('sm:h-[50px] sm:w-[88px]', (string) $collapsedHeader);
+        $this->assertStringContainsString('bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-800', (string) $collapsedHeader);
+        $this->assertStringContainsString('text-[7px] font-semibold', (string) $collapsedHeader);
+        $this->assertStringContainsString('tracking-[0.18em]', (string) $collapsedHeader);
         $this->assertStringContainsString('Topic</span>', (string) $collapsedHeader);
         $this->assertStringNotContainsString('fill-current', (string) $collapsedHeader);
     }

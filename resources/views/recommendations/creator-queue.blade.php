@@ -407,7 +407,7 @@
 
                     <div
                         data-creator-request-accordion
-                        class="space-y-3 sm:space-y-5"
+                        class="space-y-5"
                         x-data="creatorRequestAccordion(@js($visibleRecommendationIds), @js($initialExpandedRequestId))"
                         x-init="
                             if (window.location.hash && openHashRequest()) {
@@ -447,7 +447,6 @@
                             $isVotable = $recommendation->isVotable();
                             $loginReturnUrl = route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id;
                             $duplicateQuery = request()->except(['duplicate_target','page']);
-                            $isDuplicateCandidate = $duplicateSource && $duplicateSource->id !== $recommendation->id && $recommendation->isVotable();
                         @endphp
 
                         <div
@@ -469,15 +468,7 @@
                             class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 motion-reduce:transition-none hover:border-emerald-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700"
                             x-bind:class="open ? 'border-emerald-400 ring-2 ring-emerald-300/70 dark:border-emerald-500 dark:ring-emerald-500/40' : ''"
                         >
-                            <div data-request-mobile-grid class="request-blade-header group {{ $isDuplicateCandidate ? 'request-blade-has-duplicate' : '' }}">
-                                <span class="request-blade-rank {{ $rankClasses }}">
-                                    {{ $rankLabel }}
-                                </span>
-
-                                <span class="request-blade-media">
-                                    <x-recommendation-compact-media :recommendation="$recommendation" />
-                                </span>
-
+                            <div class="group flex min-h-14 w-full min-w-0 items-center gap-1.5 px-2 py-2 transition hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 sm:min-h-[66px] sm:gap-2 sm:px-3">
                                 <button
                                     type="button"
                                     data-request-disclosure-body
@@ -485,14 +476,20 @@
                                     aria-expanded="{{ $isInitiallyExpanded ? 'true' : 'false' }}"
                                     x-bind:aria-expanded="open.toString()"
                                     aria-controls="recommendation-details-{{ $recommendation->id }}"
-                                    class="request-blade-disclosure"
+                                    class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl px-1 py-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:gap-4 sm:px-2"
                                 >
-                                    <span class="request-blade-title-wrap">
-                                        <span class="request-blade-title-row">
-                                            <span data-request-mobile-title title="{{ $requestTitle }}" class="request-blade-title" x-bind:class="open ? 'line-clamp-none' : ''">
+                                    <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
+                                        {{ $rankLabel }}
+                                    </span>
+
+                                    <x-recommendation-compact-media :recommendation="$recommendation" />
+
+                                    <span class="min-w-0 flex-1">
+                                        <span class="flex min-w-0 flex-col items-start gap-1 lg:flex-row lg:items-center lg:gap-2">
+                                            <span class="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 sm:text-base">
                                                 {{ $requestTitle }}
                                             </span>
-                                            <x-requests.status-badge :request="$recommendation" variant="compact" class="hidden md:inline-flex" />
+                                            <x-requests.status-badge :request="$recommendation" variant="compact" />
                                         </span>
                                         <x-recommendation-user-indicators
                                             :recommendation="$recommendation"
@@ -502,14 +499,11 @@
                                     </span>
                                 </button>
 
-                                <div data-request-secondary-actions class="request-blade-actions">
-                                <x-requests.status-badge :request="$recommendation" variant="compact" class="request-blade-status" />
-
                                 @auth
-                                    @if($isDuplicateCandidate)
-                                        <a x-on:click.stop href="{{ route('creator.queue', ['creator'=>$creator] + $duplicateQuery + ['duplicate_source'=>$duplicateSource->id,'duplicate_target'=>$recommendation->id]) }}" aria-label="Select “{{ $requestTitle }}” as possible duplicate" class="request-blade-duplicate">Select as duplicate</a>
+                                    @if($duplicateSource && $duplicateSource->id !== $recommendation->id && $recommendation->isVotable())
+                                        <a x-on:click.stop href="{{ route('creator.queue', ['creator'=>$creator] + $duplicateQuery + ['duplicate_source'=>$duplicateSource->id,'duplicate_target'=>$recommendation->id]) }}" aria-label="Select “{{ $requestTitle }}” as possible duplicate" class="inline-flex min-h-11 items-center rounded-xl border border-amber-400 px-2 text-xs font-bold text-amber-800 dark:text-amber-200">Select as duplicate</a>
                                     @elseif(!$duplicateSource && $recommendation->isReportable())
-                                        <div x-data="requestOverflowMenu(@js($recommendation->id), @js(route('creator.queue', ['creator'=>$creator] + request()->query() + ['duplicate_source'=>$recommendation->id])), @js(route('recommendations.reports.store',[$creator,$recommendation])))" x-on:keydown.escape.window="escape()" class="request-blade-overflow shrink-0">
+                                        <div x-data="requestOverflowMenu(@js($recommendation->id), @js(route('creator.queue', ['creator'=>$creator] + request()->query() + ['duplicate_source'=>$recommendation->id])), @js(route('recommendations.reports.store',[$creator,$recommendation])))" x-on:keydown.escape.window="escape()" class="shrink-0">
                                             <button type="button" x-ref="trigger" x-on:click.stop="toggle()" aria-label="More actions for “{{ $requestTitle }}”" aria-haspopup="menu" aria-controls="request-actions-{{ $recommendation->id }}" x-bind:aria-expanded="open.toString()" class="inline-flex size-11 items-center justify-center rounded-xl text-xl leading-none text-slate-500 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:bg-slate-800">⋮</button>
                                             <template x-teleport="body">
                                                 <div id="request-actions-{{ $recommendation->id }}" x-ref="menu" x-show="open" x-cloak x-bind:style="`position: fixed; top: ${top}px; left: ${left}px; width: min(15rem, calc(100vw - 1rem));`" class="z-30 rounded-xl border border-slate-700 bg-slate-900 p-1.5 text-slate-100 shadow-xl" role="menu" aria-label="Request actions">
@@ -524,7 +518,7 @@
                                 @guest
                                     @if(!$duplicateSource && $recommendation->isReportable())
                                         @php($reportLoginUrl = route('login.required', ['return' => route('creator.queue', $creator, absolute: false).'#recommendation-'.$recommendation->id]))
-                                        <div x-data="requestOverflowMenu(@js($recommendation->id), '', '')" x-on:keydown.escape.window="escape()" class="request-blade-overflow shrink-0"><button type="button" x-ref="trigger" x-on:click.stop="toggle()" aria-label="More actions for “{{ $requestTitle }}”" aria-haspopup="menu" aria-controls="request-actions-guest-{{ $recommendation->id }}" x-bind:aria-expanded="open.toString()" class="inline-flex size-11 items-center justify-center rounded-xl text-xl text-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">⋮</button><template x-teleport="body"><div id="request-actions-guest-{{ $recommendation->id }}" x-ref="menu" x-show="open" x-cloak x-bind:style="`position: fixed; top: ${top}px; left: ${left}px; width: min(15rem, calc(100vw - 1rem));`" class="z-30 rounded-xl border border-slate-700 bg-slate-900 p-1.5 text-slate-100 shadow-xl" role="menu">@if($recommendation->isVotable())<button type="button" x-ref="action" x-on:click.stop="signIn(@js($reportLoginUrl))" role="menuitem" class="min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold hover:bg-slate-800">Report possible duplicate</button>@endif<button type="button" @if(!$recommendation->isVotable()) x-ref="action" @endif x-on:click.stop="signIn(@js($reportLoginUrl))" role="menuitem" class="min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold hover:bg-slate-800">Report</button></div></template></div>
+                                        <div x-data="requestOverflowMenu(@js($recommendation->id), '', '')" x-on:keydown.escape.window="escape()" class="shrink-0"><button type="button" x-ref="trigger" x-on:click.stop="toggle()" aria-label="More actions for “{{ $requestTitle }}”" aria-haspopup="menu" aria-controls="request-actions-guest-{{ $recommendation->id }}" x-bind:aria-expanded="open.toString()" class="inline-flex size-11 items-center justify-center rounded-xl text-xl text-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">⋮</button><template x-teleport="body"><div id="request-actions-guest-{{ $recommendation->id }}" x-ref="menu" x-show="open" x-cloak x-bind:style="`position: fixed; top: ${top}px; left: ${left}px; width: min(15rem, calc(100vw - 1rem));`" class="z-30 rounded-xl border border-slate-700 bg-slate-900 p-1.5 text-slate-100 shadow-xl" role="menu">@if($recommendation->isVotable())<button type="button" x-ref="action" x-on:click.stop="signIn(@js($reportLoginUrl))" role="menuitem" class="min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold hover:bg-slate-800">Report possible duplicate</button>@endif<button type="button" @if(!$recommendation->isVotable()) x-ref="action" @endif x-on:click.stop="signIn(@js($reportLoginUrl))" role="menuitem" class="min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold hover:bg-slate-800">Report</button></div></template></div>
                                     @endif
                                 @endguest
 
@@ -535,7 +529,7 @@
                                             action="{{ route('recommendations.vote', [$creator, $recommendation]) }}"
                                             x-on:click.stop
                                             x-on:submit.prevent.stop="toggleVote($event, 'collapsed_blade')"
-                                            class="request-blade-vote shrink-0"
+                                            class="shrink-0"
                                         >
                                             @csrf
                                             <input type="hidden" name="_method" value="DELETE" @disabled(! $hasVoted) x-bind:disabled="! hasVoted">
@@ -563,14 +557,14 @@
                                             data-collapsed-vote-button
                                             aria-label="Vote for “{{ $requestTitle }}”"
                                             x-on:click.stop
-                                            class="request-blade-vote inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-2.5 text-sm font-bold text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:min-w-[4.5rem] sm:px-3"
+                                            class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-2.5 text-sm font-bold text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:min-w-[4.5rem] sm:px-3"
                                         >
                                             <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 10v10H4V10h3Zm0 10h10.2a2 2 0 0 0 1.94-1.52l1.5-6A2 2 0 0 0 12.66 4L7 10Z" /></svg>
                                             <span class="tabular-nums">{{ $totalVotes }}</span>
                                         </a>
                                     @endauth
                                 @else
-                                    <span data-collapsed-vote-count class="request-blade-vote min-w-11 shrink-0 text-center">
+                                    <span data-collapsed-vote-count class="min-w-11 shrink-0 text-center">
                                         <span class="block text-base font-semibold leading-none text-slate-950 dark:text-white" x-text="votes">{{ $totalVotes }}</span>
                                         <span class="mt-1 block text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ Str::plural('vote', $totalVotes) }}</span>
                                     </span>
@@ -585,7 +579,7 @@
                                     aria-expanded="{{ $isInitiallyExpanded ? 'true' : 'false' }}"
                                     x-bind:aria-expanded="open.toString()"
                                     aria-controls="recommendation-details-{{ $recommendation->id }}"
-                                    class="request-blade-chevron inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                                    class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                                 >
                                     <svg
                                         class="size-5 transition-transform duration-200 motion-reduce:transition-none"
@@ -599,7 +593,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
                                     </svg>
                                 </button>
-                                </div>
                             </div>
 
                             <p x-show="voteError" x-cloak class="border-t border-red-100 px-4 py-2 text-xs font-semibold text-red-700 dark:border-red-950 dark:text-red-300">
