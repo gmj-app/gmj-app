@@ -433,9 +433,13 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringContainsString('request-blade-vote', $css);
         $this->assertStringContainsString('request-blade-chevron', $css);
         $this->assertStringContainsString('row-start-3', $css);
-        $this->assertStringContainsString('md:flex md:min-h-[66px]', $css);
+        $this->assertStringContainsString('lg:min-h-[70px] lg:grid-cols-[3.5rem_5.5rem_minmax(0,1fr)_2.75rem_5rem_2.75rem]', $css);
+        $this->assertStringContainsString('lg:col-start-3 lg:row-start-1', $css);
+        $this->assertStringContainsString('lg:col-start-5 lg:row-start-1', $css);
+        $this->assertStringContainsString('lg:col-start-6 lg:row-start-1', $css);
+        $this->assertStringContainsString('lg:w-14', $css);
         $this->assertStringContainsString('line-clamp-3', $css);
-        $this->assertStringContainsString('md:line-clamp-none', $css);
+        $this->assertStringContainsString('lg:line-clamp-2', $css);
         $this->assertStringContainsString('.request-blade-actions', $css);
         $this->assertStringContainsString('@apply contents', $css);
         $this->assertStringContainsString('text-[15px] font-semibold leading-[1.35]', $css);
@@ -588,7 +592,9 @@ class PublicCreatorQueueTest extends TestCase
         $response = $this->get(route('creator.queue', $creator))->assertOk();
         $html = $response->getContent();
 
-        $this->assertSame(3, substr_count($html, 'data-status-variant="compact"'));
+        $this->assertSame(6, substr_count($html, 'data-status-variant="compact"'));
+        $this->assertSame(3, substr_count($html, 'request-blade-status'));
+        $this->assertSame(3, substr_count($html, 'hidden lg:inline-flex'));
         foreach ([
             'coming_soon' => ['Coming Soon', 'violet'],
             'scheduled' => ['Scheduled', 'blue'],
@@ -597,7 +603,7 @@ class PublicCreatorQueueTest extends TestCase
             $response->assertSee('data-request-status="'.$status.'"', false)
                 ->assertSee('data-status-style="'.$style.'"', false)
                 ->assertSee('aria-label="Request status: '.$label.'. Voting is closed."', false);
-            $this->assertSame(1, substr_count($html, 'data-request-status="'.$status.'"'));
+            $this->assertSame(2, substr_count($html, 'data-request-status="'.$status.'"'));
         }
 
         $approved = Recommendation::query()->where('creator_id', $creator->id)->where('status', 'approved')->firstOrFail();
