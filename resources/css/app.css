@@ -4,15 +4,15 @@
 
 @layer components {
     .request-blade-header {
-        @apply relative grid w-full min-w-0 grid-cols-[3rem_4rem_minmax(0,1fr)_2.75rem] items-center gap-x-2 gap-y-1.5 px-3 py-2.5 transition hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 lg:min-h-[70px] lg:grid-cols-[3.5rem_5.5rem_minmax(0,1fr)_2.75rem_5rem_2.75rem] lg:gap-x-3 lg:px-4 lg:py-2;
+        @apply grid w-full min-w-0 grid-cols-[3rem_4rem_minmax(0,1fr)_2.75rem] items-center gap-x-2 gap-y-1.5 px-3 py-2.5 transition hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 md:flex md:min-h-[66px] md:gap-2 md:px-3 md:py-2;
     }
 
     .request-blade-disclosure {
-        @apply col-span-4 row-start-2 min-w-0 cursor-pointer rounded-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:block lg:px-2 lg:py-1;
+        @apply col-span-4 row-start-2 min-w-0 cursor-pointer rounded-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 md:flex md:flex-1 md:items-center md:px-2 md:py-1;
     }
 
     .request-blade-rank {
-        @apply col-start-1 row-start-1 inline-flex h-10 w-12 shrink-0 items-center justify-center rounded-xl border px-2 text-sm font-semibold lg:h-11 lg:w-14 lg:px-2;
+        @apply col-start-1 row-start-1 inline-flex h-10 w-12 shrink-0 items-center justify-center rounded-xl border px-2 text-sm font-semibold md:h-11 md:w-14 md:px-2;
     }
 
     .request-blade-media {
@@ -28,45 +28,41 @@
     }
 
     .request-blade-title-row {
-        @apply flex min-w-0 flex-col items-start gap-1 lg:flex-row lg:items-center lg:gap-2;
+        @apply flex min-w-0 flex-col items-start gap-1 md:flex-row md:items-center md:gap-2;
     }
 
     .request-blade-title {
-        @apply line-clamp-3 min-w-0 flex-1 break-words text-[15px] font-semibold leading-[1.35] text-slate-800 dark:text-slate-100 lg:line-clamp-2 lg:text-base lg:leading-snug;
+        @apply line-clamp-3 min-w-0 flex-1 break-words text-[15px] font-semibold leading-[1.35] text-slate-800 dark:text-slate-100 md:line-clamp-none md:text-base md:leading-snug;
     }
 
     .request-blade-actions {
-        @apply contents;
+        @apply contents md:ml-auto md:flex md:shrink-0 md:items-center md:gap-1;
     }
 
     .request-blade-status {
-        @apply col-span-2 col-start-1 row-start-3 justify-self-start lg:hidden;
+        @apply col-span-2 col-start-1 row-start-3 justify-self-start md:hidden;
     }
 
     .request-blade-overflow {
-        @apply col-start-4 row-start-1 justify-self-end lg:justify-self-center;
+        @apply col-start-4 row-start-1 justify-self-end;
     }
 
     .request-blade-vote {
-        @apply col-start-3 row-start-3 justify-self-end lg:col-start-5 lg:row-start-1 lg:flex lg:w-full lg:justify-center;
+        @apply col-start-3 row-start-3 justify-self-end;
     }
 
     .request-blade-chevron {
-        @apply col-start-4 row-start-3 justify-self-end lg:col-start-6 lg:row-start-1 lg:justify-self-center;
+        @apply col-start-4 row-start-3 justify-self-end;
     }
 
     .request-blade-duplicate {
-        @apply col-span-4 row-start-3 flex min-h-11 w-full items-center justify-center rounded-xl border border-amber-400 px-3 text-center text-xs font-bold text-amber-800 dark:text-amber-200 lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:z-10 lg:min-h-9 lg:w-auto lg:justify-self-end;
+        @apply col-span-4 row-start-3 flex min-h-11 w-full items-center justify-center rounded-xl border border-amber-400 px-3 text-center text-xs font-bold text-amber-800 dark:text-amber-200 md:w-auto;
     }
 
     .request-blade-has-duplicate .request-blade-status,
     .request-blade-has-duplicate .request-blade-vote,
     .request-blade-has-duplicate .request-blade-chevron {
-        @apply row-start-4 lg:row-start-1;
-    }
-
-    .request-blade-has-duplicate .request-blade-disclosure {
-        @apply lg:pr-36;
+        @apply row-start-4;
     }
 
     .ci-page {

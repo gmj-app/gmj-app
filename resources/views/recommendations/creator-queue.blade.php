@@ -492,7 +492,7 @@
                                             <span data-request-mobile-title title="{{ $requestTitle }}" class="request-blade-title" x-bind:class="open ? 'line-clamp-none' : ''">
                                                 {{ $requestTitle }}
                                             </span>
-                                            <x-requests.status-badge :request="$recommendation" variant="compact" class="hidden lg:inline-flex" />
+                                            <x-requests.status-badge :request="$recommendation" variant="compact" class="hidden md:inline-flex" />
                                         </span>
                                         <x-recommendation-user-indicators
                                             :recommendation="$recommendation"

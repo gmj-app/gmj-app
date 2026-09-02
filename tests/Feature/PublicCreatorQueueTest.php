@@ -433,13 +433,15 @@ class PublicCreatorQueueTest extends TestCase
         $this->assertStringContainsString('request-blade-vote', $css);
         $this->assertStringContainsString('request-blade-chevron', $css);
         $this->assertStringContainsString('row-start-3', $css);
-        $this->assertStringContainsString('lg:min-h-[70px] lg:grid-cols-[3.5rem_5.5rem_minmax(0,1fr)_2.75rem_5rem_2.75rem]', $css);
-        $this->assertStringContainsString('lg:col-start-3 lg:row-start-1', $css);
-        $this->assertStringContainsString('lg:col-start-5 lg:row-start-1', $css);
-        $this->assertStringContainsString('lg:col-start-6 lg:row-start-1', $css);
-        $this->assertStringContainsString('lg:w-14', $css);
+        $this->assertStringContainsString('md:flex md:min-h-[66px]', $css);
+        $this->assertStringContainsString('md:flex md:flex-1 md:items-center', $css);
+        $this->assertStringContainsString('@apply contents md:ml-auto md:flex md:shrink-0 md:items-center md:gap-1', $css);
+        $this->assertStringNotContainsString('lg:grid-cols-[3.5rem_5.5rem_minmax(0,1fr)_2.75rem_5rem_2.75rem]', $css);
+        $this->assertStringNotContainsString('lg:pr-36', $css);
+        $this->assertStringNotContainsString('border-r', Str::before($css, '.ci-page'));
+        $this->assertStringContainsString('md:w-14', $css);
         $this->assertStringContainsString('line-clamp-3', $css);
-        $this->assertStringContainsString('lg:line-clamp-2', $css);
+        $this->assertStringContainsString('md:line-clamp-none', $css);
         $this->assertStringContainsString('.request-blade-actions', $css);
         $this->assertStringContainsString('@apply contents', $css);
         $this->assertStringContainsString('text-[15px] font-semibold leading-[1.35]', $css);
@@ -594,7 +596,7 @@ class PublicCreatorQueueTest extends TestCase
 
         $this->assertSame(6, substr_count($html, 'data-status-variant="compact"'));
         $this->assertSame(3, substr_count($html, 'request-blade-status'));
-        $this->assertSame(3, substr_count($html, 'hidden lg:inline-flex'));
+        $this->assertSame(3, substr_count($html, 'hidden md:inline-flex'));
         foreach ([
             'coming_soon' => ['Coming Soon', 'violet'],
             'scheduled' => ['Scheduled', 'blue'],
