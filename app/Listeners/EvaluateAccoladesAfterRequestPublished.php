@@ -31,7 +31,7 @@ class EvaluateAccoladesAfterRequestPublished implements ShouldQueue
             && $request->submitted_by && ($submitter = User::find($request->submitted_by))) {
             $this->evaluation->evaluateGuide($submitter, ['guide_requests_published', 'guide_influence'], $source);
         }
-        foreach ($this->supporters->resolve($request, $request->submitted_by) as $supporter) {
+        foreach ($this->supporters->resolve($request) as $supporter) {
             $this->evaluation->evaluateGuide($supporter, ['guide_supported_publications', 'guide_influence'], $source);
         }
         if ($creator = Creator::find($request->creator_id)) {

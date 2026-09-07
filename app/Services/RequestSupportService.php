@@ -3,12 +3,24 @@
 namespace App\Services;
 
 use App\Models\Recommendation;
+use App\Models\User;
 use App\Models\UserPick;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class RequestSupportService
 {
+    /** Call within the caller's transaction and user lock. */
+    public function supportRequest(User $user, Recommendation $request): UserPick
+    {
+        return $user->userPicks()->firstOrCreate([
+            'recommendation_id' => $request->id,
+        ], [
+            'creator_id' => $request->creator_id,
+            'vote_count' => 1,
+        ]);
+    }
+
     /** @return Builder<UserPick> */
     public function activeSupport(Recommendation $request): Builder
     {

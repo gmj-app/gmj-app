@@ -73,7 +73,7 @@ class AccoladeTestingToolkitTest extends TestCase
         $ownRequest = $submitted->recommendationsSubmitted()->firstOrFail();
         UserPick::create(['user_id' => $submitted->id, 'creator_id' => $ownRequest->creator_id, 'recommendation_id' => $ownRequest->id, 'vote_count' => 1]);
         $selfSupport = $evaluation->evaluateGuide($submitted, ['guide_supported_publications'], persist: false)->tracks['guide_supported_publications'];
-        $this->assertSame(0, $selfSupport['current_value']);
+        $this->assertSame(1, $selfSupport['current_value']);
 
         $consistencyCreator = Creator::where('slug', 'accolade-creator-consistency-exact')->firstOrFail();
         $consistency = $evaluation->evaluateCreator($consistencyCreator, ['creator_consistency'], persist: false)->tracks['creator_consistency'];

@@ -457,6 +457,9 @@ class RecommendationController extends Controller
                 'status' => $creator->defaultRecommendationStatus(),
             ]);
 
+            $this->requestSupport->supportRequest($user, $createdRequest);
+            DB::afterCommit(fn () => $this->requestCache->forget($createdRequest));
+
             if ($isChristmasRequest) {
                 $this->creatorTags->attach($creator, $createdRequest, CreatorTagService::CHRISTMAS_TAG);
             }
@@ -605,15 +608,10 @@ class RecommendationController extends Controller
         ]);
         $this->ensureVoteable($recommendation);
 
-        $created = DB::transaction(function () use ($creator, $recommendation, $request): bool {
+        $created = DB::transaction(function () use ($recommendation, $request): bool {
             /** @var User $user */
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
-            $pick = $user->userPicks()->firstOrCreate([
-                'recommendation_id' => $recommendation->id,
-            ], [
-                'creator_id' => $creator->id,
-                'vote_count' => 1,
-            ]);
+            $pick = $this->requestSupport->supportRequest($user, $recommendation);
 
             return $pick->wasRecentlyCreated;
         });

@@ -51,7 +51,7 @@ class PhaseThreeAccoladeTest extends TestCase
         $this->assertDatabaseHas('user_accolades', ['subject_type' => 'guide', 'subject_id' => $submitter->id, 'accolade_key' => 'guide.requests_submitted.tenderfoot']);
         $this->assertDatabaseHas('user_accolades', ['subject_id' => $submitter->id, 'accolade_key' => 'guide.published_requests.trailblazer']);
         $this->assertDatabaseHas('user_accolades', ['subject_id' => $submitter->id, 'accolade_key' => 'guide.influence.first_footprint']);
-        $this->assertDatabaseMissing('user_accolades', ['subject_id' => $submitter->id, 'accolade_key' => 'guide.supported_publications.hiking_boots']);
+        $this->assertDatabaseHas('user_accolades', ['subject_id' => $submitter->id, 'accolade_key' => 'guide.supported_publications.hiking_boots', 'progress_value_at_award' => 1]);
         $this->assertDatabaseHas('user_accolades', ['subject_id' => $supporter->id, 'accolade_key' => 'guide.supported_publications.hiking_boots', 'progress_value_at_award' => 1]);
         $this->assertSame(1, UserAccolade::where('subject_id', $submitter->id)->where('accolade_key', 'guide.published_requests.trailblazer')->count());
         Event::assertDispatched(AccoladeAwarded::class);
