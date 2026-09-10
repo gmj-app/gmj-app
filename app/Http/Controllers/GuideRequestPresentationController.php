@@ -23,7 +23,7 @@ class GuideRequestPresentationController extends Controller
 
     public function update(UpdateOwnRequestPresentationRequest $request, Recommendation $recommendation, RequestPresentationService $service): RedirectResponse
     {
-        $revision = $service->update($recommendation, $request->user(), $request->validated());
+        $revision = $service->update($recommendation, $request->user(), $request->safe()->only(['display_title_override', 'reason']));
 
         return back()->with('success', $revision ? 'Your request presentation was updated.' : 'No presentation changes were made.');
     }

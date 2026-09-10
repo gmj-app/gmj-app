@@ -138,7 +138,7 @@ class CreatorRequestController extends Controller
     {
         $item = $this->owned($creator, $recommendation);
         $service->revert($item, $revision, $request->user(), 'super_admin');
-        $this->audit->record($request->user(), $item, 'request.display_title_override_reverted', 'Guide presentation reverted to an earlier revision.', [], $item->fresh()->only(['display_title_override', 'request_context']), ['creator_id' => $creator->id, 'revision_id' => $revision->id], $request);
+        $this->audit->record($request->user(), $item, 'request.display_title_override_reverted', 'Guide presentation reverted to an earlier revision.', [], $item->fresh()->only(['display_title_override', 'reason', 'request_context']), ['creator_id' => $creator->id, 'revision_id' => $revision->id], $request);
 
         return back()->with('success', 'Presentation reverted.');
     }

@@ -6,7 +6,11 @@ use App\Models\Creator;
 use App\Models\CreatorOwner;
 use App\Models\Recommendation;
 use App\Models\User;
+use App\Services\RequestDuplicateService;
+use App\Services\RequestPresentationService;
+use App\Services\RequestReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -22,12 +26,12 @@ class GuideRequestPresentationTest extends TestCase
 
         $this->actingAs($guide)->patch(route('requests.presentation.update', $request), [
             'display_title_override' => '  A clearer   public title ',
-            'request_context' => "Useful context\nfor the creator.",
+            'reason' => "Useful context\nfor the creator.",
         ])->assertRedirect()->assertSessionHasNoErrors();
 
         $request->refresh();
         $this->assertSame('A clearer public title', $request->display_title_override);
-        $this->assertSame("Useful context\nfor the creator.", $request->request_context);
+        $this->assertSame("Useful context\nfor the creator.", $request->reason);
         $this->assertSame($identity, $request->only(array_keys($identity)));
         $this->assertDatabaseHas('request_presentation_revisions', [
             'recommendation_id' => $request->id,
@@ -143,11 +147,11 @@ class GuideRequestPresentationTest extends TestCase
 
     public function test_no_revision_is_created_when_normalized_values_are_unchanged(): void
     {
-        [$guide, $request] = $this->guideRequest(['display_title_override' => 'Same title', 'request_context' => 'Same context']);
+        [$guide, $request] = $this->guideRequest(['display_title_override' => 'Same title', 'reason' => 'Same context']);
 
         $this->actingAs($guide)->patch(route('requests.presentation.update', $request), [
             'display_title_override' => ' Same   title ',
-            'request_context' => 'Same context',
+            'reason' => 'Same context',
         ])->assertSessionHasNoErrors();
 
         $this->assertDatabaseCount('request_presentation_revisions', 0);
@@ -190,12 +194,12 @@ class GuideRequestPresentationTest extends TestCase
 
         $this->actingAs($guide)->patch(route('requests.presentation.update', $request), [
             'display_title_override' => str_repeat('x', 161),
-            'request_context' => str_repeat('y', 2001),
-        ])->assertSessionHasErrors(['display_title_override', 'request_context']);
+            'reason' => str_repeat('y', 2001),
+        ])->assertSessionHasErrors(['display_title_override', 'reason']);
 
         $this->actingAs($guide)->patch(route('requests.presentation.update', $request), [
             'display_title_override' => '<script>alert(1)</script> Helpful title',
-            'request_context' => '<img src=x onerror=alert(1)>',
+            'reason' => '<img src=x onerror=alert(1)>',
         ])->assertSessionHasNoErrors();
         $this->actingAs($guide)->get(route('creator.queue', $request->creator))
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt; Helpful title', false)
@@ -203,10 +207,10 @@ class GuideRequestPresentationTest extends TestCase
 
         $this->actingAs($guide)->patch(route('requests.presentation.update', $request), [
             'display_title_override' => '   ',
-            'request_context' => "\n ",
+            'reason' => "\n ",
         ])->assertSessionHasNoErrors();
         $this->assertNull($request->fresh()->display_title_override);
-        $this->assertNull($request->fresh()->request_context);
+        $this->assertNull($request->fresh()->reason);
     }
 
     public function test_super_admin_can_clear_and_revert_a_guide_override_with_audit_history(): void
@@ -241,6 +245,149 @@ class GuideRequestPresentationTest extends TestCase
 
         $this->actingAs($owner)->post(route('creators.recommendations.presentation.revert', [$request->creator, $request, $revision]))->assertRedirect();
         $this->assertSame('Guide title', $request->fresh()->display_title_override);
+    }
+
+    public function test_submitted_context_is_editable_and_updates_current_public_text_without_changing_support(): void
+    {
+        $guide = User::factory()->create();
+        $creator = Creator::factory()->create(['recommendation_approval_mode' => Creator::APPROVAL_MODE_AUTO]);
+        $original = "Original context & <script>alert('no')</script>\nSecond line.";
+        $this->actingAs($guide)->post(route('recommendations.store', $creator), [
+            'recommendation_type' => 'youtube', 'youtube_url' => 'https://www.youtube.com/watch?v=AAAAAAAAAAA',
+            'title' => 'Original linked title', 'reason' => $original, 'confirm_favorite' => '1',
+        ])->assertSessionHasNoErrors();
+        $item = $creator->recommendations()->sole();
+        $this->assertSame($original, $item->reason);
+        $this->assertNull($item->request_context);
+        $edit = route('requests.presentation.edit', $item);
+        $this->get($edit)->assertOk()->assertSee(e($original), false)->assertDontSee("<script>alert('no')</script>", false);
+        $before = $item->getAttributes();
+        $support = $item->allUserPicks()->get()->toArray();
+        $this->assertCount(1, $support);
+        $rank = Recommendation::query()->withOverallCreatorRank($creator->id)->findOrFail($item->id)->overall_rank;
+        $slots = $guide->suggestionsUsedFor($creator);
+        Notification::fake();
+        $updated = "Updated context <img src=x onerror=alert(1)>\nWith more background.";
+        $this->from($edit)->patch(route('requests.presentation.update', $item), [
+            'display_title_override' => 'Clearer title', 'reason' => $updated,
+        ])->assertRedirect($edit)->assertSessionHasNoErrors()->assertSessionHas('success', 'Your request presentation was updated.');
+        $item->refresh();
+        foreach (array_diff_key($before, array_flip(['reason', 'display_title_override', 'updated_at'])) as $key => $value) {
+            $this->assertSame($value, $item->getRawOriginal($key), $key);
+        }
+        $this->assertSame($support, $item->allUserPicks()->get()->toArray());
+        $this->assertSame($rank, Recommendation::query()->withOverallCreatorRank($creator->id)->findOrFail($item->id)->overall_rank);
+        $this->assertSame($slots, $guide->fresh()->suggestionsUsedFor($creator));
+        $this->assertSame($updated, $item->reason);
+        $revision = $item->presentationRevisions()->sole();
+        $this->assertContains('reason', $revision->changed_fields);
+        $this->assertSame($original, $revision->previous_request_context);
+        $this->assertSame($updated, $revision->new_request_context);
+        $this->assertDatabaseCount('request_identity_corrections', 0);
+        $this->get($edit)->assertOk()->assertSee(e($updated), false);
+        $this->get(route('requests.card-details', $item))->assertOk()->assertSee(e($updated), false)
+            ->assertDontSee(e($original), false)->assertDontSee('<img src=x onerror=alert(1)>', false);
+        Notification::assertNothingSent();
+    }
+
+    public function test_legacy_context_is_preserved_as_history_and_never_masks_or_resurrects_the_canonical_reason(): void
+    {
+        [$guide, $item] = $this->guideRequest(['reason' => 'Initial submitted reason', 'request_context' => 'Legacy separate context']);
+        $this->actingAs($guide)->get(route('requests.presentation.edit', $item))
+            ->assertOk()->assertSee('Initial submitted reason')->assertDontSee('Legacy separate context');
+        $this->patch(route('requests.presentation.update', $item), ['reason' => 'Updated canonical context', 'request_context' => null])->assertSessionHasNoErrors();
+        $revision = $item->presentationRevisions()->sole();
+        $this->assertSame('Legacy separate context', $item->fresh()->request_context);
+        $this->get(route('requests.card-details', $item))->assertOk()->assertSee('Updated canonical context')
+            ->assertDontSee('Initial submitted reason')->assertDontSee('Legacy separate context');
+        app(RequestPresentationService::class)->revert($item, $revision, $guide, 'guide');
+        $this->assertSame('Initial submitted reason', $item->fresh()->reason);
+        $this->assertSame('Legacy separate context', $item->fresh()->request_context);
+        $this->patch(route('requests.presentation.update', $item), ['reason' => ''])->assertSessionHasNoErrors();
+        $this->assertNull($item->fresh()->reason);
+        $this->get(route('requests.card-details', $item))->assertOk()->assertDontSee('Why this was suggested')->assertDontSee('Legacy separate context');
+        $this->get(route('requests.presentation.edit', $item))->assertOk()->assertDontSee('Initial submitted reason')->assertDontSee('Legacy separate context');
+    }
+
+    public function test_empty_context_can_be_added_and_limits_preserve_attempted_and_legacy_text(): void
+    {
+        [$guide, $item] = $this->guideRequest(['reason' => null]);
+        $edit = route('requests.presentation.edit', $item);
+        $this->actingAs($guide)->get($edit)->assertOk()->assertSee('></textarea>', false);
+        $valid = str_repeat('é', 2000);
+        $this->patch(route('requests.presentation.update', $item), ['reason' => $valid])->assertSessionHasNoErrors();
+        $this->assertSame($valid, $item->fresh()->reason);
+        $attempt = $valid.'!';
+        $this->from($edit)->patch(route('requests.presentation.update', $item), ['reason' => $attempt])
+            ->assertRedirect($edit)->assertSessionHasErrors('reason')->assertSessionHasInput('reason', $attempt);
+        $this->get($edit)->assertOk()->assertSee($attempt);
+        $this->assertSame($valid, $item->fresh()->reason);
+        $item->update(['reason' => $attempt]);
+        $this->flushSession();
+        $this->get($edit)->assertOk()->assertSee($attempt);
+        $this->assertSame($attempt, $item->fresh()->reason);
+    }
+
+    public function test_description_save_rejects_other_guides_admins_and_legacy_or_identity_inputs(): void
+    {
+        [$guide, $item] = $this->guideRequest(['reason' => 'Original']);
+        $url = route('requests.presentation.update', $item);
+        $this->patch($url, ['reason' => 'Guest'])->assertRedirect(route('login'));
+        $this->actingAs(User::factory()->create())->patch($url, ['reason' => 'Other'])->assertForbidden();
+        config(['super_admin.emails' => ['admin@example.com']]);
+        $this->actingAs(User::factory()->create(['email' => 'admin@example.com']))->patch($url, ['reason' => 'Admin'])->assertForbidden();
+        $this->actingAs($guide)->patch($url, ['reason' => 'No', 'request_context' => 'Obsolete field'])->assertSessionHasErrors('request_context');
+        $this->patch($url, ['reason' => 'No', 'description' => 'Changed topic identity'])->assertSessionHasErrors('request_identity');
+        $this->assertSame('Original', $item->fresh()->reason);
+        $this->assertDatabaseCount('request_presentation_revisions', 0);
+    }
+
+    public function test_topic_identity_and_correction_remain_separate_from_editable_context(): void
+    {
+        [$guide, $item] = $this->guideRequest(['recommendation_type' => 'topic', 'description' => 'Original topic identity', 'reason' => 'Original motivation']);
+        $this->actingAs($guide)->patch(route('requests.presentation.update', $item), ['reason' => 'Updated motivation'])->assertSessionHasNoErrors();
+        $this->assertSame('Original topic identity', $item->fresh()->description);
+        $this->assertDatabaseCount('request_identity_corrections', 0);
+        $this->post(route('requests.corrections.store', $item), ['proposed_topic' => 'Corrected topic', 'explanation' => 'Topic correction'])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('request_identity_corrections', ['recommendation_id' => $item->id, 'proposed_topic' => 'Corrected topic', 'status' => 'pending']);
+    }
+
+    public function test_context_edits_preserve_pending_reports_and_only_invalidate_presentation_caches(): void
+    {
+        [$guide, $item] = $this->guideRequest(['reason' => 'Original']);
+        $other = Recommendation::factory()->create(['creator_id' => $item->creator_id, 'status' => 'approved']);
+        $case = app(RequestDuplicateService::class)->report($guide, $item, $other);
+        $report = app(RequestReportService::class)->report($guide, $item, 'other', 'Review this');
+        $caseBefore = $case->fresh()->getAttributes();
+        $reportBefore = $report->fresh()->getAttributes();
+        $keys = ["recommendation:{$item->id}", "creator:{$item->creator_id}:requests", "user:{$guide->id}:activity", "guide:{$guide->id}:profile", 'search:recommendations'];
+        foreach ([...$keys, 'home:top-requests', 'unrelated-cache-entry'] as $key) {
+            Cache::put($key, 'cached');
+        }
+        $this->actingAs($guide)->patch(route('requests.presentation.update', $item), ['reason' => 'Updated'])->assertSessionHasNoErrors();
+        $this->assertSame($caseBefore, $case->fresh()->getAttributes());
+        $this->assertSame($reportBefore, $report->fresh()->getAttributes());
+        $this->assertDatabaseCount('request_duplicate_reports', 1);
+        foreach ($keys as $key) {
+            $this->assertFalse(Cache::has($key), $key);
+        }
+        $this->assertSame('cached', Cache::get('home:top-requests'));
+        $this->assertSame('cached', Cache::get('unrelated-cache-entry'));
+    }
+
+    public function test_submission_accepts_the_same_two_thousand_character_context_limit(): void
+    {
+        $guide = User::factory()->create();
+        $creator = Creator::factory()->create(['recommendation_approval_mode' => Creator::APPROVAL_MODE_AUTO]);
+        $data = ['recommendation_type' => 'topic', 'title' => 'Topic', 'description' => 'Topic definition', 'confirm_favorite' => '1'];
+        $this->actingAs($guide)->post(route('recommendations.store', $creator), $data + ['reason' => str_repeat('a', 2001)])
+            ->assertSessionHasErrors('reason');
+        $this->assertDatabaseCount('recommendations', 0);
+        $this->post(route('recommendations.store', $creator), $data + ['reason' => str_repeat('a', 2000)])
+            ->assertSessionHasNoErrors();
+        $item = $creator->recommendations()->sole();
+        $this->assertSame(str_repeat('a', 2000), $item->reason);
+        $this->assertNull($item->request_context);
     }
 
     /** @return array{User, Recommendation} */

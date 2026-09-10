@@ -40,8 +40,9 @@ class SubmitRecommendationTest extends TestCase
             ->assertSee('Submitting this request will use 1 of your request slots for this creator. Voting is separate.')
             ->assertSee('Why should JFragment make, cover, or explore this?')
             ->assertSee('maxlength="1000"', false)
-            ->assertSee('Optional, up to 1,000 characters.')
-            ->assertSee('0 / 1000')
+            ->assertSee('maxlength="2000"', false)
+            ->assertSee('Optional, up to 2,000 characters.')
+            ->assertSee('0 / 2000')
             ->assertSee('Submit request');
     }
 
@@ -139,7 +140,7 @@ class SubmitRecommendationTest extends TestCase
                 'title' => '',
                 'artist' => str_repeat('a', 256),
                 'category' => 'gaming',
-                'reason' => str_repeat('a', 1001),
+                'reason' => str_repeat('a', 2001),
             ])
             ->assertSessionHasErrors([
                 'youtube_url',

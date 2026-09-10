@@ -275,10 +275,6 @@
             <x-plain-expandable-text :text="$recommendation->reason" label="Why this was suggested" />
         @endif
 
-        @if ($recommendation->request_context)
-            <x-plain-expandable-text :text="$recommendation->request_context" label="Guide context" />
-        @endif
-
         @if ($recommendation->status === 'scheduled' && $recommendation->scheduled_for)
             <p class="mt-4 rounded-xl bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                 Scheduled for {{ $recommendation->scheduled_for->format('M j, Y \a\t g:i A') }}
