@@ -93,8 +93,8 @@ class RecommendationController extends Controller
                 $status => Recommendation::STATUS_LABELS[$status],
             ]);
 
-        $recommendationsQuery = $creator->recommendations()
-            ->activePubliclyVisible()
+        $recommendationsQuery = Recommendation::query()
+            ->withOverallCreatorRank($creator->id)
             ->when($filters['q'] !== '', function ($query) use ($filters): void {
                 $query->where(function ($query) use ($filters): void {
                     $query
@@ -111,8 +111,7 @@ class RecommendationController extends Controller
             ->when($filters['tag'] !== '', fn ($query) => $query
                 ->whereHas('creatorTags', fn ($query) => $query
                     ->where('creator_tags.creator_id', $creator->id)
-                    ->where('creator_tags.slug', $filters['tag'])))
-            ->withEffectiveVoteTotal();
+                    ->where('creator_tags.slug', $filters['tag'])));
 
         if ($request->user()) {
             $recommendationsQuery

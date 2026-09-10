@@ -565,10 +565,30 @@ class Recommendation extends Model
     /** @param Builder<Recommendation> $query */
     public function scopeOrderByEffectiveVoteRank(Builder $query): Builder
     {
-        return $query
-            ->orderByDesc('user_picks_count')
-            ->orderBy('created_at')
-            ->orderBy('id');
+        return $query->orderByRaw(self::EFFECTIVE_VOTE_RANK_ORDER);
+    }
+
+    private const EFFECTIVE_VOTE_RANK_ORDER = 'user_picks_count DESC, created_at ASC, id ASC';
+
+    /**
+     * Sequential overall public Creator rank, assigned before display filters/sorts.
+     * Reuse the public eligibility and effective support total, including closed snapshots.
+     *
+     * @param  Builder<Recommendation>  $query
+     */
+    public function scopeWithOverallCreatorRank(Builder $query, int $creatorId): Builder
+    {
+        $universe = self::query()
+            ->where('creator_id', $creatorId)
+            ->activePubliclyVisible()
+            ->withEffectiveVoteTotal();
+
+        $ranked = $query->getQuery()->newQuery()
+            ->fromSub($universe, 'rank_universe')
+            ->select('rank_universe.*')
+            ->selectRaw('ROW_NUMBER() OVER (ORDER BY '.self::EFFECTIVE_VOTE_RANK_ORDER.') AS overall_rank');
+
+        return $query->fromSub($ranked, 'recommendations')->select('recommendations.*');
     }
 
     /**

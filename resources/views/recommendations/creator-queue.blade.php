@@ -422,7 +422,7 @@
                     >
                     @forelse ($recommendations as $recommendation)
                         @php
-                            $rank = ($recommendations->firstItem() ?? 1) + $loop->index;
+                            $rank = (int) $recommendation->overall_rank;
                             $rankMod100 = $rank % 100;
                             $rankSuffix = in_array($rankMod100, [11, 12, 13], true)
                                 ? 'th'
@@ -478,7 +478,7 @@
                                     aria-controls="recommendation-details-{{ $recommendation->id }}"
                                     class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl px-1 py-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:gap-4 sm:px-2"
                                 >
-                                    <span class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
+                                    <span aria-label="Overall rank {{ $rankLabel }}" class="inline-flex h-10 min-w-12 shrink-0 items-center justify-center rounded-xl border px-2.5 text-sm font-semibold sm:h-11 sm:min-w-14 {{ $rankClasses }}">
                                         {{ $rankLabel }}
                                     </span>
 
