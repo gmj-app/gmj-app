@@ -55,7 +55,8 @@ class CreatorPagePerformanceTest extends TestCase
         $response->assertOk();
         $this->assertSame(50, substr_count($html, 'data-creator-request-row'));
         $this->assertLessThanOrEqual(20, $queries);
-        $this->assertLessThan(600 * 1024, strlen($html));
+        // The shared top paginator adds about 6 KiB to the 600 KiB single-paginator budget.
+        $this->assertLessThan(610 * 1024, strlen($html));
         $this->assertStringNotContainsString('data-recommendation-expanded-card', $html);
         $this->assertStringContainsString('mqdefault.jpg', $html);
         $this->assertStringNotContainsString('hqdefault.jpg', $html);

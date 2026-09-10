@@ -1254,7 +1254,7 @@ class PublicCreatorQueueTest extends TestCase
             ->assertDontSee('Deleted published item');
     }
 
-    public function test_creator_page_surfaces_recorded_requests_as_visible_journey_progress(): void
+    public function test_creator_page_preserves_recorded_requests_without_journey_progress(): void
     {
         $creator = Creator::factory()->create(['slug' => 'recorded-progress']);
         Recommendation::factory()->count(2)->create([
@@ -1270,17 +1270,17 @@ class PublicCreatorQueueTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('data-recorded-progress', false)
-            ->assertSee('Journey progress')
-            ->assertSee('2 recorded requests moving toward publication')
-            ->assertSee('Recording is complete. Publication is the next step')
-            ->assertSee('See recorded requests')
-            ->assertSee(route('creator.queue', ['creator' => $creator, 'status' => 'recorded']), false)
+            ->assertDontSee('data-recorded-progress', false)
+            ->assertDontSee('Journey progress')
+            ->assertDontSee('2 recorded requests moving toward publication')
+            ->assertDontSee('Recording is complete. Publication is the next step')
+            ->assertDontSee('See recorded requests')
             ->assertSee('>1</dd>', false);
 
         $this->get(route('creator.queue', ['creator' => $creator, 'status' => 'recorded']))
             ->assertOk()
-            ->assertSee('Showing recorded requests')
+            ->assertSee('Recorded')
+            ->assertViewHas('recommendations', fn ($requests) => $requests->total() === 2 && $requests->every(fn ($item) => $item->status === 'recorded'))
             ->assertSee('data-active-filter-count="1"', false)
             ->assertDontSee('See recorded requests');
     }

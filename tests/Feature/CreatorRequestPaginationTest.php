@@ -201,8 +201,8 @@ class CreatorRequestPaginationTest extends TestCase
         ]))->assertOk();
 
         $html = $response->getContent();
-        $this->assertMatchesRegularExpression('/<select[^>]+id="requests-per-page"[^>]+name="per_page"[^>]+aria-label="Requests per page"[^>]+onchange="this\.form\.requestSubmit\(\)"[^>]*>.*?<option value="10".*?<option value="25" selected.*?<option value="50".*?<option value="100".*?<\/select>/s', $html);
-        $this->assertSame(4, preg_match_all('/<option value="(?:10|25|50|100)"/', $html));
+        $this->assertMatchesRegularExpression('/<select[^>]+id="requests-per-page-top"[^>]+name="per_page"[^>]+aria-label="Requests per page, top"[^>]+onchange="this\.form\.requestSubmit\(\)"[^>]*>.*?<option value="10".*?<option value="25" selected.*?<option value="50".*?<option value="100".*?<\/select>/s', $html);
+        $this->assertSame(8, preg_match_all('/<option value="(?:10|25|50|100)"/', $html));
         $this->assertStringContainsString('<noscript>', $html);
 
         preg_match('/<form[^>]+data-request-per-page-form[^>]*>(.*?)<\/form>/s', $html, $form);
@@ -308,6 +308,82 @@ class CreatorRequestPaginationTest extends TestCase
 
         $this->assertLessThanOrEqual(2, $counts[100] - $counts[10], json_encode($counts, JSON_THROW_ON_ERROR));
         $this->assertLessThan(32, max($counts), json_encode($counts, JSON_THROW_ON_ERROR));
+    }
+
+    public function test_both_pagination_regions_share_links_forms_and_result_state(): void
+    {
+        $creator = $this->creatorWithActiveRequests(35);
+        $tag = $creator->creatorTags()->create(['name' => 'Christmas', 'slug' => 'christmas']);
+        $creator->recommendations->each(fn ($item) => $item->creatorTags()->attach($tag));
+        $creator->recommendations()->update(['category' => 'Music']);
+        $source = $creator->recommendations->first();
+        $this->actingAs(User::factory()->create());
+        $query = ['creator' => $creator, 'q' => 'Request', 'status' => 'approved', 'category' => 'Music', 'tag' => 'christmas', 'sort' => 'newest', 'duplicate_source' => $source->id, 'per_page' => 10];
+        $response = $this->get(route('creator.queue', $query))->assertOk();
+
+        foreach (['top', 'bottom'] as $position) {
+            $dom = new \DOMDocument;
+            @$dom->loadHTML($response->getContent());
+            $xpath = new \DOMXPath($dom);
+            $regions = $xpath->query('//section[@data-request-pagination-controls]');
+            $this->assertCount(2, $regions);
+            $this->assertSame($regions[0]->textContent, $regions[1]->textContent);
+            $ids = [];
+            foreach ($xpath->query('//*[@id]') as $element) {
+                $ids[] = $element->getAttribute('id');
+            }
+            $this->assertSame($ids, array_values(array_unique($ids)));
+            $region = '//section[@aria-label="Request pagination, '.$position.'"]';
+            $next = $xpath->query($region.'//a[@rel="next"]')->item(0);
+            $this->assertNotNull($next);
+            parse_str(parse_url($next->getAttribute('href'), PHP_URL_QUERY), $linkQuery);
+            foreach (array_diff_key($query, ['creator' => true]) as $key => $value) {
+                $this->assertEquals($value, $linkQuery[$key]);
+            }
+            $response = $this->get($next->getAttribute('href'))->assertOk();
+            $response->assertViewHas('recommendations', fn ($items) => $items->currentPage() === ($position === 'top' ? 2 : 3));
+            $this->assertSame(2, substr_count($response->getContent(), '<option value="10" selected'));
+
+            $form = $xpath->query($region.'//form')->item(0);
+            $values = [];
+            foreach ($xpath->query('.//input', $form) as $input) {
+                $values[$input->getAttribute('name')] = $input->getAttribute('value');
+            }
+            $this->assertArrayNotHasKey('page', $values);
+            $this->assertEquals($source->id, $values['duplicate_source']);
+            $this->assertSame('christmas', $values['tag']);
+            $resized = $this->get($form->getAttribute('action').'?'.http_build_query($values + ['per_page' => 25]))->assertOk();
+            $resized->assertViewHas('recommendations', fn ($items) => $items->currentPage() === 1 && $items->total() === 35);
+            $this->assertSame(2, substr_count($resized->getContent(), '<option value="25" selected'));
+        }
+
+        $response->assertSeeInOrder(['Request pagination, top', 'Filter requests', 'Request pagination, bottom']);
+    }
+
+    #[DataProvider('paginationResultCounts')]
+    public function test_both_regions_handle_empty_single_and_many_pages_without_queries(int $total): void
+    {
+        $creator = $this->creatorWithActiveRequests($total);
+        $response = $this->get(route('creator.queue', ['creator' => $creator, 'per_page' => 10]))->assertOk();
+        $html = $response->getContent();
+        $this->assertSame(2, substr_count($html, 'data-request-pagination-controls'));
+        $summary = $total === 0 ? 'Showing 0 results' : 'Showing <span class="font-medium">1</span> to <span class="font-medium">'.min(10, $total).'</span> of <span class="font-medium">'.$total.'</span> results';
+        $this->assertSame(2, substr_count($html, $summary));
+        $this->assertStringNotContainsString('Showing 1 to 0', $html);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        foreach (['top', 'bottom'] as $position) {
+            view('recommendations.partials.request-pagination', $response->original->getData() + ['position' => $position])->render();
+        }
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
+        $this->assertSame([], $queries);
+    }
+
+    public static function paginationResultCounts(): array
+    {
+        return ['empty' => [0], 'single' => [5], 'two' => [20], 'four' => [40], 'many' => [120]];
     }
 
     private function creatorWithActiveRequests(int $count): Creator

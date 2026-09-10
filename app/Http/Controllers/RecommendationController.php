@@ -71,7 +71,6 @@ class RecommendationController extends Controller
 
         $header = $this->creatorPageHeader->forCreator($creator, $request->user());
         $publicRecommendationsCount = $header['metrics'][0]['value'];
-        $recordedRecommendationsCount = $header['progress']['recorded_count'];
         $ownsCreator = $header['context']['is_creator_owner'];
         $topRequestedId = $creator->recommendations()
             ->activePubliclyVisible()
@@ -182,7 +181,6 @@ class RecommendationController extends Controller
             'perPage',
             'perPageOptions',
             'publicRecommendationsCount',
-            'recordedRecommendationsCount',
             'recentPublishedRecommendations',
             'recommendations',
             'statusOptions',
