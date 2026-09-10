@@ -90,6 +90,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/accolades', GuideAccoladeIndexController::class)->name('accolades.index');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::get('/notifications/dropdown', [NotificationController::class, 'dropdown'])->name('notifications.dropdown');
+    Route::post('/notifications/acknowledge-open', [NotificationController::class, 'acknowledgeOpen'])->name('notifications.acknowledge-open');
     Route::get('/notifications/{notification}/open', [NotificationController::class, 'open'])->name('notifications.open');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/{notification}/unread', [NotificationController::class, 'markUnread'])->name('notifications.unread');

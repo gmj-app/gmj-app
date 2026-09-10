@@ -132,7 +132,8 @@ class HomepageTest extends TestCase
             ->get('/')
             ->assertOk()
             ->assertSee('data-header-avatar-fallback class="inline-flex h-full w-full items-center justify-center rounded-full"', false)
-            ->assertDontSee('data-notification-unread-badge', false);
+            ->assertSee('notificationBell({ unreadCount: 0', false)
+            ->assertSee('x-show="unreadCount > 0" x-cloak data-notification-unread-badge', false);
 
         $this->assertSame(2, substr_count($fallbackResponse->getContent(), 'data-header-circle-trigger='));
         $this->assertSame(2, substr_count($fallbackResponse->getContent(), 'size-11 shrink-0 items-center justify-center'));

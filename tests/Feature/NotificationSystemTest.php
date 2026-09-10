@@ -182,7 +182,8 @@ class NotificationSystemTest extends TestCase
             ->assertSee('sm:max-w-[calc(100vw-2rem)]', false)
             ->assertSee('sm:max-h-[min(70vh,35rem)]', false)
             ->assertSee('overflow-y-auto overscroll-contain', false)
-            ->assertSee('<span class="sr-only">101 unread notifications</span>', false);
+            ->assertSee('x-text="unreadCount + \' unread notifications\'"', false)
+            ->assertSee('notificationBell({ unreadCount: 101', false);
         $this->assertSame(10, substr_count($response->getContent(), 'class="block border-b border-slate-100'));
     }
 

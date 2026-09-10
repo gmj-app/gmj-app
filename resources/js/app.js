@@ -7,6 +7,7 @@ import { creatorPublicationStatusForm } from './creator-publication-status-form.
 import { enhanceCreatorYoutubeThumbnails } from './creator-youtube-thumbnail.js';
 import { metadataQueue } from './metadata-queue.js';
 import { requestOverflowMenu } from './request-overflow-menu.js';
+import { notificationBell } from './notification-bell.js';
 
 window.Alpine = Alpine;
 
@@ -69,6 +70,7 @@ Alpine.data('creatorRequestVote', creatorRequestVote);
 Alpine.data('creatorPublicationStatusForm', creatorPublicationStatusForm);
 Alpine.data('metadataQueue', metadataQueue);
 Alpine.data('requestOverflowMenu', requestOverflowMenu);
+Alpine.data('notificationBell', notificationBell);
 
 const resetModalState = () => {
     document.body.classList.remove('overflow-hidden', 'overflow-y-hidden', 'pointer-events-none');

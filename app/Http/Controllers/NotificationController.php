@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Presenters\NotificationPresenter;
+use App\Services\NotificationReadService;
 use App\Services\NotificationUrlResolver;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -49,9 +51,37 @@ class NotificationController extends Controller
         return back()->with('success', 'Notification marked unread.');
     }
 
-    public function markAllRead(Request $request): RedirectResponse
+    public function dropdown(Request $request): JsonResponse
     {
-        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+        return $this->dropdownState($request);
+    }
+
+    public function acknowledgeOpen(Request $request, NotificationReadService $reads): JsonResponse
+    {
+        // The first inbox query defines this open event's server-side boundary.
+        $snapshot = $reads->unreadSnapshot($request->user());
+        $reads->acknowledge($request->user(), $snapshot);
+
+        return $this->dropdownState($request, $snapshot->all());
+    }
+
+    private function dropdownState(Request $request, array $openedIds = []): JsonResponse
+    {
+        $user = $request->user();
+        $notificationItems = $user->notifications()->latest()->limit(10)->get()
+            ->map(fn ($item) => new NotificationPresenter($item));
+
+        return response()->json([
+            'unread_count' => $user->unreadNotifications()->count(),
+            'unread_ids' => $notificationItems->reject->isRead()->map->id()->values(),
+            'opened_unread_ids' => $notificationItems->map->id()->intersect($openedIds)->values(),
+            'html' => view('components.notifications.dropdown-items', compact('notificationItems'))->render(),
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function markAllRead(Request $request, NotificationReadService $reads): RedirectResponse
+    {
+        $reads->acknowledge($request->user(), $reads->unreadSnapshot($request->user()));
 
         return back()->with('success', 'All notifications marked read.');
     }
